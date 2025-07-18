@@ -64,10 +64,17 @@ export const MealCell: React.FC<MealCellProps> = ({
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    e.dataTransfer.dropEffect = 'move';
+    
+    // Check what type of data we're receiving
+    const types = Array.from(e.dataTransfer.types);
+    console.log(`✨ Drag over ${cellId} - data types:`, types);
+    
+    // Allow drop for both recipe items and meal items
+    if (types.includes('text/plain')) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
     
     if (!isDragOver) {
-      console.log(`✨ Drag over ${cellId} - setting drop effect`);
       setIsDragOver(true);
     }
   };
