@@ -66,7 +66,7 @@ export const RecipeInventory: React.FC = () => {
   // Listen for add to inventory events
   React.useEffect(() => {
     const handleAddToInventory = (event: CustomEvent) => {
-      const itemName = event.detail;
+      const { itemName, mealType } = event.detail;
       if (itemName && typeof itemName === 'string') {
         // Check if recipe already exists
         const existingRecipe = recipes.find(r => r.name.toLowerCase() === itemName.toLowerCase());
@@ -74,7 +74,7 @@ export const RecipeInventory: React.FC = () => {
           const newRecipe: Recipe = {
             id: `recipe-${Date.now()}`,
             name: itemName,
-            category: 'Lunch', // Default category for meal plan items
+            category: mealType,
           };
           setRecipes(prev => [...prev, newRecipe]);
           toast({
