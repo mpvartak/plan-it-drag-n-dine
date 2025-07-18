@@ -26,7 +26,8 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					glow: 'hsl(var(--primary-glow))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -51,6 +52,22 @@ export default {
 				card: {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
+				},
+				breakfast: {
+					DEFAULT: 'hsl(var(--breakfast))',
+					foreground: 'hsl(var(--breakfast-foreground))'
+				},
+				lunch: {
+					DEFAULT: 'hsl(var(--lunch))',
+					foreground: 'hsl(var(--lunch-foreground))'
+				},
+				dinner: {
+					DEFAULT: 'hsl(var(--dinner))',
+					foreground: 'hsl(var(--dinner-foreground))'
+				},
+				snack: {
+					DEFAULT: 'hsl(var(--snack))',
+					foreground: 'hsl(var(--snack-foreground))'
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
