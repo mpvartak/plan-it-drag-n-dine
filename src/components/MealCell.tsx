@@ -67,11 +67,18 @@ export const MealCell: React.FC<MealCellProps> = ({
     
     // Check what type of data we're receiving
     const types = Array.from(e.dataTransfer.types);
-    console.log(`✨ Drag over ${cellId} - data types:`, types);
+    const isFromRecipe = types.includes('application/x-recipe-item');
+    const hasSourceCell = types.includes('application/x-source-cell');
     
-    // Allow drop for both recipe items and meal items
-    if (types.includes('text/plain')) {
-      e.dataTransfer.dropEffect = 'copy';
+    console.log(`✨ Drag over ${cellId} - isFromRecipe: ${isFromRecipe}, hasSourceCell: ${hasSourceCell}`);
+    
+    // Set appropriate drop effect
+    if (isFromRecipe) {
+      e.dataTransfer.dropEffect = 'copy'; // Copy from inventory
+    } else if (hasSourceCell) {
+      e.dataTransfer.dropEffect = 'move'; // Move between cells
+    } else {
+      e.dataTransfer.dropEffect = 'copy'; // Default
     }
     
     if (!isDragOver) {
