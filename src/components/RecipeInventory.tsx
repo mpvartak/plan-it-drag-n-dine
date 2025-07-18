@@ -5,13 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Plus, X, ChefHat, Search } from 'lucide-react';
+import { Plus, X, ChefHat, Search, Edit2, Check, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export interface Recipe {
   id: string;
   name: string;
   category: string;
+  cuisine: string;
   ingredients?: string[];
   instructions?: string;
 }
@@ -21,46 +22,54 @@ const DEFAULT_RECIPES: Recipe[] = [
     id: '1',
     name: 'Overnight Oats',
     category: 'Breakfast',
+    cuisine: 'American',
     ingredients: ['oats', 'milk', 'honey', 'fruits'],
   },
   {
     id: '2',
     name: 'Grilled Chicken Salad',
     category: 'Lunch',
+    cuisine: 'Mediterranean',
     ingredients: ['chicken breast', 'mixed greens', 'cherry tomatoes', 'olive oil'],
   },
   {
     id: '3',
     name: 'Spaghetti Bolognese',
     category: 'Dinner',
+    cuisine: 'Italian',
     ingredients: ['spaghetti', 'ground beef', 'tomato sauce', 'onions'],
   },
   {
     id: '4',
     name: 'Apple Slices with Peanut Butter',
     category: 'Snack',
+    cuisine: 'American',
     ingredients: ['apple', 'peanut butter'],
   },
   {
     id: '5',
     name: 'Greek Yogurt Parfait',
     category: 'Breakfast',
+    cuisine: 'Greek',
     ingredients: ['greek yogurt', 'granola', 'berries', 'honey'],
   },
   {
     id: '6',
     name: 'Turkey Sandwich',
     category: 'Lunch',
+    cuisine: 'American',
     ingredients: ['whole grain bread', 'turkey', 'lettuce', 'tomato'],
   },
 ];
 
 export const RecipeInventory: React.FC = () => {
   const [recipes, setRecipes] = useState<Recipe[]>(DEFAULT_RECIPES);
-  const [newRecipe, setNewRecipe] = useState({ name: '', category: 'Breakfast' });
+  const [newRecipe, setNewRecipe] = useState({ name: '', category: 'Breakfast', cuisine: 'American' });
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [draggedRecipe, setDraggedRecipe] = useState<Recipe | null>(null);
+  const [editingRecipe, setEditingRecipe] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Recipe>>({});
   const { toast } = useToast();
 
   // Listen for add to inventory events
@@ -75,6 +84,7 @@ export const RecipeInventory: React.FC = () => {
             id: `recipe-${Date.now()}`,
             name: itemName,
             category: mealType,
+            cuisine: 'American', // Default cuisine
           };
           setRecipes(prev => [...prev, newRecipe]);
           toast({
@@ -92,6 +102,7 @@ export const RecipeInventory: React.FC = () => {
   }, [recipes, toast]);
 
   const categories = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snack'];
+  const cuisines = ['American', 'Italian', 'Mexican', 'Asian', 'Mediterranean', 'Indian', 'French', 'Greek', 'Thai', 'Chinese', 'Japanese', 'Other'];
 
   const addRecipe = () => {
     if (newRecipe.name.trim()) {
@@ -99,9 +110,10 @@ export const RecipeInventory: React.FC = () => {
         id: `recipe-${Date.now()}`,
         name: newRecipe.name.trim(),
         category: newRecipe.category,
+        cuisine: newRecipe.cuisine,
       };
       setRecipes(prev => [...prev, recipe]);
-      setNewRecipe({ name: '', category: 'Breakfast' });
+      setNewRecipe({ name: '', category: 'Breakfast', cuisine: 'American' });
       toast({
         title: "Recipe added",
         description: `"${recipe.name}" has been added to your inventory.`,
@@ -118,6 +130,36 @@ export const RecipeInventory: React.FC = () => {
         description: `"${recipe.name}" has been removed from your inventory.`,
       });
     }
+  };
+
+  const startEditing = (recipe: Recipe) => {
+    setEditingRecipe(recipe.id);
+    setEditForm({
+      name: recipe.name,
+      category: recipe.category,
+      cuisine: recipe.cuisine,
+    });
+  };
+
+  const saveEdit = () => {
+    if (editingRecipe && editForm.name?.trim()) {
+      setRecipes(prev => prev.map(recipe => 
+        recipe.id === editingRecipe 
+          ? { ...recipe, ...editForm, name: editForm.name!.trim() }
+          : recipe
+      ));
+      setEditingRecipe(null);
+      setEditForm({});
+      toast({
+        title: "Recipe updated",
+        description: "Your recipe has been successfully updated.",
+      });
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingRecipe(null);
+    setEditForm({});
   };
 
   const filteredRecipes = recipes.filter(recipe => {
@@ -180,27 +222,38 @@ export const RecipeInventory: React.FC = () => {
         </p>
 
         {/* Add new recipe */}
-        <div className="flex gap-2 p-4 bg-muted/30 rounded-lg">
-          <div className="flex-1">
-            <Input
-              value={newRecipe.name}
-              onChange={(e) => setNewRecipe(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="Enter recipe name..."
-              onKeyPress={(e) => e.key === 'Enter' && addRecipe()}
-            />
+        <div className="grid gap-2 p-4 bg-muted/30 rounded-lg">
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <Input
+                value={newRecipe.name}
+                onChange={(e) => setNewRecipe(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter recipe name..."
+                onKeyPress={(e) => e.key === 'Enter' && addRecipe()}
+              />
+            </div>
+            <select
+              value={newRecipe.category}
+              onChange={(e) => setNewRecipe(prev => ({ ...prev, category: e.target.value }))}
+              className="px-3 py-2 border border-input bg-background rounded-md text-sm"
+            >
+              {categories.slice(1).map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+            <select
+              value={newRecipe.cuisine}
+              onChange={(e) => setNewRecipe(prev => ({ ...prev, cuisine: e.target.value }))}
+              className="px-3 py-2 border border-input bg-background rounded-md text-sm"
+            >
+              {cuisines.map(cuisine => (
+                <option key={cuisine} value={cuisine}>{cuisine}</option>
+              ))}
+            </select>
+            <Button onClick={addRecipe}>
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
-          <select
-            value={newRecipe.category}
-            onChange={(e) => setNewRecipe(prev => ({ ...prev, category: e.target.value }))}
-            className="px-3 py-2 border border-input bg-background rounded-md text-sm"
-          >
-            {categories.slice(1).map(category => (
-              <option key={category} value={category}>{category}</option>
-            ))}
-          </select>
-          <Button onClick={addRecipe}>
-            <Plus className="h-4 w-4" />
-          </Button>
         </div>
 
         <Separator />
@@ -240,30 +293,87 @@ export const RecipeInventory: React.FC = () => {
               }`}
               title="Drag to meal plan"
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-card-foreground truncate">{recipe.name}</h4>
-                  <Badge variant="outline" className="mt-1 text-xs">
-                    {recipe.category}
-                  </Badge>
-                  {recipe.ingredients && (
-                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                      {recipe.ingredients.join(', ')}
-                    </p>
-                  )}
+              {editingRecipe === recipe.id ? (
+                <div className="space-y-2">
+                  <Input
+                    value={editForm.name || ''}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                    className="text-sm"
+                    placeholder="Recipe name"
+                  />
+                  <div className="grid grid-cols-2 gap-1">
+                    <select
+                      value={editForm.category || ''}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, category: e.target.value }))}
+                      className="px-2 py-1 border border-input bg-background rounded text-xs"
+                    >
+                      {categories.slice(1).map(category => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={editForm.cuisine || ''}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, cuisine: e.target.value }))}
+                      className="px-2 py-1 border border-input bg-background rounded text-xs"
+                    >
+                      {cuisines.map(cuisine => (
+                        <option key={cuisine} value={cuisine}>{cuisine}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button size="sm" onClick={saveEdit} className="h-7 px-2">
+                      <Check className="h-3 w-3" />
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={cancelEdit} className="h-7 px-2">
+                      <XCircle className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeRecipe(recipe.id);
-                  }}
-                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
+              ) : (
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-card-foreground truncate">{recipe.name}</h4>
+                    <div className="flex gap-1 mt-1">
+                      <Badge variant="outline" className="text-xs">
+                        {recipe.category}
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        {recipe.cuisine}
+                      </Badge>
+                    </div>
+                    {recipe.ingredients && (
+                      <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                        {recipe.ingredients.join(', ')}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startEditing(recipe);
+                      }}
+                      className="h-6 w-6 p-0 hover:bg-primary hover:text-primary-foreground"
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeRecipe(recipe.id);
+                      }}
+                      className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
