@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, X, GripVertical } from 'lucide-react';
+import { Plus, X, GripVertical, Copy, Clipboard } from 'lucide-react';
 import { MealItem } from './MealPlanBuilder';
 import { useToast } from '@/hooks/use-toast';
 
@@ -29,6 +29,7 @@ export const MealCell: React.FC<MealCellProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [draggedItem, setDraggedItem] = useState<MealItem | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [copiedItems, setCopiedItems] = useState<MealItem[]>([]);
   const { toast } = useToast();
 
   const cellId = `${day}-${mealType}`;
@@ -58,6 +59,52 @@ export const MealCell: React.FC<MealCellProps> = ({
 
   const removeItem = (itemId: string) => {
     onItemsChange(items.filter(item => item.id !== itemId));
+  };
+
+  const copyItems = () => {
+    setCopiedItems([...items]);
+    toast({
+      title: "Items copied",
+      description: `Copied ${items.length} item(s) from ${day} ${mealType}.`,
+    });
+  };
+
+  const pasteItems = () => {
+    if (copiedItems.length === 0) {
+      toast({
+        title: "Nothing to paste",
+        description: "No items have been copied yet.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create new items with unique IDs to avoid conflicts
+    const newItems = copiedItems.map(item => ({
+      ...item,
+      id: `${Date.now()}-${Math.random()}`,
+    }));
+
+    // Filter out items that already exist (by text comparison)
+    const existingTexts = items.map(item => item.text.toLowerCase());
+    const uniqueNewItems = newItems.filter(item => 
+      !existingTexts.includes(item.text.toLowerCase())
+    );
+
+    if (uniqueNewItems.length === 0) {
+      toast({
+        title: "No new items to paste",
+        description: "All copied items already exist in this cell.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    onItemsChange([...items, ...uniqueNewItems]);
+    toast({
+      title: "Items pasted",
+      description: `Pasted ${uniqueNewItems.length} item(s) to ${day} ${mealType}.`,
+    });
   };
 
   // Drag and drop handlers with enhanced debugging
@@ -225,6 +272,32 @@ export const MealCell: React.FC<MealCellProps> = ({
             </Button>
           </div>
         ))}
+
+        {/* Copy/Paste controls */}
+        <div className="flex gap-1">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={copyItems}
+            className="flex-1 h-7 text-xs"
+            disabled={items.length === 0}
+            title={`Copy all ${items.length} items`}
+          >
+            <Copy className="h-3 w-3 mr-1" />
+            Copy ({items.length})
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={pasteItems}
+            className="flex-1 h-7 text-xs"
+            disabled={copiedItems.length === 0}
+            title={`Paste ${copiedItems.length} copied items`}
+          >
+            <Clipboard className="h-3 w-3 mr-1" />
+            Paste ({copiedItems.length})
+          </Button>
+        </div>
 
         {isAdding ? (
           <div className="space-y-2">

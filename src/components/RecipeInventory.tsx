@@ -102,7 +102,7 @@ export const RecipeInventory: React.FC = () => {
   }, [recipes, toast]);
 
   const categories = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snack'];
-  const cuisines = ['American', 'Italian', 'Mexican', 'Asian', 'Mediterranean', 'Indian', 'French', 'Greek', 'Thai', 'Chinese', 'Japanese', 'Other'];
+  const cuisines = ['American', 'Asian', 'Chinese', 'French', 'Greek', 'Indian', 'Italian', 'Japanese', 'Mediterranean', 'Mexican', 'Other', 'Thai'].sort();
 
   const addRecipe = () => {
     if (newRecipe.name.trim()) {
