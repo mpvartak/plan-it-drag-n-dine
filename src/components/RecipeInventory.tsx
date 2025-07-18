@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,6 +60,7 @@ export const RecipeInventory: React.FC = () => {
   const [newRecipe, setNewRecipe] = useState({ name: '', category: 'Breakfast' });
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [draggedRecipe, setDraggedRecipe] = useState<Recipe | null>(null);
   const { toast } = useToast();
 
   const categories = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snack'];
@@ -97,15 +99,39 @@ export const RecipeInventory: React.FC = () => {
   });
 
   const handleDragStart = (e: React.DragEvent, recipe: Recipe) => {
+    console.log('🚀 Starting drag from inventory:', recipe.name);
+    
+    setDraggedRecipe(recipe);
+    
     const mealItem = {
       id: `recipe-${recipe.id}-${Date.now()}`,
       text: recipe.name,
       isRecipe: true,
       recipeId: recipe.id,
     };
+    
+    // Set multiple data formats for better compatibility
     e.dataTransfer.setData('text/plain', JSON.stringify(mealItem));
     e.dataTransfer.setData('application/x-recipe-item', 'true');
+    e.dataTransfer.setData('application/json', JSON.stringify(mealItem));
+    
+    // Set the effect to copy since we're copying from inventory
     e.dataTransfer.effectAllowed = 'copy';
+    
+    console.log('📦 Data set for drag:', {
+      mealItem,
+      effectAllowed: e.dataTransfer.effectAllowed,
+    });
+    
+    // Add visual feedback
+    e.currentTarget.style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    console.log('🏁 Drag ended from inventory');
+    setDraggedRecipe(null);
+    // Reset visual feedback
+    e.currentTarget.style.opacity = '1';
   };
 
   return (
@@ -114,6 +140,11 @@ export const RecipeInventory: React.FC = () => {
         <div className="flex items-center gap-3">
           <ChefHat className="h-6 w-6 text-primary" />
           <h2 className="text-2xl font-bold text-foreground">Recipe Inventory</h2>
+          {draggedRecipe && (
+            <Badge variant="outline" className="animate-pulse">
+              Dragging: {draggedRecipe.name}
+            </Badge>
+          )}
         </div>
         
         <p className="text-muted-foreground">
@@ -175,7 +206,11 @@ export const RecipeInventory: React.FC = () => {
               key={recipe.id}
               draggable
               onDragStart={(e) => handleDragStart(e, recipe)}
-              className="group p-3 border border-border rounded-lg cursor-move hover:border-primary hover:shadow-soft transition-all duration-200 bg-card"
+              onDragEnd={handleDragEnd}
+              className={`group p-3 border border-border rounded-lg cursor-move hover:border-primary hover:shadow-lg transition-all duration-200 bg-card ${
+                draggedRecipe?.id === recipe.id ? 'opacity-50 scale-95' : 'hover:scale-105'
+              }`}
+              title="Drag to meal plan"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
@@ -192,7 +227,10 @@ export const RecipeInventory: React.FC = () => {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => removeRecipe(recipe.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeRecipe(recipe.id);
+                  }}
                   className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground"
                 >
                   <X className="h-3 w-3" />

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +26,10 @@ export const MealCell: React.FC<MealCellProps> = ({
   const [newItemText, setNewItemText] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [draggedItem, setDraggedItem] = useState<MealItem | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const { toast } = useToast();
+
+  const cellId = `${day}-${mealType}`;
 
   const addItem = () => {
     if (newItemText.trim()) {
@@ -48,31 +52,73 @@ export const MealCell: React.FC<MealCellProps> = ({
     onItemsChange(items.filter(item => item.id !== itemId));
   };
 
-  // Drag and drop handlers
+  // Drag and drop handlers with enhanced debugging
   const handleDragStart = (e: React.DragEvent, item: MealItem) => {
+    console.log(`🎯 Drag started from ${cellId}:`, item);
     setDraggedItem(item);
     e.dataTransfer.setData('text/plain', JSON.stringify(item));
-    e.dataTransfer.setData('application/x-source-cell', `${day}-${mealType}`);
+    e.dataTransfer.setData('application/x-source-cell', cellId);
     e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
+    
+    if (!isDragOver) {
+      console.log(`✨ Drag over ${cellId} - setting drop effect`);
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log(`🎯 Drag entered ${cellId}`);
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set isDragOver to false if we're leaving the cell completely
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      console.log(`🚪 Drag left ${cellId}`);
+      setIsDragOver(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    console.log(`💧 Drop attempted on ${cellId}`);
+    
+    setIsDragOver(false);
+    
     try {
       const droppedItemData = e.dataTransfer.getData('text/plain');
       const sourceCell = e.dataTransfer.getData('application/x-source-cell');
       const isFromRecipe = e.dataTransfer.getData('application/x-recipe-item');
       
+      console.log('Drop data:', {
+        droppedItemData: droppedItemData ? 'present' : 'missing',
+        sourceCell,
+        isFromRecipe,
+        cellId
+      });
+      
       if (droppedItemData) {
         const droppedItem: MealItem = JSON.parse(droppedItemData);
+        console.log('Parsed dropped item:', droppedItem);
         
         // Check if the item is not already in this cell
-        if (!items.find(item => item.id === droppedItem.id)) {
+        const existingItem = items.find(item => item.id === droppedItem.id);
+        if (!existingItem) {
           // If from inventory, always create new item with unique ID
           // If from another cell, use original item
           const finalItem = isFromRecipe ? {
@@ -80,10 +126,12 @@ export const MealCell: React.FC<MealCellProps> = ({
             id: `${Date.now()}-${Math.random()}`,
           } : droppedItem;
           
+          console.log('Adding item to cell:', finalItem);
           onItemsChange([...items, finalItem]);
           
           // Remove from source cell if moving between cells (not from inventory)
           if (sourceCell && onRemoveFromSource && !isFromRecipe) {
+            console.log('Removing from source cell:', sourceCell, droppedItem.id);
             onRemoveFromSource(sourceCell, droppedItem.id);
           }
           
@@ -91,22 +139,42 @@ export const MealCell: React.FC<MealCellProps> = ({
             title: isFromRecipe ? "Recipe added" : (sourceCell ? "Item moved" : "Item added"),
             description: `"${finalItem.text}" ${isFromRecipe ? 'added' : (sourceCell ? 'moved' : 'added')} to ${day} ${mealType}.`,
           });
+        } else {
+          console.log('Item already exists in this cell:', existingItem);
+          toast({
+            title: "Item already exists",
+            description: `"${droppedItem.text}" is already in ${day} ${mealType}.`,
+            variant: "destructive",
+          });
         }
+      } else {
+        console.error('No dropped item data found');
       }
     } catch (error) {
       console.error('Error dropping item:', error);
+      toast({
+        title: "Drop failed",
+        description: "Failed to add item to meal plan. Please try again.",
+        variant: "destructive",
+      });
     }
     setDraggedItem(null);
   };
 
   const handleDragEnd = () => {
+    console.log(`🏁 Drag ended from ${cellId}`);
     setDraggedItem(null);
+    setIsDragOver(false);
   };
 
   return (
     <Card 
-      className="p-3 min-h-24 transition-colors duration-200 hover:shadow-md"
+      className={`p-3 min-h-24 transition-all duration-200 hover:shadow-md ${
+        isDragOver ? 'ring-2 ring-primary bg-primary/5 shadow-lg' : ''
+      }`}
       onDragOver={handleDragOver}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       <div className="space-y-2">

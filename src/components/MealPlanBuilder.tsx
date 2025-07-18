@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -38,9 +39,38 @@ export const MealPlanBuilder = () => {
   const [customMealTypes, setCustomMealTypes] = useState<string[]>([]);
   const [newMealType, setNewMealType] = useState('');
   const [showRecipeInventory, setShowRecipeInventory] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
 
   const allMealTypes = [...DEFAULT_MEAL_TYPES, ...customMealTypes];
+
+  // Add global drag event listeners for debugging
+  React.useEffect(() => {
+    const handleGlobalDragStart = (e: DragEvent) => {
+      console.log('🚀 Global drag start detected:', e.target);
+      setIsDragging(true);
+    };
+
+    const handleGlobalDragEnd = (e: DragEvent) => {
+      console.log('🏁 Global drag end detected:', e.target);
+      setIsDragging(false);
+    };
+
+    const handleGlobalDrop = (e: DragEvent) => {
+      console.log('💧 Global drop detected:', e.target);
+      setIsDragging(false);
+    };
+
+    document.addEventListener('dragstart', handleGlobalDragStart);
+    document.addEventListener('dragend', handleGlobalDragEnd);
+    document.addEventListener('drop', handleGlobalDrop);
+
+    return () => {
+      document.removeEventListener('dragstart', handleGlobalDragStart);
+      document.removeEventListener('dragend', handleGlobalDragEnd);
+      document.removeEventListener('drop', handleGlobalDrop);
+    };
+  }, []);
 
   const addCustomMealType = () => {
     if (newMealType.trim() && !allMealTypes.includes(newMealType.trim())) {
@@ -110,7 +140,7 @@ export const MealPlanBuilder = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 space-y-6">
+    <div className={`min-h-screen bg-background p-4 space-y-6 ${isDragging ? 'cursor-grabbing' : ''}`}>
       {/* Header */}
       <div className="text-center space-y-4">
         <div className="flex items-center justify-center gap-3">
@@ -120,6 +150,11 @@ export const MealPlanBuilder = () => {
         <p className="text-lg text-muted-foreground">
           Plan your weekly meals with drag & drop functionality
         </p>
+        {isDragging && (
+          <div className="text-sm text-orange-600 font-medium">
+            🎯 Dragging in progress - Drop on any meal cell
+          </div>
+        )}
       </div>
 
       {/* Controls */}
@@ -170,7 +205,7 @@ export const MealPlanBuilder = () => {
 
             {/* Meal type rows */}
             {allMealTypes.map(mealType => (
-              <React.Fragment key={mealType}>
+              <div key={mealType} className="contents">
                 <div className={`p-3 rounded-lg flex items-center justify-between bg-${getMealTypeColor(mealType)} text-${getMealTypeColor(mealType)}-foreground`}>
                   <span className="font-medium">{mealType}</span>
                   {customMealTypes.includes(mealType) && (
@@ -195,7 +230,7 @@ export const MealPlanBuilder = () => {
                     onRemoveFromSource={removeItemFromSource}
                   />
                 ))}
-              </React.Fragment>
+              </div>
             ))}
           </div>
         </div>
