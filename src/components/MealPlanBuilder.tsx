@@ -92,6 +92,14 @@ export const MealPlanBuilder = () => {
     }));
   };
 
+  const removeItemFromSource = (sourceCell: string, itemId: string) => {
+    const [day, mealType] = sourceCell.split('-');
+    if (day && mealType && mealPlan[day] && mealPlan[day][mealType]) {
+      const updatedItems = mealPlan[day][mealType].filter(item => item.id !== itemId);
+      updateMealPlan(day, mealType, updatedItems);
+    }
+  };
+
   const getMealTypeColor = (mealType: string) => {
     const normalizedType = mealType.toLowerCase();
     if (normalizedType.includes('breakfast')) return 'breakfast';
@@ -184,6 +192,7 @@ export const MealPlanBuilder = () => {
                     mealType={mealType}
                     items={mealPlan[day][mealType] || []}
                     onItemsChange={(items) => updateMealPlan(day, mealType, items)}
+                    onRemoveFromSource={removeItemFromSource}
                   />
                 ))}
               </React.Fragment>

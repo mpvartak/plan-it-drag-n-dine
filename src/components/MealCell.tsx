@@ -12,6 +12,7 @@ interface MealCellProps {
   mealType: string;
   items: MealItem[];
   onItemsChange: (items: MealItem[]) => void;
+  onRemoveFromSource?: (sourceCell: string, itemId: string) => void;
 }
 
 export const MealCell: React.FC<MealCellProps> = ({
@@ -19,6 +20,7 @@ export const MealCell: React.FC<MealCellProps> = ({
   mealType,
   items,
   onItemsChange,
+  onRemoveFromSource,
 }) => {
   const [newItemText, setNewItemText] = useState('');
   const [isAdding, setIsAdding] = useState(false);
@@ -50,6 +52,7 @@ export const MealCell: React.FC<MealCellProps> = ({
   const handleDragStart = (e: React.DragEvent, item: MealItem) => {
     setDraggedItem(item);
     e.dataTransfer.setData('text/plain', JSON.stringify(item));
+    e.dataTransfer.setData('application/x-source-cell', `${day}-${mealType}`);
     e.dataTransfer.effectAllowed = 'move';
   };
 
@@ -62,21 +65,29 @@ export const MealCell: React.FC<MealCellProps> = ({
     e.preventDefault();
     try {
       const droppedItemData = e.dataTransfer.getData('text/plain');
+      const sourceCell = e.dataTransfer.getData('application/x-source-cell');
+      
       if (droppedItemData) {
         const droppedItem: MealItem = JSON.parse(droppedItemData);
         
         // Check if the item is not already in this cell
         if (!items.find(item => item.id === droppedItem.id)) {
-          // Create a new item with a new ID to avoid conflicts
-          const newItem: MealItem = {
+          // If from inventory, create new item with unique ID
+          const finalItem = sourceCell ? droppedItem : {
             ...droppedItem,
             id: `${Date.now()}-${Math.random()}`,
           };
-          onItemsChange([...items, newItem]);
+          
+          onItemsChange([...items, finalItem]);
+          
+          // Remove from source cell if moving between cells
+          if (sourceCell && onRemoveFromSource) {
+            onRemoveFromSource(sourceCell, droppedItem.id);
+          }
           
           toast({
-            title: "Item moved",
-            description: `"${newItem.text}" moved to ${day} ${mealType}.`,
+            title: sourceCell ? "Item moved" : "Recipe added",
+            description: `"${finalItem.text}" ${sourceCell ? 'moved' : 'added'} to ${day} ${mealType}.`,
           });
         }
       }
