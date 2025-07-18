@@ -124,14 +124,14 @@ export const RecipeInventory: React.FC = () => {
     });
     
     // Add visual feedback
-    e.currentTarget.style.opacity = '0.5';
+    (e.currentTarget as HTMLElement).style.opacity = '0.5';
   };
 
   const handleDragEnd = (e: React.DragEvent) => {
     console.log('🏁 Drag ended from inventory');
     setDraggedRecipe(null);
     // Reset visual feedback
-    e.currentTarget.style.opacity = '1';
+    (e.currentTarget as HTMLElement).style.opacity = '1';
   };
 
   return (
