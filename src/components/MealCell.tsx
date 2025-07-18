@@ -1,10 +1,9 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, X, GripVertical, Copy, Clipboard } from 'lucide-react';
+import { Plus, X, GripVertical } from 'lucide-react';
 import { MealItem } from './MealPlanBuilder';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,6 +15,10 @@ interface MealCellProps {
   onRemoveFromSource?: (sourceCell: string, itemId: string) => void;
   onAddToInventory?: (itemName: string) => void;
 }
+
+// Global clipboard state
+let globalClipboard: MealItem[] = [];
+let activeCell: string | null = null;
 
 export const MealCell: React.FC<MealCellProps> = ({
   day,
@@ -29,10 +32,79 @@ export const MealCell: React.FC<MealCellProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [draggedItem, setDraggedItem] = useState<MealItem | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [copiedItems, setCopiedItems] = useState<MealItem[]>([]);
+  const [isActive, setIsActive] = useState(false);
   const { toast } = useToast();
+  const cellRef = useRef<HTMLDivElement>(null);
 
   const cellId = `${day}-${mealType}`;
+
+  // Keyboard shortcuts handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle shortcuts when this cell is active and not typing in an input
+      if (activeCell !== cellId || e.target instanceof HTMLInputElement) return;
+
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const ctrlKey = isMac ? e.metaKey : e.ctrlKey;
+
+      if (ctrlKey && e.key === 'c') {
+        e.preventDefault();
+        copyItems();
+      } else if (ctrlKey && e.key === 'v') {
+        e.preventDefault();
+        pasteItems();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [cellId, items]);
+
+  const copyItems = () => {
+    globalClipboard = [...items];
+    toast({
+      title: "Items copied",
+      description: `Copied ${items.length} item(s) from ${day} ${mealType}. Press Ctrl+V to paste.`,
+    });
+  };
+
+  const pasteItems = () => {
+    if (globalClipboard.length === 0) {
+      toast({
+        title: "Nothing to paste",
+        description: "No items have been copied yet. Press Ctrl+C on a cell to copy items.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create new items with unique IDs to avoid conflicts
+    const newItems = globalClipboard.map(item => ({
+      ...item,
+      id: `${Date.now()}-${Math.random()}`,
+    }));
+
+    // Filter out items that already exist (by text comparison)
+    const existingTexts = items.map(item => item.text.toLowerCase());
+    const uniqueNewItems = newItems.filter(item => 
+      !existingTexts.includes(item.text.toLowerCase())
+    );
+
+    if (uniqueNewItems.length === 0) {
+      toast({
+        title: "No new items to paste",
+        description: "All copied items already exist in this cell.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    onItemsChange([...items, ...uniqueNewItems]);
+    toast({
+      title: "Items pasted",
+      description: `Pasted ${uniqueNewItems.length} item(s) to ${day} ${mealType}.`,
+    });
+  };
 
   const addItem = () => {
     if (newItemText.trim()) {
@@ -61,53 +133,31 @@ export const MealCell: React.FC<MealCellProps> = ({
     onItemsChange(items.filter(item => item.id !== itemId));
   };
 
-  const copyItems = () => {
-    setCopiedItems([...items]);
-    toast({
-      title: "Items copied",
-      description: `Copied ${items.length} item(s) from ${day} ${mealType}.`,
-    });
+  const handleMouseEnter = () => {
+    activeCell = cellId;
+    setIsActive(true);
   };
 
-  const pasteItems = () => {
-    if (copiedItems.length === 0) {
-      toast({
-        title: "Nothing to paste",
-        description: "No items have been copied yet.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Create new items with unique IDs to avoid conflicts
-    const newItems = copiedItems.map(item => ({
-      ...item,
-      id: `${Date.now()}-${Math.random()}`,
-    }));
-
-    // Filter out items that already exist (by text comparison)
-    const existingTexts = items.map(item => item.text.toLowerCase());
-    const uniqueNewItems = newItems.filter(item => 
-      !existingTexts.includes(item.text.toLowerCase())
-    );
-
-    if (uniqueNewItems.length === 0) {
-      toast({
-        title: "No new items to paste",
-        description: "All copied items already exist in this cell.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    onItemsChange([...items, ...uniqueNewItems]);
-    toast({
-      title: "Items pasted",
-      description: `Pasted ${uniqueNewItems.length} item(s) to ${day} ${mealType}.`,
-    });
+  const handleMouseLeave = () => {
+    activeCell = null;
+    setIsActive(false);
   };
 
-  // Drag and drop handlers with enhanced debugging
+  const handleFocus = () => {
+    activeCell = cellId;
+    setIsActive(true);
+  };
+
+  const handleBlur = () => {
+    // Only clear active state if we're not moving to a child element
+    setTimeout(() => {
+      if (!cellRef.current?.contains(document.activeElement)) {
+        activeCell = null;
+        setIsActive(false);
+      }
+    }, 0);
+  };
+
   const handleDragStart = (e: React.DragEvent, item: MealItem) => {
     console.log(`🎯 Drag started from ${cellId}:`, item);
     setDraggedItem(item);
@@ -238,13 +288,22 @@ export const MealCell: React.FC<MealCellProps> = ({
 
   return (
     <Card 
+      ref={cellRef}
       className={`p-3 min-h-24 transition-all duration-200 hover:shadow-md ${
         isDragOver ? 'ring-2 ring-primary bg-primary/5 shadow-lg' : ''
+      } ${
+        isActive ? 'ring-1 ring-primary/30 bg-primary/2' : ''
       }`}
       onDragOver={handleDragOver}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      tabIndex={0}
+      title={`${day} ${mealType} - Press Ctrl+C to copy, Ctrl+V to paste`}
     >
       <div className="space-y-2">
         {items.map((item) => (
@@ -272,32 +331,6 @@ export const MealCell: React.FC<MealCellProps> = ({
             </Button>
           </div>
         ))}
-
-        {/* Copy/Paste controls */}
-        <div className="flex gap-1">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={copyItems}
-            className="flex-1 h-7 text-xs"
-            disabled={items.length === 0}
-            title={`Copy all ${items.length} items`}
-          >
-            <Copy className="h-3 w-3 mr-1" />
-            Copy ({items.length})
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={pasteItems}
-            className="flex-1 h-7 text-xs"
-            disabled={copiedItems.length === 0}
-            title={`Paste ${copiedItems.length} copied items`}
-          >
-            <Clipboard className="h-3 w-3 mr-1" />
-            Paste ({copiedItems.length})
-          </Button>
-        </div>
 
         {isAdding ? (
           <div className="space-y-2">
@@ -330,6 +363,13 @@ export const MealCell: React.FC<MealCellProps> = ({
           >
             <Plus className="h-4 w-4" />
           </Button>
+        )}
+
+        {/* Keyboard shortcut hint */}
+        {isActive && (
+          <div className="text-xs text-muted-foreground text-center px-2 py-1 bg-muted/30 rounded">
+            Ctrl+C to copy • Ctrl+V to paste
+          </div>
         )}
       </div>
     </Card>

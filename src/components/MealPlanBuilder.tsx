@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Plus, Trash2, UtensilsCrossed } from 'lucide-react';
 import { MealCell } from './MealCell';
 import { RecipeInventory } from './RecipeInventory';
+import { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
 import { useToast } from '@/hooks/use-toast';
 
 export interface MealItem {
@@ -190,6 +191,9 @@ export const MealPlanBuilder = () => {
           </Button>
         </div>
       </Card>
+
+      {/* Keyboard Shortcuts Help */}
+      <KeyboardShortcutsHelp />
 
       {/* Recipe Inventory */}
       {showRecipeInventory && <RecipeInventory />}
