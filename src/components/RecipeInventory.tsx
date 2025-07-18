@@ -104,6 +104,7 @@ export const RecipeInventory: React.FC = () => {
       recipeId: recipe.id,
     };
     e.dataTransfer.setData('text/plain', JSON.stringify(mealItem));
+    e.dataTransfer.setData('application/x-recipe-item', 'true');
     e.dataTransfer.effectAllowed = 'copy';
   };
 

@@ -66,28 +66,30 @@ export const MealCell: React.FC<MealCellProps> = ({
     try {
       const droppedItemData = e.dataTransfer.getData('text/plain');
       const sourceCell = e.dataTransfer.getData('application/x-source-cell');
+      const isFromRecipe = e.dataTransfer.getData('application/x-recipe-item');
       
       if (droppedItemData) {
         const droppedItem: MealItem = JSON.parse(droppedItemData);
         
         // Check if the item is not already in this cell
         if (!items.find(item => item.id === droppedItem.id)) {
-          // If from inventory, create new item with unique ID
-          const finalItem = sourceCell ? droppedItem : {
+          // If from inventory, always create new item with unique ID
+          // If from another cell, use original item
+          const finalItem = isFromRecipe ? {
             ...droppedItem,
             id: `${Date.now()}-${Math.random()}`,
-          };
+          } : droppedItem;
           
           onItemsChange([...items, finalItem]);
           
-          // Remove from source cell if moving between cells
-          if (sourceCell && onRemoveFromSource) {
+          // Remove from source cell if moving between cells (not from inventory)
+          if (sourceCell && onRemoveFromSource && !isFromRecipe) {
             onRemoveFromSource(sourceCell, droppedItem.id);
           }
           
           toast({
-            title: sourceCell ? "Item moved" : "Recipe added",
-            description: `"${finalItem.text}" ${sourceCell ? 'moved' : 'added'} to ${day} ${mealType}.`,
+            title: isFromRecipe ? "Recipe added" : (sourceCell ? "Item moved" : "Item added"),
+            description: `"${finalItem.text}" ${isFromRecipe ? 'added' : (sourceCell ? 'moved' : 'added')} to ${day} ${mealType}.`,
           });
         }
       }
