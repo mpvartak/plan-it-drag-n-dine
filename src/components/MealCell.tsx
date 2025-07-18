@@ -14,6 +14,7 @@ interface MealCellProps {
   items: MealItem[];
   onItemsChange: (items: MealItem[]) => void;
   onRemoveFromSource?: (sourceCell: string, itemId: string) => void;
+  onAddToInventory?: (itemName: string) => void;
 }
 
 export const MealCell: React.FC<MealCellProps> = ({
@@ -22,6 +23,7 @@ export const MealCell: React.FC<MealCellProps> = ({
   items,
   onItemsChange,
   onRemoveFromSource,
+  onAddToInventory,
 }) => {
   const [newItemText, setNewItemText] = useState('');
   const [isAdding, setIsAdding] = useState(false);
@@ -39,6 +41,12 @@ export const MealCell: React.FC<MealCellProps> = ({
         isRecipe: false,
       };
       onItemsChange([...items, newItem]);
+      
+      // Add to inventory if callback provided
+      if (onAddToInventory) {
+        onAddToInventory(newItem.text);
+      }
+      
       setNewItemText('');
       setIsAdding(false);
       toast({
@@ -244,10 +252,10 @@ export const MealCell: React.FC<MealCellProps> = ({
             size="sm"
             variant="ghost"
             onClick={() => setIsAdding(true)}
-            className="w-full border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 hover:bg-primary/5"
+            className="w-full h-8 border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 hover:bg-primary/5"
+            title="Add item"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Item
+            <Plus className="h-4 w-4" />
           </Button>
         )}
       </div>

@@ -42,6 +42,11 @@ export const MealPlanBuilder = () => {
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
 
+  const handleAddToInventory = (itemName: string) => {
+    // This will be handled by the RecipeInventory component via a custom event
+    window.dispatchEvent(new CustomEvent('addToInventory', { detail: itemName }));
+  };
+
   const allMealTypes = [...DEFAULT_MEAL_TYPES, ...customMealTypes];
 
   // Add global drag event listeners for debugging
@@ -228,6 +233,7 @@ export const MealPlanBuilder = () => {
                     items={mealPlan[day][mealType] || []}
                     onItemsChange={(items) => updateMealPlan(day, mealType, items)}
                     onRemoveFromSource={removeItemFromSource}
+                    onAddToInventory={handleAddToInventory}
                   />
                 ))}
               </div>

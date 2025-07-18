@@ -63,6 +63,34 @@ export const RecipeInventory: React.FC = () => {
   const [draggedRecipe, setDraggedRecipe] = useState<Recipe | null>(null);
   const { toast } = useToast();
 
+  // Listen for add to inventory events
+  React.useEffect(() => {
+    const handleAddToInventory = (event: CustomEvent) => {
+      const itemName = event.detail;
+      if (itemName && typeof itemName === 'string') {
+        // Check if recipe already exists
+        const existingRecipe = recipes.find(r => r.name.toLowerCase() === itemName.toLowerCase());
+        if (!existingRecipe) {
+          const newRecipe: Recipe = {
+            id: `recipe-${Date.now()}`,
+            name: itemName,
+            category: 'Lunch', // Default category for meal plan items
+          };
+          setRecipes(prev => [...prev, newRecipe]);
+          toast({
+            title: "Added to inventory",
+            description: `"${itemName}" has been added to your recipe inventory.`,
+          });
+        }
+      }
+    };
+
+    window.addEventListener('addToInventory', handleAddToInventory as EventListener);
+    return () => {
+      window.removeEventListener('addToInventory', handleAddToInventory as EventListener);
+    };
+  }, [recipes, toast]);
+
   const categories = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
   const addRecipe = () => {
