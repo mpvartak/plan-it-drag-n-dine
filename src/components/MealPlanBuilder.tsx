@@ -1,9 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, UtensilsCrossed } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud } from 'lucide-react';
 import { MealCell } from './MealCell';
 import { RecipeInventory } from './RecipeInventory';
 import { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
@@ -23,7 +26,17 @@ export interface MealPlan {
 }
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const DEFAULT_MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'School Snacks'];
+const DEFAULT_MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'School Snacks', 'Prep'];
+
+interface WeatherData {
+  temp: number;
+  condition: string;
+  icon: string;
+}
+
+interface DayNotes {
+  [day: string]: string;
+}
 
 export const MealPlanBuilder = () => {
   const [mealPlan, setMealPlan] = useState<MealPlan>(() => {
@@ -41,6 +54,19 @@ export const MealPlanBuilder = () => {
   const [newMealType, setNewMealType] = useState('');
   const [showRecipeInventory, setShowRecipeInventory] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + mondayOffset);
+    return monday;
+  });
+  const [zipCode, setZipCode] = useState('');
+  const [weather, setWeather] = useState<{[day: string]: WeatherData}>({});
+  const [dayNotes, setDayNotes] = useState<DayNotes>({});
+  const [notesOpen, setNotesOpen] = useState<{[day: string]: boolean}>({});
+  const [showSettings, setShowSettings] = useState(false);
   const { toast } = useToast();
 
   const handleAddToInventory = (itemName: string, mealType: string) => {
@@ -49,6 +75,67 @@ export const MealPlanBuilder = () => {
   };
 
   const allMealTypes = [...DEFAULT_MEAL_TYPES, ...customMealTypes];
+
+  // Get dates for the current week
+  const getWeekDates = () => {
+    return DAYS.map((_, index) => {
+      const date = new Date(currentWeekStart);
+      date.setDate(currentWeekStart.getDate() + index);
+      return date;
+    });
+  };
+
+  const weekDates = getWeekDates();
+
+  // Fetch weather data
+  const fetchWeather = async (zip: string) => {
+    if (!zip) return;
+    
+    try {
+      // Using WeatherAPI (free tier) - replace with your preferred weather service
+      const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=YOUR_API_KEY&q=${zip}&days=7`);
+      const data = await response.json();
+      
+      const weatherData: {[day: string]: WeatherData} = {};
+      data.forecast.forecastday.forEach((day: any, index: number) => {
+        if (index < 7) {
+          weatherData[DAYS[index]] = {
+            temp: Math.round(day.day.avgtemp_f),
+            condition: day.day.condition.text,
+            icon: day.day.condition.icon
+          };
+        }
+      });
+      
+      setWeather(weatherData);
+    } catch (error) {
+      console.error('Failed to fetch weather:', error);
+      toast({
+        title: "Weather Error",
+        description: "Failed to fetch weather data. Please check your zip code.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Load weather when zipcode changes
+  useEffect(() => {
+    if (zipCode) {
+      fetchWeather(zipCode);
+    }
+  }, [zipCode]);
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const updateDayNotes = (day: string, notes: string) => {
+    setDayNotes(prev => ({ ...prev, [day]: notes }));
+  };
+
+  const toggleNotesSection = (day: string) => {
+    setNotesOpen(prev => ({ ...prev, [day]: !prev[day] }));
+  };
 
   // Add global drag event listeners for debugging
   React.useEffect(() => {
@@ -189,6 +276,35 @@ export const MealPlanBuilder = () => {
           >
             {showRecipeInventory ? 'Hide' : 'Show'} Recipe Inventory
           </Button>
+
+          <Dialog open={showSettings} onOpenChange={setShowSettings}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Settings</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    Zip Code (for weather)
+                  </label>
+                  <Input
+                    value={zipCode}
+                    onChange={(e) => setZipCode(e.target.value)}
+                    placeholder="Enter zip code"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enter your zip code to see weather information for each day
+                  </p>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </Card>
 
@@ -202,15 +318,54 @@ export const MealPlanBuilder = () => {
       <Card className="p-6 overflow-x-auto">
         <div className="min-w-[800px]">
           <div className="grid grid-cols-8 gap-2">
-            {/* Header row */}
+            {/* Header row with dates and weather */}
             <div className="font-semibold text-center p-3 text-foreground">
               Meal Type
             </div>
-            {DAYS.map(day => (
-              <div key={day} className="font-semibold text-center p-3 text-foreground">
-                {day}
+            {DAYS.map((day, index) => (
+              <div key={day} className="text-center p-3 space-y-1">
+                <div className="font-semibold text-foreground">{day}</div>
+                <div className="text-sm text-muted-foreground">
+                  {formatDate(weekDates[index])}
+                </div>
+                {weather[day] && (
+                  <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                    <Cloud className="h-3 w-3" />
+                    <span>{weather[day].temp}°F</span>
+                  </div>
+                )}
               </div>
             ))}
+
+            {/* Collapsible Notes row */}
+            <div className="contents">
+              <div className="p-3 rounded-lg bg-muted text-muted-foreground">
+                <span className="font-medium">Notes</span>
+              </div>
+              {DAYS.map(day => (
+                <div key={`notes-${day}`} className="p-2">
+                  <Collapsible 
+                    open={notesOpen[day]} 
+                    onOpenChange={() => toggleNotesSection(day)}
+                  >
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="w-full justify-between p-2">
+                        <span className="text-xs">Daily Notes</span>
+                        {notesOpen[day] ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <Textarea
+                        value={dayNotes[day] || ''}
+                        onChange={(e) => updateDayNotes(day, e.target.value)}
+                        placeholder={`Notes for ${day}...`}
+                        className="mt-2 min-h-[60px] text-xs"
+                      />
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              ))}
+            </div>
 
             {/* Meal type rows */}
             {allMealTypes.map(mealType => (
