@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud } from 'lucide-react';
+import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { MealCell } from './MealCell';
 import { RecipeInventory } from './RecipeInventory';
-import { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
+
 import { useToast } from '@/hooks/use-toast';
 
 export interface MealItem {
@@ -253,23 +254,6 @@ export const MealPlanBuilder = () => {
       {/* Controls */}
       <Card className="p-4">
         <div className="flex flex-wrap gap-4 items-end">
-          <div className="flex-1 min-w-48">
-            <label className="text-sm font-medium text-foreground mb-2 block">
-              Add Custom Meal Type
-            </label>
-            <div className="flex gap-2">
-              <Input
-                value={newMealType}
-                onChange={(e) => setNewMealType(e.target.value)}
-                placeholder="e.g., Afternoon Snack, Pre-workout"
-                onKeyPress={(e) => e.key === 'Enter' && addCustomMealType()}
-              />
-              <Button onClick={addCustomMealType} size="sm">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          
           <Button 
             onClick={() => setShowRecipeInventory(!showRecipeInventory)}
             variant="outline"
@@ -284,23 +268,91 @@ export const MealPlanBuilder = () => {
                 Settings
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Settings</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {/* Weather Settings */}
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">
-                    Zip Code (for weather)
-                  </label>
-                  <Input
-                    value={zipCode}
-                    onChange={(e) => setZipCode(e.target.value)}
-                    placeholder="Enter zip code"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Enter your zip code to see weather information for each day
-                  </p>
+                  <h3 className="text-lg font-medium mb-3">Weather</h3>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-2 block">
+                      Zip Code
+                    </label>
+                    <Input
+                      value={zipCode}
+                      onChange={(e) => setZipCode(e.target.value)}
+                      placeholder="Enter zip code"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Enter your zip code to see weather information for each day
+                    </p>
+                  </div>
+                </div>
+
+                {/* Custom Meal Types */}
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Custom Meal Types</h3>
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <Input
+                        value={newMealType}
+                        onChange={(e) => setNewMealType(e.target.value)}
+                        placeholder="e.g., Afternoon Snack, Pre-workout"
+                        onKeyPress={(e) => e.key === 'Enter' && addCustomMealType()}
+                      />
+                      <Button onClick={addCustomMealType} size="sm">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {customMealTypes.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">Custom meal types:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {customMealTypes.map(mealType => (
+                            <Badge key={mealType} variant="secondary" className="flex items-center gap-1">
+                              {mealType}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => removeCustomMealType(mealType)}
+                                className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                              >
+                                <X className="h-2 w-2" />
+                              </Button>
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Keyboard Shortcuts */}
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Keyboard Shortcuts</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Copy items from cell</span>
+                      <kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+C</kbd>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Paste items to cell</span>
+                      <kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+V</kbd>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Add new item</span>
+                      <kbd className="px-2 py-1 bg-muted rounded text-xs">Enter</kbd>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Cancel adding</span>
+                      <kbd className="px-2 py-1 bg-muted rounded text-xs">Escape</kbd>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-3">
+                      💡 Hover over any meal cell to activate keyboard shortcuts for that cell.
+                    </p>
+                  </div>
                 </div>
               </div>
             </DialogContent>
@@ -308,8 +360,6 @@ export const MealPlanBuilder = () => {
         </div>
       </Card>
 
-      {/* Keyboard Shortcuts Help */}
-      <KeyboardShortcutsHelp />
 
       {/* Recipe Inventory */}
       {showRecipeInventory && <RecipeInventory />}
