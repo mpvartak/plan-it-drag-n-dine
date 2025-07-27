@@ -87,41 +87,41 @@ export const MealPlanBuilder = () => {
 
   const weekDates = getWeekDates();
 
-  // Fetch weather data
-  const fetchWeather = async (zip: string) => {
+  // Generate mock weather data based on zip code
+  const generateMockWeather = (zip: string) => {
     if (!zip) return;
     
-    try {
-      // Using WeatherAPI (free tier) - replace with your preferred weather service
-      const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=YOUR_API_KEY&q=${zip}&days=7`);
-      const data = await response.json();
+    // Use zip code as seed for consistent weather
+    const seed = zip.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    
+    const conditions = ['Sunny', 'Partly Cloudy', 'Cloudy', 'Light Rain', 'Clear'];
+    const weatherData: {[day: string]: WeatherData} = {};
+    
+    DAYS.forEach((day, index) => {
+      // Generate pseudo-random but consistent temperatures and conditions
+      const dayIndex = (seed + index) % 100;
+      const baseTemp = 65 + (dayIndex % 30); // 65-95°F range
+      const conditionIndex = (seed + index * 3) % conditions.length;
       
-      const weatherData: {[day: string]: WeatherData} = {};
-      data.forecast.forecastday.forEach((day: any, index: number) => {
-        if (index < 7) {
-          weatherData[DAYS[index]] = {
-            temp: Math.round(day.day.avgtemp_f),
-            condition: day.day.condition.text,
-            icon: day.day.condition.icon
-          };
-        }
-      });
-      
-      setWeather(weatherData);
-    } catch (error) {
-      console.error('Failed to fetch weather:', error);
-      toast({
-        title: "Weather Error",
-        description: "Failed to fetch weather data. Please check your zip code.",
-        variant: "destructive"
-      });
-    }
+      weatherData[day] = {
+        temp: baseTemp,
+        condition: conditions[conditionIndex],
+        icon: '' // Not using icons in mock data
+      };
+    });
+    
+    setWeather(weatherData);
+    
+    toast({
+      title: "Weather Loaded",
+      description: `Showing mock weather data for ${zip}`,
+    });
   };
 
   // Load weather when zipcode changes
   useEffect(() => {
     if (zipCode) {
-      fetchWeather(zipCode);
+      generateMockWeather(zipCode);
     }
   }, [zipCode]);
 
