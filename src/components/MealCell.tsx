@@ -303,7 +303,6 @@ export const MealCell: React.FC<MealCellProps> = ({
       onFocus={handleFocus}
       onBlur={handleBlur}
       tabIndex={0}
-      title={`${day} ${mealType} - Press Ctrl+C to copy, Ctrl+V to paste`}
     >
       <div className="space-y-2">
         {items.map((item) => (
@@ -365,12 +364,6 @@ export const MealCell: React.FC<MealCellProps> = ({
           </Button>
         )}
 
-        {/* Keyboard shortcut hint */}
-        {isActive && (
-          <div className="text-xs text-muted-foreground text-center px-2 py-1 bg-muted/30 rounded">
-            Ctrl+C to copy • Ctrl+V to paste
-          </div>
-        )}
       </div>
     </Card>
   );
