@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud, X } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { MealCell } from './MealCell';
 import { RecipeInventory } from './RecipeInventory';
@@ -26,8 +27,14 @@ export interface MealPlan {
   };
 }
 
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const ALL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const DEFAULT_MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'School Snacks', 'Prep'];
+
+// Helper function to get ordered days based on first day of week
+const getOrderedDays = (firstDayOfWeek: string) => {
+  const startIndex = ALL_DAYS.indexOf(firstDayOfWeek);
+  return [...ALL_DAYS.slice(startIndex), ...ALL_DAYS.slice(0, startIndex)];
+};
 
 interface WeatherData {
   temp: number;
@@ -40,9 +47,43 @@ interface DayNotes {
 }
 
 export const MealPlanBuilder = () => {
+  // Load settings from localStorage
+  const [firstDayOfWeek, setFirstDayOfWeek] = useState<string>(() => {
+    return localStorage.getItem('mealPlan_firstDayOfWeek') || 'Monday';
+  });
+
+  const [mealPlans, setMealPlans] = useState<{[weekKey: string]: MealPlan}>(() => {
+    const stored = localStorage.getItem('mealPlans');
+    return stored ? JSON.parse(stored) : {};
+  });
+
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
+    const today = new Date();
+    const firstDayIndex = ALL_DAYS.indexOf(firstDayOfWeek);
+    const todayIndex = (today.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0 format
+    const dayOffset = todayIndex - firstDayIndex;
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - (dayOffset >= 0 ? dayOffset : dayOffset + 7));
+    return weekStart;
+  });
+
+  // Get current week key for localStorage
+  const getWeekKey = (weekStart: Date) => {
+    return weekStart.toISOString().split('T')[0]; // YYYY-MM-DD format
+  };
+
+  const currentWeekKey = getWeekKey(currentWeekStart);
+  const orderedDays = getOrderedDays(firstDayOfWeek);
+
+  // Get current meal plan for the week
   const [mealPlan, setMealPlan] = useState<MealPlan>(() => {
+    const weekKey = getWeekKey(currentWeekStart);
+    if (mealPlans[weekKey]) {
+      return mealPlans[weekKey];
+    }
+    
     const plan: MealPlan = {};
-    DAYS.forEach(day => {
+    ALL_DAYS.forEach(day => {
       plan[day] = {};
       DEFAULT_MEAL_TYPES.forEach(mealType => {
         plan[day][mealType] = [];
@@ -51,19 +92,17 @@ export const MealPlanBuilder = () => {
     return plan;
   });
 
-  const [customMealTypes, setCustomMealTypes] = useState<string[]>([]);
+  const [customMealTypes, setCustomMealTypes] = useState<string[]>(() => {
+    const stored = localStorage.getItem('mealPlan_customMealTypes');
+    return stored ? JSON.parse(stored) : [];
+  });
+
   const [newMealType, setNewMealType] = useState('');
   const [showRecipeInventory, setShowRecipeInventory] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + mondayOffset);
-    return monday;
+  const [zipCode, setZipCode] = useState(() => {
+    return localStorage.getItem('mealPlan_zipCode') || '';
   });
-  const [zipCode, setZipCode] = useState('');
   const [weather, setWeather] = useState<{[day: string]: WeatherData}>({});
   const [dayNotes, setDayNotes] = useState<DayNotes>({});
   const [notesOpen, setNotesOpen] = useState<{[day: string]: boolean}>({});
@@ -77,9 +116,43 @@ export const MealPlanBuilder = () => {
 
   const allMealTypes = [...DEFAULT_MEAL_TYPES, ...customMealTypes];
 
+  // Save to localStorage whenever settings change
+  useEffect(() => {
+    localStorage.setItem('mealPlan_firstDayOfWeek', firstDayOfWeek);
+  }, [firstDayOfWeek]);
+
+  useEffect(() => {
+    localStorage.setItem('mealPlan_customMealTypes', JSON.stringify(customMealTypes));
+  }, [customMealTypes]);
+
+  useEffect(() => {
+    localStorage.setItem('mealPlan_zipCode', zipCode);
+  }, [zipCode]);
+
+  useEffect(() => {
+    localStorage.setItem('mealPlans', JSON.stringify(mealPlans));
+  }, [mealPlans]);
+
+  // Update meal plan when week changes
+  useEffect(() => {
+    const weekKey = getWeekKey(currentWeekStart);
+    if (mealPlans[weekKey]) {
+      setMealPlan(mealPlans[weekKey]);
+    } else {
+      const plan: MealPlan = {};
+      ALL_DAYS.forEach(day => {
+        plan[day] = {};
+        [...DEFAULT_MEAL_TYPES, ...customMealTypes].forEach(mealType => {
+          plan[day][mealType] = [];
+        });
+      });
+      setMealPlan(plan);
+    }
+  }, [currentWeekStart, customMealTypes, mealPlans]);
+
   // Get dates for the current week
   const getWeekDates = () => {
-    return DAYS.map((_, index) => {
+    return orderedDays.map((_, index) => {
       const date = new Date(currentWeekStart);
       date.setDate(currentWeekStart.getDate() + index);
       return date;
@@ -87,6 +160,19 @@ export const MealPlanBuilder = () => {
   };
 
   const weekDates = getWeekDates();
+
+  // Navigation functions
+  const goToPreviousWeek = () => {
+    const newWeekStart = new Date(currentWeekStart);
+    newWeekStart.setDate(currentWeekStart.getDate() - 7);
+    setCurrentWeekStart(newWeekStart);
+  };
+
+  const goToNextWeek = () => {
+    const newWeekStart = new Date(currentWeekStart);
+    newWeekStart.setDate(currentWeekStart.getDate() + 7);
+    setCurrentWeekStart(newWeekStart);
+  };
 
   // Generate mock weather data based on zip code
   const generateMockWeather = (zip: string) => {
@@ -98,7 +184,7 @@ export const MealPlanBuilder = () => {
     const conditions = ['Sunny', 'Partly Cloudy', 'Cloudy', 'Light Rain', 'Clear'];
     const weatherData: {[day: string]: WeatherData} = {};
     
-    DAYS.forEach((day, index) => {
+    orderedDays.forEach((day, index) => {
       // Generate pseudo-random but consistent temperatures and conditions
       const dayIndex = (seed + index) % 100;
       const baseTemp = 65 + (dayIndex % 30); // 65-95°F range
@@ -174,7 +260,7 @@ export const MealPlanBuilder = () => {
       // Add empty arrays for this meal type across all days
       setMealPlan(prev => {
         const updated = { ...prev };
-        DAYS.forEach(day => {
+        ALL_DAYS.forEach(day => {
           updated[day][mealType] = [];
         });
         return updated;
@@ -194,7 +280,7 @@ export const MealPlanBuilder = () => {
     // Remove this meal type from all days
     setMealPlan(prev => {
       const updated = { ...prev };
-      DAYS.forEach(day => {
+      ALL_DAYS.forEach(day => {
         delete updated[day][mealTypeToRemove];
       });
       return updated;
@@ -207,12 +293,19 @@ export const MealPlanBuilder = () => {
   };
 
   const updateMealPlan = (day: string, mealType: string, items: MealItem[]) => {
-    setMealPlan(prev => ({
-      ...prev,
+    const updatedPlan = {
+      ...mealPlan,
       [day]: {
-        ...prev[day],
+        ...mealPlan[day],
         [mealType]: items
       }
+    };
+    setMealPlan(updatedPlan);
+    
+    // Save to localStorage
+    setMealPlans(prev => ({
+      ...prev,
+      [currentWeekKey]: updatedPlan
     }));
   };
 
@@ -291,7 +384,30 @@ export const MealPlanBuilder = () => {
                   </div>
                 </div>
 
-                {/* Custom Meal Types */}
+                 {/* Week Settings */}
+                 <div>
+                   <h3 className="text-lg font-medium mb-3">Week Settings</h3>
+                   <div>
+                     <label className="text-sm font-medium text-foreground mb-2 block">
+                       First Day of Week
+                     </label>
+                     <Select value={firstDayOfWeek} onValueChange={setFirstDayOfWeek}>
+                       <SelectTrigger>
+                         <SelectValue />
+                       </SelectTrigger>
+                       <SelectContent>
+                         {ALL_DAYS.map(day => (
+                           <SelectItem key={day} value={day}>{day}</SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
+                     <p className="text-xs text-muted-foreground mt-1">
+                       Choose which day your meal planning week should start with
+                     </p>
+                   </div>
+                 </div>
+
+                 {/* Custom Meal Types */}
                 <div>
                   <h3 className="text-lg font-medium mb-3">Custom Meal Types</h3>
                   <div className="space-y-3">
@@ -367,12 +483,27 @@ export const MealPlanBuilder = () => {
       {/* Meal Plan Table */}
       <Card className="p-6 overflow-x-auto">
         <div className="min-w-[800px]">
+          {/* Week Navigation */}
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <Button variant="outline" size="sm" onClick={goToPreviousWeek}>
+              <ChevronLeft className="h-4 w-4" />
+              Previous Week
+            </Button>
+            <div className="text-lg font-medium">
+              {formatDate(weekDates[0])} - {formatDate(weekDates[6])}
+            </div>
+            <Button variant="outline" size="sm" onClick={goToNextWeek}>
+              Next Week
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
           <div className="grid grid-cols-8 gap-2">
             {/* Header row with dates and weather */}
             <div className="font-semibold text-center p-3 text-foreground">
               Meal Type
             </div>
-            {DAYS.map((day, index) => (
+            {orderedDays.map((day, index) => (
               <div key={day} className="text-center p-3 space-y-1">
                 <div className="font-semibold text-foreground">{day}</div>
                 <div className="text-sm text-muted-foreground">
@@ -392,7 +523,7 @@ export const MealPlanBuilder = () => {
               <div className="p-3 rounded-lg bg-muted text-muted-foreground">
                 <span className="font-medium">Notes</span>
               </div>
-              {DAYS.map(day => (
+              {orderedDays.map(day => (
                 <div key={`notes-${day}`} className="p-2">
                   <Collapsible 
                     open={notesOpen[day]} 
@@ -434,7 +565,7 @@ export const MealPlanBuilder = () => {
                   )}
                 </div>
 
-                {DAYS.map(day => (
+                {orderedDays.map(day => (
                   <MealCell
                     key={`${day}-${mealType}`}
                     day={day}
