@@ -327,9 +327,9 @@ export const MealPlanBuilder = () => {
   };
 
   return (
-    <div className={`min-h-screen bg-background p-4 space-y-6 ${isDragging ? 'cursor-grabbing' : ''}`}>
+    <div className={`min-h-screen bg-background p-6 space-y-8 ${isDragging ? 'cursor-grabbing' : ''}`}>
       {/* Header */}
-      <div className="text-center space-y-4">
+      <div className="text-center space-y-6">
         <div className="flex items-center justify-center gap-3">
           <UtensilsCrossed className="h-8 w-8 text-primary" />
           <h1 className="text-4xl font-bold text-foreground">Meal Plan Builder</h1>
@@ -345,7 +345,7 @@ export const MealPlanBuilder = () => {
       </div>
 
       {/* Controls */}
-      <Card className="p-4">
+      <Card className="p-6 shadow-card">
         <div className="flex flex-wrap gap-4 items-end">
           <Button 
             onClick={() => setShowRecipeInventory(!showRecipeInventory)}
@@ -498,7 +498,7 @@ export const MealPlanBuilder = () => {
             </Button>
           </div>
 
-          <div className="grid grid-cols-8 gap-2">
+          <div className="grid grid-cols-8 gap-4">
             {/* Header row with dates and weather */}
             <div className="font-semibold text-center p-3 text-foreground">
               Meal Type

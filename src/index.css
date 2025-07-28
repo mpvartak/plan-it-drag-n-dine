@@ -8,52 +8,53 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 45 23% 97%;
-    --foreground: 25 25% 15%;
+    --background: 40 25% 98%;
+    --foreground: 20 14% 25%;
 
     --card: 0 0% 100%;
-    --card-foreground: 25 25% 15%;
+    --card-foreground: 20 14% 25%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 25 25% 15%;
+    --popover-foreground: 20 14% 25%;
 
-    --primary: 142 71% 45%;
+    --primary: 140 50% 45%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 142 71% 65%;
+    --primary-glow: 140 50% 65%;
 
-    --secondary: 39 77% 88%;
-    --secondary-foreground: 25 45% 25%;
+    --secondary: 40 85% 92%;
+    --secondary-foreground: 20 14% 25%;
 
-    --muted: 45 15% 94%;
-    --muted-foreground: 25 15% 55%;
+    --muted: 40 20% 95%;
+    --muted-foreground: 20 8% 55%;
 
-    --accent: 25 85% 85%;
-    --accent-foreground: 25 45% 25%;
+    --accent: 25 90% 88%;
+    --accent-foreground: 20 14% 25%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 45 15% 88%;
-    --input: 45 15% 94%;
-    --ring: 142 71% 45%;
+    --border: 40 20% 90%;
+    --input: 40 20% 94%;
+    --ring: 140 50% 45%;
 
-    /* Custom meal planning colors */
-    --breakfast: 45 86% 83%;
-    --breakfast-foreground: 25 45% 25%;
-    --lunch: 35 77% 85%;
-    --lunch-foreground: 25 45% 25%;
-    --dinner: 25 85% 85%;
-    --dinner-foreground: 25 45% 25%;
-    --snack: 142 35% 85%;
-    --snack-foreground: 25 45% 25%;
+    /* Food-inspired meal colors */
+    --breakfast: 48 100% 75%;
+    --breakfast-foreground: 20 14% 25%;
+    --lunch: 120 45% 65%;
+    --lunch-foreground: 0 0% 100%;
+    --dinner: 25 85% 68%;
+    --dinner-foreground: 0 0% 100%;
+    --snack: 270 55% 75%;
+    --snack-foreground: 0 0% 100%;
 
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
     --gradient-warm: linear-gradient(135deg, hsl(var(--breakfast)), hsl(var(--lunch)));
     
-    /* Shadows */
-    --shadow-soft: 0 4px 12px hsl(var(--primary) / 0.15);
-    --shadow-glow: 0 0 20px hsl(var(--primary-glow) / 0.3);
+    /* Enhanced shadows */
+    --shadow-soft: 0 2px 8px hsl(20 14% 25% / 0.08);
+    --shadow-card: 0 4px 12px hsl(20 14% 25% / 0.12);
+    --shadow-glow: 0 0 20px hsl(var(--primary-glow) / 0.25);
 
     --radius: 0.5rem;
 
