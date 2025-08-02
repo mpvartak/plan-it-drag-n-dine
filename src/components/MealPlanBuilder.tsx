@@ -57,14 +57,17 @@ export const MealPlanBuilder = () => {
     return stored ? JSON.parse(stored) : {};
   });
 
-  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
-    const today = new Date();
-    const firstDayIndex = ALL_DAYS.indexOf(firstDayOfWeek);
-    const todayIndex = (today.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0 format
-    const dayOffset = todayIndex - firstDayIndex;
-    const weekStart = new Date(today);
-    weekStart.setDate(today.getDate() - (dayOffset >= 0 ? dayOffset : dayOffset + 7));
+  const calculateWeekStart = (date: Date, firstDay: string) => {
+    const firstDayIndex = ALL_DAYS.indexOf(firstDay);
+    const currentDayIndex = (date.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0 format
+    const dayOffset = (currentDayIndex - firstDayIndex + 7) % 7;
+    const weekStart = new Date(date);
+    weekStart.setDate(date.getDate() - dayOffset);
     return weekStart;
+  };
+
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
+    return calculateWeekStart(new Date(), firstDayOfWeek);
   });
 
   // Get current week key for localStorage
@@ -119,6 +122,8 @@ export const MealPlanBuilder = () => {
   // Save to localStorage whenever settings change
   useEffect(() => {
     localStorage.setItem('mealPlan_firstDayOfWeek', firstDayOfWeek);
+    // Recalculate current week start when first day changes
+    setCurrentWeekStart(calculateWeekStart(new Date(), firstDayOfWeek));
   }, [firstDayOfWeek]);
 
   useEffect(() => {
