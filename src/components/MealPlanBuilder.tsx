@@ -194,16 +194,23 @@ export const MealPlanBuilder = () => {
         // Calculate which day of the ordered week this date represents
         const daysDiff = Math.floor((date.getTime() - currentWeekStart.getTime()) / (1000 * 60 * 60 * 24));
         
+        console.log('🔄 Date calculation:', {
+          recordDate: record.date,
+          currentWeekStart: currentWeekStart.toISOString().split('T')[0],
+          daysDiff,
+          calculatedDay: orderedDays[daysDiff] || 'INVALID'
+        });
+        
         if (daysDiff >= 0 && daysDiff < 7) {
           const dayName = orderedDays[daysDiff];
           console.log('🔄 Processing record for', dayName, record.meal_type, '- Raw meal_items:', record.meal_items);
-          if (plan[dayName] && record.meal_items) {
+          if (plan[dayName] && record.meal_items && Array.isArray(record.meal_items) && record.meal_items.length > 0) {
             const items = (record.meal_items as unknown) as MealItem[];
             console.log('🔄 Items after casting:', items, 'Length:', items.length);
             plan[dayName][record.meal_type] = items;
             console.log('🔄 Loaded', items.length, 'items for', dayName, record.meal_type);
           } else {
-            console.log('🔄 Skipping record for', dayName, record.meal_type, '- plan exists:', !!plan[dayName], 'meal_items exists:', !!record.meal_items);
+            console.log('🔄 Skipping record for', dayName, record.meal_type, '- plan exists:', !!plan[dayName], 'meal_items exists:', !!record.meal_items, 'is array:', Array.isArray(record.meal_items), 'length:', record.meal_items ? (record.meal_items as any[]).length : 'N/A');
           }
         }
       });
