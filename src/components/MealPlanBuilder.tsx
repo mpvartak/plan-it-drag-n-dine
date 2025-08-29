@@ -253,9 +253,6 @@ export const MealPlanBuilder = () => {
         itemsToSave: items.map(item => ({ id: item.id, text: item.text }))
       });
 
-      // Add a small random delay to prevent concurrent database operations
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
-
       const { data, error } = await supabase
         .from('meal_plans')
         .upsert({
@@ -446,6 +443,9 @@ export const MealPlanBuilder = () => {
   };
 
   const updateMealPlan = (day: string, mealType: string, items: MealItem[]) => {
+    console.log('🔄 [UPDATE] updateMealPlan called:', { day, mealType, itemCount: items.length });
+    console.log('🔄 [UPDATE] Current mealPlan before update:', JSON.stringify(mealPlan[day]?.[mealType]?.map(item => ({ id: item.id, text: item.text })) || []));
+    
     const updatedPlan = {
       ...mealPlan,
       [day]: {
@@ -453,14 +453,22 @@ export const MealPlanBuilder = () => {
         [mealType]: items
       }
     };
+    
+    console.log('🔄 [UPDATE] New items being set:', items.map(item => ({ id: item.id, text: item.text })));
     setMealPlan(updatedPlan);
     
-    // Save to database and local state
+    // Save to database (async, doesn't block UI)
     saveMealPlanToDatabase(day, mealType, items);
-    setMealPlans(prev => ({
-      ...prev,
-      [currentWeekKey]: updatedPlan
-    }));
+    
+    // Update local cache
+    setMealPlans(prev => {
+      const updated = {
+        ...prev,
+        [currentWeekKey]: updatedPlan
+      };
+      console.log('🔄 [UPDATE] Updated mealPlans cache for week:', currentWeekKey);
+      return updated;
+    });
   };
 
   const removeItemFromSource = (sourceCell: string, itemId: string) => {
