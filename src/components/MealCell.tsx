@@ -16,9 +16,10 @@ interface MealCellProps {
   onAddToInventory?: (itemName: string) => void;
 }
 
-// Global clipboard state
+// Global clipboard state  
 let globalClipboard: MealItem[] = [];
 let activeCell: string | null = null;
+let hoveredCell: string | null = null; // Track hovered cell for paste
 
 export const MealCell: React.FC<MealCellProps> = ({
   day,
@@ -41,25 +42,27 @@ export const MealCell: React.FC<MealCellProps> = ({
   // Keyboard shortcuts handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      console.log('🎹 Key pressed:', e.key, 'Active cell:', activeCell, 'Current cell:', cellId, 'Target:', e.target?.constructor.name);
+      console.log('🎹 Key pressed:', e.key, 'Active cell:', activeCell, 'Hovered cell:', hoveredCell, 'Current cell:', cellId);
       
-      // Only handle shortcuts when this cell is active and not typing in an input
-      if (activeCell !== cellId || e.target instanceof HTMLInputElement) {
-        console.log('🎹 Ignoring keypress - activeCell:', activeCell, 'cellId:', cellId, 'isInput:', e.target instanceof HTMLInputElement);
-        return;
-      }
-
+      // Copy: only works on active cell (must click first)
+      // Paste: works on hovered cell OR active cell
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       const ctrlKey = isMac ? e.metaKey : e.ctrlKey;
 
       if (ctrlKey && e.key === 'c') {
-        e.preventDefault();
-        console.log('🎹 Copy triggered for cell:', cellId);
-        copyItems();
+        // Copy only works on active cell
+        if (activeCell === cellId && !(e.target instanceof HTMLInputElement)) {
+          e.preventDefault();
+          console.log('🎹 Copy triggered for active cell:', cellId);
+          copyItems();
+        }
       } else if (ctrlKey && e.key === 'v') {
-        e.preventDefault();
-        console.log('🎹 Paste triggered for cell:', cellId);
-        pasteItems();
+        // Paste works on hovered cell OR active cell
+        if ((hoveredCell === cellId || activeCell === cellId) && !(e.target instanceof HTMLInputElement)) {
+          e.preventDefault();
+          console.log('🎹 Paste triggered for cell:', cellId, '(hovered:', hoveredCell === cellId, 'active:', activeCell === cellId, ')');
+          pasteItems();
+        }
       }
     };
 
@@ -159,12 +162,14 @@ export const MealCell: React.FC<MealCellProps> = ({
 
   const handleMouseEnter = () => {
     console.log('🖱️ Mouse entered cell:', cellId);
-    // Don't change active cell on hover - too unstable
+    hoveredCell = cellId; // Track for paste operations
   };
 
   const handleMouseLeave = () => {
     console.log('🖱️ Mouse left cell:', cellId);
-    // Don't clear active cell on mouse leave - too aggressive
+    if (hoveredCell === cellId) {
+      hoveredCell = null;
+    }
   };
 
   const handleClick = () => {
