@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Plus, X, GripVertical } from 'lucide-react';
 import { MealItem } from './MealPlanBuilder';
 import { useToast } from '@/hooks/use-toast';
@@ -314,22 +313,13 @@ export const MealCell: React.FC<MealCellProps> = ({
             onDragEnd={handleDragEnd}
             className="group flex items-center gap-2 p-2 rounded-md bg-muted/50 cursor-move hover:bg-muted transition-colors"
           >
-            <GripVertical className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-            <TooltipProvider delayDuration={500}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge 
-                    variant={item.isRecipe ? 'default' : 'secondary'} 
-                    className="flex-1 justify-start min-w-0"
-                  >
-                    <span className="truncate">{item.text}</span>
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs">
-                  <p className="text-sm">{item.text}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <GripVertical className="h-3 w-3 text-muted-foreground" />
+            <Badge 
+              variant={item.isRecipe ? 'default' : 'secondary'} 
+              className="flex-1 justify-start"
+            >
+              {item.text}
+            </Badge>
             <Button
               size="sm"
               variant="ghost"
