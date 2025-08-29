@@ -196,10 +196,14 @@ export const MealPlanBuilder = () => {
         
         if (daysDiff >= 0 && daysDiff < 7) {
           const dayName = orderedDays[daysDiff];
+          console.log('🔄 Processing record for', dayName, record.meal_type, '- Raw meal_items:', record.meal_items);
           if (plan[dayName] && record.meal_items) {
             const items = (record.meal_items as unknown) as MealItem[];
+            console.log('🔄 Items after casting:', items, 'Length:', items.length);
             plan[dayName][record.meal_type] = items;
             console.log('🔄 Loaded', items.length, 'items for', dayName, record.meal_type);
+          } else {
+            console.log('🔄 Skipping record for', dayName, record.meal_type, '- plan exists:', !!plan[dayName], 'meal_items exists:', !!record.meal_items);
           }
         }
       });
