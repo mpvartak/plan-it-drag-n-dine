@@ -11,7 +11,8 @@ import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud,
 import { Badge } from '@/components/ui/badge';
 import { MealCell } from './MealCell';
 import { RecipeInventory } from './RecipeInventory';
-
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
 export interface MealItem {
@@ -47,15 +48,16 @@ interface DayNotes {
 }
 
 export const MealPlanBuilder = () => {
-  // Load settings from localStorage
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  // Load settings from localStorage (non-critical settings can stay local)
   const [firstDayOfWeek, setFirstDayOfWeek] = useState<string>(() => {
     return localStorage.getItem('mealPlan_firstDayOfWeek') || 'Monday';
   });
 
-  const [mealPlans, setMealPlans] = useState<{[weekKey: string]: MealPlan}>(() => {
-    const stored = localStorage.getItem('mealPlans');
-    return stored ? JSON.parse(stored) : {};
-  });
+  const [mealPlans, setMealPlans] = useState<{[weekKey: string]: MealPlan}>({});
+  const [isLoading, setIsLoading] = useState(true);
 
   const calculateWeekStart = (date: Date, firstDay: string) => {
     const firstDayIndex = ALL_DAYS.indexOf(firstDay);
@@ -110,7 +112,6 @@ export const MealPlanBuilder = () => {
   const [dayNotes, setDayNotes] = useState<DayNotes>({});
   const [notesOpen, setNotesOpen] = useState<{[day: string]: boolean}>({});
   const [showSettings, setShowSettings] = useState(false);
-  const { toast } = useToast();
 
   const handleAddToInventory = (itemName: string, mealType: string) => {
     // This will be handled by the RecipeInventory component via a custom event
@@ -134,9 +135,100 @@ export const MealPlanBuilder = () => {
     localStorage.setItem('mealPlan_zipCode', zipCode);
   }, [zipCode]);
 
+  // Load meal plans from database when user changes or week changes
   useEffect(() => {
-    localStorage.setItem('mealPlans', JSON.stringify(mealPlans));
-  }, [mealPlans]);
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+    
+    loadMealPlansFromDatabase();
+  }, [user, currentWeekStart]);
+
+  const loadMealPlansFromDatabase = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      // Get date range for current week
+      const weekDates = getWeekDates();
+      const startDate = weekDates[0].toISOString().split('T')[0];
+      const endDate = weekDates[weekDates.length - 1].toISOString().split('T')[0];
+      
+      const { data, error } = await supabase
+        .from('meal_plans')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('date', startDate)
+        .lte('date', endDate);
+
+      if (error) throw error;
+
+      // Convert database format to local MealPlan format
+      const weekKey = getWeekKey(currentWeekStart);
+      const plan: MealPlan = {};
+      
+      // Initialize empty plan
+      ALL_DAYS.forEach(day => {
+        plan[day] = {};
+        [...DEFAULT_MEAL_TYPES, ...customMealTypes].forEach(mealType => {
+          plan[day][mealType] = [];
+        });
+      });
+
+      // Fill with database data
+      data?.forEach(record => {
+        const date = new Date(record.date);
+        const dayName = ALL_DAYS[date.getDay() === 0 ? 6 : date.getDay() - 1]; // Convert to day name
+        
+        if (plan[dayName] && record.meal_items) {
+          plan[dayName][record.meal_type] = (record.meal_items as unknown) as MealItem[];
+        }
+      });
+
+      setMealPlans(prev => ({ ...prev, [weekKey]: plan }));
+      setMealPlan(plan);
+    } catch (error) {
+      console.error('Error loading meal plans:', error);
+      toast({
+        title: "Error loading meal plans",
+        description: "Failed to load your meal plans from the database.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveMealPlanToDatabase = async (day: string, mealType: string, items: MealItem[]) => {
+    if (!user) return;
+
+    try {
+      // Calculate the actual date for this day
+      const dayIndex = orderedDays.indexOf(day);
+      const date = new Date(currentWeekStart);
+      date.setDate(currentWeekStart.getDate() + dayIndex);
+      const dateString = date.toISOString().split('T')[0];
+
+      const { error } = await supabase
+        .from('meal_plans')
+        .upsert({
+          user_id: user.id,
+          date: dateString,
+          meal_type: mealType,
+          meal_items: items as unknown as any,
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving meal plan:', error);
+      toast({
+        title: "Error saving meal plan",
+        description: "Failed to save changes to the database.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Update meal plan when week changes
   useEffect(() => {
@@ -307,7 +399,8 @@ export const MealPlanBuilder = () => {
     };
     setMealPlan(updatedPlan);
     
-    // Save to localStorage
+    // Save to database and local state
+    saveMealPlanToDatabase(day, mealType, items);
     setMealPlans(prev => ({
       ...prev,
       [currentWeekKey]: updatedPlan
@@ -330,6 +423,38 @@ export const MealPlanBuilder = () => {
     if (normalizedType.includes('snack')) return 'snack';
     return 'muted';
   };
+
+  // Show authentication message if not logged in
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+        <Card className="p-8 max-w-md text-center space-y-4">
+          <UtensilsCrossed className="h-12 w-12 text-primary mx-auto" />
+          <h2 className="text-2xl font-bold">Authentication Required</h2>
+          <p className="text-muted-foreground">
+            Please sign in to access your meal plans and save them to the database.
+          </p>
+          <Button onClick={() => window.location.href = '/auth'}>
+            Sign In
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+        <Card className="p-8 max-w-md text-center space-y-4">
+          <UtensilsCrossed className="h-12 w-12 text-primary mx-auto animate-pulse" />
+          <h2 className="text-2xl font-bold">Loading Meal Plans</h2>
+          <p className="text-muted-foreground">
+            Fetching your meal plans from the database...
+          </p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen bg-background p-6 space-y-8 ${isDragging ? 'cursor-grabbing' : ''}`}>
