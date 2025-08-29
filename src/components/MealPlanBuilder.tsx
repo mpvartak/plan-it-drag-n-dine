@@ -221,6 +221,8 @@ export const MealPlanBuilder = () => {
           date: dateString,
           meal_type: mealType,
           meal_items: items as unknown as any,
+        }, {
+          onConflict: 'user_id,date,meal_type'
         });
 
       if (error) throw error;
