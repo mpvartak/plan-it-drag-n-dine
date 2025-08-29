@@ -148,6 +148,7 @@ export const MealPlanBuilder = () => {
   const loadMealPlansFromDatabase = async () => {
     if (!user) return;
     
+    console.log('🔄 Loading meal plans from database...');
     setIsLoading(true);
     try {
       // Get date range for current week
@@ -155,6 +156,8 @@ export const MealPlanBuilder = () => {
       const startDate = weekDates[0].toISOString().split('T')[0];
       const endDate = weekDates[weekDates.length - 1].toISOString().split('T')[0];
       
+      console.log('🔄 Querying database for dates:', { startDate, endDate });
+
       const { data, error } = await supabase
         .from('meal_plans')
         .select('*')
@@ -163,6 +166,15 @@ export const MealPlanBuilder = () => {
         .lte('date', endDate);
 
       if (error) throw error;
+
+      console.log('🔄 Database returned:', data?.length || 0, 'records');
+      data?.forEach(record => {
+        console.log('🔄 Record:', { 
+          date: record.date, 
+          meal_type: record.meal_type, 
+          item_count: record.meal_items ? (record.meal_items as any[]).length : 0 
+        });
+      });
 
       // Convert database format to local MealPlan format
       const weekKey = getWeekKey(currentWeekStart);
@@ -185,15 +197,18 @@ export const MealPlanBuilder = () => {
         if (daysDiff >= 0 && daysDiff < 7) {
           const dayName = orderedDays[daysDiff];
           if (plan[dayName] && record.meal_items) {
-            plan[dayName][record.meal_type] = (record.meal_items as unknown) as MealItem[];
+            const items = (record.meal_items as unknown) as MealItem[];
+            plan[dayName][record.meal_type] = items;
+            console.log('🔄 Loaded', items.length, 'items for', dayName, record.meal_type);
           }
         }
       });
 
       setMealPlans(prev => ({ ...prev, [weekKey]: plan }));
       setMealPlan(plan);
+      console.log('🔄 Meal plan loading completed');
     } catch (error) {
-      console.error('Error loading meal plans:', error);
+      console.error('❌ Error loading meal plans:', error);
       toast({
         title: "Error loading meal plans",
         description: "Failed to load your meal plans from the database.",
