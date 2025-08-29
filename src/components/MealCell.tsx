@@ -130,7 +130,10 @@ export const MealCell: React.FC<MealCellProps> = ({
   };
 
   const removeItem = (itemId: string) => {
-    onItemsChange(items.filter(item => item.id !== itemId));
+    console.log('🗑️ Removing item:', itemId, 'from', cellId);
+    const filteredItems = items.filter(item => item.id !== itemId);
+    console.log('🗑️ Items before removal:', items.length, 'Items after removal:', filteredItems.length);
+    onItemsChange(filteredItems);
   };
 
   const handleMouseEnter = () => {

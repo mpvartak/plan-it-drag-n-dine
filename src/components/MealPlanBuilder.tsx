@@ -207,12 +207,21 @@ export const MealPlanBuilder = () => {
   const saveMealPlanToDatabase = async (day: string, mealType: string, items: MealItem[]) => {
     if (!user) return;
 
+    console.log('💾 Saving to database:', { day, mealType, itemCount: items.length });
+    
     try {
       // Calculate the actual date for this day
       const dayIndex = orderedDays.indexOf(day);
       const date = new Date(currentWeekStart);
       date.setDate(currentWeekStart.getDate() + dayIndex);
       const dateString = date.toISOString().split('T')[0];
+
+      console.log('💾 Database save details:', { 
+        dateString, 
+        dayIndex, 
+        orderedDays, 
+        currentWeekStart: currentWeekStart.toISOString() 
+      });
 
       const { error } = await supabase
         .from('meal_plans')
@@ -226,8 +235,9 @@ export const MealPlanBuilder = () => {
         });
 
       if (error) throw error;
+      console.log('✅ Successfully saved to database');
     } catch (error) {
-      console.error('Error saving meal plan:', error);
+      console.error('❌ Error saving meal plan:', error);
       toast({
         title: "Error saving meal plan",
         description: "Failed to save changes to the database.",
