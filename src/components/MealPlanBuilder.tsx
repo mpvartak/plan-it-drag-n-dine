@@ -188,11 +188,13 @@ export const MealPlanBuilder = () => {
         });
       });
 
-      // Fill with database data
+      // Fill with database data  
       data?.forEach(record => {
-        const date = new Date(record.date);
+        const date = new Date(record.date + 'T00:00:00'); // Force local timezone
         // Calculate which day of the ordered week this date represents
-        const daysDiff = Math.floor((date.getTime() - currentWeekStart.getTime()) / (1000 * 60 * 60 * 24));
+        const weekStartDate = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), currentWeekStart.getDate());
+        const recordDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const daysDiff = Math.floor((recordDate.getTime() - weekStartDate.getTime()) / (1000 * 60 * 60 * 24));
         
         console.log('🔄 Date calculation:', {
           recordDate: record.date,
@@ -236,17 +238,18 @@ export const MealPlanBuilder = () => {
     console.log('💾 Saving to database:', { day, mealType, itemCount: items.length });
     
     try {
-      // Calculate the actual date for this day
+      // Calculate the actual date for this day using consistent date logic
       const dayIndex = orderedDays.indexOf(day);
-      const date = new Date(currentWeekStart);
-      date.setDate(currentWeekStart.getDate() + dayIndex);
-      const dateString = date.toISOString().split('T')[0];
+      const weekStartDate = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), currentWeekStart.getDate());
+      const targetDate = new Date(weekStartDate);
+      targetDate.setDate(weekStartDate.getDate() + dayIndex);
+      const dateString = targetDate.toISOString().split('T')[0];
 
       console.log('💾 Database save details:', { 
         dateString, 
         dayIndex, 
         orderedDays, 
-        currentWeekStart: currentWeekStart.toISOString() 
+        currentWeekStart: currentWeekStart.toISOString().split('T')[0] 
       });
 
       const { error } = await supabase
