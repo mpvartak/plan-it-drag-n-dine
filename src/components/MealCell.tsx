@@ -41,17 +41,24 @@ export const MealCell: React.FC<MealCellProps> = ({
   // Keyboard shortcuts handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      console.log('🎹 Key pressed:', e.key, 'Active cell:', activeCell, 'Current cell:', cellId, 'Target:', e.target?.constructor.name);
+      
       // Only handle shortcuts when this cell is active and not typing in an input
-      if (activeCell !== cellId || e.target instanceof HTMLInputElement) return;
+      if (activeCell !== cellId || e.target instanceof HTMLInputElement) {
+        console.log('🎹 Ignoring keypress - activeCell:', activeCell, 'cellId:', cellId, 'isInput:', e.target instanceof HTMLInputElement);
+        return;
+      }
 
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       const ctrlKey = isMac ? e.metaKey : e.ctrlKey;
 
       if (ctrlKey && e.key === 'c') {
         e.preventDefault();
+        console.log('🎹 Copy triggered for cell:', cellId);
         copyItems();
       } else if (ctrlKey && e.key === 'v') {
         e.preventDefault();
+        console.log('🎹 Paste triggered for cell:', cellId);
         pasteItems();
       }
     };
@@ -61,11 +68,13 @@ export const MealCell: React.FC<MealCellProps> = ({
   }, [cellId, items]);
 
   const copyItems = () => {
+    console.log('📋 Copying items from', cellId, ':', items);
     globalClipboard = [...items];
     toast({
       title: "Items copied",
       description: `Copied ${items.length} item(s) from ${day} ${mealType}. Press Ctrl+V to paste.`,
     });
+    console.log('📋 Global clipboard now contains:', globalClipboard);
   };
 
   const pasteItems = () => {
@@ -137,24 +146,29 @@ export const MealCell: React.FC<MealCellProps> = ({
   };
 
   const handleMouseEnter = () => {
+    console.log('🖱️ Mouse entered cell:', cellId);
     activeCell = cellId;
     setIsActive(true);
   };
 
   const handleMouseLeave = () => {
+    console.log('🖱️ Mouse left cell:', cellId);
     activeCell = null;
     setIsActive(false);
   };
 
   const handleFocus = () => {
+    console.log('🎯 Cell focused:', cellId);
     activeCell = cellId;
     setIsActive(true);
   };
 
   const handleBlur = () => {
+    console.log('🎯 Cell blur triggered:', cellId);
     // Only clear active state if we're not moving to a child element
     setTimeout(() => {
       if (!cellRef.current?.contains(document.activeElement)) {
+        console.log('🎯 Cell actually lost focus:', cellId);
         activeCell = null;
         setIsActive(false);
       }
