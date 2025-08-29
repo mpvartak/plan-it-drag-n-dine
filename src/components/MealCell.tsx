@@ -90,19 +90,20 @@ export const MealCell: React.FC<MealCellProps> = ({
       return;
     }
 
-    // Create new items with unique IDs to avoid conflicts
-    const newItems = globalClipboard.map(item => ({
+    // Create new items with TRULY unique IDs to avoid conflicts
+    const newItems = globalClipboard.map((item, index) => ({
       ...item,
-      id: `${Date.now()}-${Math.random()}`,
+      id: `${cellId}-${Date.now()}-${Math.random()}-${index}`, // Include cellId and index for uniqueness
     }));
 
-    // Filter out items that already exist (by text comparison)
+    // Filter out items that already exist (by text comparison only, not ID)
     const existingTexts = items.map(item => item.text.toLowerCase());
     const uniqueNewItems = newItems.filter(item => 
       !existingTexts.includes(item.text.toLowerCase())
     );
 
     console.log('📋 Items after deduplication:', uniqueNewItems.length);
+    console.log('📋 New item IDs being created:', uniqueNewItems.map(item => item.id));
 
     if (uniqueNewItems.length === 0) {
       toast({
@@ -113,7 +114,10 @@ export const MealCell: React.FC<MealCellProps> = ({
       return;
     }
 
-    onItemsChange([...items, ...uniqueNewItems]);
+    const finalItems = [...items, ...uniqueNewItems];
+    console.log('📋 Final items array:', finalItems.map(item => ({ id: item.id, text: item.text })));
+    
+    onItemsChange(finalItems);
     toast({
       title: "Items pasted",
       description: `Pasted ${uniqueNewItems.length} item(s) to ${day} ${mealType}.`,
@@ -124,10 +128,11 @@ export const MealCell: React.FC<MealCellProps> = ({
   const addItem = () => {
     if (newItemText.trim()) {
       const newItem: MealItem = {
-        id: `${Date.now()}-${Math.random()}`,
+        id: `${cellId}-${Date.now()}-${Math.random()}`, // Include cellId for uniqueness
         text: newItemText.trim(),
         isRecipe: false,
       };
+      console.log('➕ Adding new item:', newItem.id, newItem.text, 'to', cellId);
       onItemsChange([...items, newItem]);
       
       // Add to inventory if callback provided
@@ -146,8 +151,9 @@ export const MealCell: React.FC<MealCellProps> = ({
 
   const removeItem = (itemId: string) => {
     console.log('🗑️ Removing item:', itemId, 'from', cellId);
+    console.log('🗑️ Items before removal:', items.map(item => ({ id: item.id, text: item.text })));
     const filteredItems = items.filter(item => item.id !== itemId);
-    console.log('🗑️ Items before removal:', items.length, 'Items after removal:', filteredItems.length);
+    console.log('🗑️ Items after removal:', filteredItems.map(item => ({ id: item.id, text: item.text })));
     onItemsChange(filteredItems);
   };
 
