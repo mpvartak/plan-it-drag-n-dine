@@ -235,7 +235,7 @@ export const MealPlanBuilder = () => {
   const saveMealPlanToDatabase = async (day: string, mealType: string, items: MealItem[]) => {
     if (!user) return;
 
-    console.log('💾 Saving to database:', { day, mealType, itemCount: items.length });
+    console.log('💾 [SAVE START] Saving to database:', { day, mealType, itemCount: items.length, user: user.id });
     
     try {
       // Calculate the actual date for this day using consistent date logic
@@ -245,14 +245,18 @@ export const MealPlanBuilder = () => {
       targetDate.setDate(weekStartDate.getDate() + dayIndex);
       const dateString = targetDate.toISOString().split('T')[0];
 
-      console.log('💾 Database save details:', { 
+      console.log('💾 [SAVE] Database save details:', { 
         dateString, 
         dayIndex, 
         orderedDays, 
-        currentWeekStart: currentWeekStart.toISOString().split('T')[0] 
+        currentWeekStart: currentWeekStart.toISOString().split('T')[0],
+        itemsToSave: items.map(item => ({ id: item.id, text: item.text }))
       });
 
-      const { error } = await supabase
+      // Add a small random delay to prevent concurrent database operations
+      await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
+
+      const { data, error } = await supabase
         .from('meal_plans')
         .upsert({
           user_id: user.id,
@@ -261,16 +265,22 @@ export const MealPlanBuilder = () => {
           meal_items: items as unknown as any,
         }, {
           onConflict: 'user_id,date,meal_type'
-        });
+        })
+        .select();
 
       if (error) throw error;
-      console.log('✅ Successfully saved to database');
+      console.log('✅ [SAVE SUCCESS] Successfully saved to database:', { 
+        day, 
+        mealType, 
+        itemCount: items.length,
+        returnedData: data 
+      });
       
     } catch (error) {
-      console.error('❌ Error saving meal plan:', error);
+      console.error('❌ [SAVE ERROR] Error saving meal plan:', error, { day, mealType, itemCount: items.length });
       toast({
         title: "Error saving meal plan",
-        description: "Failed to save changes to the database.",
+        description: `Failed to save changes to ${day} ${mealType}.`,
         variant: "destructive",
       });
     }

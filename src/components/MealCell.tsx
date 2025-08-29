@@ -168,14 +168,10 @@ export const MealCell: React.FC<MealCellProps> = ({
   };
 
   const handleClick = () => {
-    console.log('🖱️ Cell clicked:', cellId, 'Setting as active');
+    console.log('🖱️ [CLICK] Cell clicked:', cellId, 'Setting as active');
     activeCell = cellId;
     setIsActive(true);
-    // Add visual feedback
-    toast({
-      title: "Cell Selected",
-      description: `${day} ${mealType} is now active. Use Ctrl+C to copy, Ctrl+V to paste.`,
-    });
+    // Remove toast - too noisy for multi-paste operations
   };
 
   const handleFocus = () => {
