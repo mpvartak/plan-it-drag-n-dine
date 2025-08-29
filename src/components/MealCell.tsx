@@ -78,10 +78,13 @@ export const MealCell: React.FC<MealCellProps> = ({
   };
 
   const pasteItems = () => {
+    console.log('📋 Paste attempt - clipboard has:', globalClipboard.length, 'items');
+    console.log('📋 Current cell items:', items.length);
+    
     if (globalClipboard.length === 0) {
       toast({
         title: "Nothing to paste",
-        description: "No items have been copied yet. Press Ctrl+C on a cell to copy items.",
+        description: "No items have been copied yet. Click on a cell and press Ctrl+C to copy items.",
         variant: "destructive",
       });
       return;
@@ -99,6 +102,8 @@ export const MealCell: React.FC<MealCellProps> = ({
       !existingTexts.includes(item.text.toLowerCase())
     );
 
+    console.log('📋 Items after deduplication:', uniqueNewItems.length);
+
     if (uniqueNewItems.length === 0) {
       toast({
         title: "No new items to paste",
@@ -113,6 +118,7 @@ export const MealCell: React.FC<MealCellProps> = ({
       title: "Items pasted",
       description: `Pasted ${uniqueNewItems.length} item(s) to ${day} ${mealType}.`,
     });
+    console.log('📋 Paste completed successfully');
   };
 
   const addItem = () => {
@@ -147,14 +153,23 @@ export const MealCell: React.FC<MealCellProps> = ({
 
   const handleMouseEnter = () => {
     console.log('🖱️ Mouse entered cell:', cellId);
-    activeCell = cellId;
-    setIsActive(true);
+    // Don't change active cell on hover - too unstable
   };
 
   const handleMouseLeave = () => {
     console.log('🖱️ Mouse left cell:', cellId);
-    activeCell = null;
-    setIsActive(false);
+    // Don't clear active cell on mouse leave - too aggressive
+  };
+
+  const handleClick = () => {
+    console.log('🖱️ Cell clicked:', cellId, 'Setting as active');
+    activeCell = cellId;
+    setIsActive(true);
+    // Add visual feedback
+    toast({
+      title: "Cell Selected",
+      description: `${day} ${mealType} is now active. Use Ctrl+C to copy, Ctrl+V to paste.`,
+    });
   };
 
   const handleFocus = () => {
@@ -169,7 +184,7 @@ export const MealCell: React.FC<MealCellProps> = ({
     setTimeout(() => {
       if (!cellRef.current?.contains(document.activeElement)) {
         console.log('🎯 Cell actually lost focus:', cellId);
-        activeCell = null;
+        // Don't clear activeCell here - let click handle it
         setIsActive(false);
       }
     }, 0);
@@ -306,10 +321,10 @@ export const MealCell: React.FC<MealCellProps> = ({
   return (
     <Card 
       ref={cellRef}
-      className={`p-3 min-h-24 transition-all duration-200 hover:shadow-md ${
+      className={`p-3 min-h-24 transition-all duration-200 hover:shadow-md cursor-pointer ${
         isDragOver ? 'ring-2 ring-primary bg-primary/5 shadow-lg' : ''
       } ${
-        isActive ? 'ring-1 ring-primary/30 bg-primary/2' : ''
+        isActive ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:ring-1 hover:ring-primary/30'
       }`}
       onDragOver={handleDragOver}
       onDragEnter={handleDragEnter}
@@ -317,6 +332,7 @@ export const MealCell: React.FC<MealCellProps> = ({
       onDrop={handleDrop}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onClick={handleClick}
       onFocus={handleFocus}
       onBlur={handleBlur}
       tabIndex={0}
