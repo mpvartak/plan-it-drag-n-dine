@@ -266,12 +266,6 @@ export const MealPlanBuilder = () => {
       if (error) throw error;
       console.log('✅ Successfully saved to database');
       
-      // Add a small delay to ensure database consistency, then reload
-      setTimeout(() => {
-        console.log('🔄 Force reloading after save...');
-        loadMealPlansFromDatabase();
-      }, 500);
-      
     } catch (error) {
       console.error('❌ Error saving meal plan:', error);
       toast({
