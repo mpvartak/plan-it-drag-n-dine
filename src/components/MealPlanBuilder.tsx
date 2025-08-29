@@ -48,6 +48,7 @@ interface DayNotes {
 }
 
 export const MealPlanBuilder = () => {
+  console.log('MealPlanBuilder component loaded');
   const { user } = useAuth();
   const { toast } = useToast();
 

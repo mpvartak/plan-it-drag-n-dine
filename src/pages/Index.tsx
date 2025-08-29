@@ -6,6 +6,8 @@ import { LogOut } from 'lucide-react';
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
+  
+  console.log('Index component - user:', user?.email, 'loading:', loading);
 
   useEffect(() => {
     if (!loading && !user) {
