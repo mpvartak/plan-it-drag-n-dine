@@ -143,7 +143,7 @@ export const MealPlanBuilder = () => {
     }
     
     loadMealPlansFromDatabase();
-  }, [user, currentWeekStart]);
+  }, [user, currentWeekStart, firstDayOfWeek]);
 
   const loadMealPlansFromDatabase = async () => {
     if (!user) return;
@@ -179,10 +179,14 @@ export const MealPlanBuilder = () => {
       // Fill with database data
       data?.forEach(record => {
         const date = new Date(record.date);
-        const dayName = ALL_DAYS[date.getDay() === 0 ? 6 : date.getDay() - 1]; // Convert to day name
+        // Calculate which day of the ordered week this date represents
+        const daysDiff = Math.floor((date.getTime() - currentWeekStart.getTime()) / (1000 * 60 * 60 * 24));
         
-        if (plan[dayName] && record.meal_items) {
-          plan[dayName][record.meal_type] = (record.meal_items as unknown) as MealItem[];
+        if (daysDiff >= 0 && daysDiff < 7) {
+          const dayName = orderedDays[daysDiff];
+          if (plan[dayName] && record.meal_items) {
+            plan[dayName][record.meal_type] = (record.meal_items as unknown) as MealItem[];
+          }
         }
       });
 
