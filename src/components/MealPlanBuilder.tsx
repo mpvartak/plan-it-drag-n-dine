@@ -1,13 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud, X, ChevronLeft, ChevronRight, Copy, Printer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { MealCell } from './MealCell';
 import { RecipeInventory } from './RecipeInventory';
@@ -113,6 +115,7 @@ export const MealPlanBuilder = () => {
   const [dayNotes, setDayNotes] = useState<DayNotes>({});
   const [notesOpen, setNotesOpen] = useState<{[day: string]: boolean}>({});
   const [showSettings, setShowSettings] = useState(false);
+  const [checkedItems, setCheckedItems] = useState<{[key: string]: boolean}>({});
 
   const handleAddToInventory = (itemName: string, mealType: string) => {
     // This will be handled by the RecipeInventory component via a custom event
@@ -120,6 +123,86 @@ export const MealPlanBuilder = () => {
   };
 
   const allMealTypes = [...DEFAULT_MEAL_TYPES, ...customMealTypes];
+
+  // Aggregate grocery items from current meal plan
+  const groceryList = useMemo(() => {
+    const itemCounts: { [key: string]: number } = {};
+    
+    // Collect all items from current week's meal plan
+    orderedDays.forEach(day => {
+      allMealTypes.forEach(mealType => {
+        const items = mealPlan[day]?.[mealType] || [];
+        items.forEach(item => {
+          const normalizedText = item.text.toLowerCase().trim();
+          itemCounts[normalizedText] = (itemCounts[normalizedText] || 0) + 1;
+        });
+      });
+    });
+
+    // Convert to array and sort alphabetically
+    return Object.entries(itemCounts)
+      .map(([text, count]) => ({
+        text: text.charAt(0).toUpperCase() + text.slice(1), // Capitalize first letter
+        count
+      }))
+      .sort((a, b) => a.text.localeCompare(b.text));
+  }, [mealPlan, orderedDays, allMealTypes]);
+
+  // Copy grocery list to clipboard
+  const copyGroceryList = async () => {
+    const listText = groceryList
+      .map(item => item.count > 1 ? `${item.text} x${item.count}` : item.text)
+      .join('\n');
+    
+    try {
+      await navigator.clipboard.writeText(listText);
+      toast({
+        title: "Copied to clipboard",
+        description: "Grocery list copied successfully!",
+      });
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      toast({
+        title: "Copy failed",
+        description: "Unable to copy to clipboard. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Print grocery list
+  const printGroceryList = () => {
+    const printContent = `
+      <html>
+        <head>
+          <title>Grocery List - Week of ${formatDate(weekDates[0])} to ${formatDate(weekDates[6])}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { color: #333; border-bottom: 2px solid #333; padding-bottom: 10px; }
+            .item { margin: 8px 0; padding: 5px; border-left: 3px solid #007acc; padding-left: 10px; }
+            .count { font-weight: bold; color: #666; }
+          </style>
+        </head>
+        <body>
+          <h1>Grocery List</h1>
+          <p>Week of ${formatDate(weekDates[0])} - ${formatDate(weekDates[6])}</p>
+          <p>Total items: ${groceryList.length}</p>
+          ${groceryList.map(item => `
+            <div class="item">
+              ${item.text} ${item.count > 1 ? `<span class="count">x${item.count}</span>` : ''}
+            </div>
+          `).join('')}
+        </body>
+      </html>
+    `;
+    
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
 
   // Save to localStorage whenever settings change
   useEffect(() => {
@@ -693,9 +776,74 @@ export const MealPlanBuilder = () => {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <Button variant="default" className="absolute right-0">
-              Get grocery list
-            </Button>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="default" className="absolute right-0">
+                  Get grocery list
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-96">
+                <SheetHeader className="mb-4">
+                  <SheetTitle>Grocery List</SheetTitle>
+                  <div className="text-sm text-muted-foreground">
+                    Week of {formatDate(weekDates[0])} - {formatDate(weekDates[6])}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Total items: {groceryList.length}
+                  </div>
+                </SheetHeader>
+                
+                {/* Action buttons */}
+                <div className="flex gap-2 mb-4">
+                  <Button variant="outline" size="sm" onClick={copyGroceryList}>
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copy
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={printGroceryList}>
+                    <Printer className="h-4 w-4 mr-1" />
+                    Print
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setCheckedItems({})}
+                    className="ml-auto"
+                  >
+                    Clear checks
+                  </Button>
+                </div>
+
+                {/* Grocery list */}
+                <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
+                  {groceryList.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-8">
+                      <UtensilsCrossed className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>No items in your meal plan yet.</p>
+                      <p className="text-xs">Add meals to see your grocery list here.</p>
+                    </div>
+                  ) : (
+                    groceryList.map((item, index) => (
+                      <div key={index} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded">
+                        <Checkbox
+                          checked={checkedItems[item.text] || false}
+                          onCheckedChange={(checked) => 
+                            setCheckedItems(prev => ({ ...prev, [item.text]: checked as boolean }))
+                          }
+                        />
+                        <span className={`flex-1 ${checkedItems[item.text] ? 'line-through text-muted-foreground' : ''}`}>
+                          {item.text}
+                        </span>
+                        {item.count > 1 && (
+                          <Badge variant="secondary" className="text-xs">
+                            x{item.count}
+                          </Badge>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
 
           <div className="grid grid-cols-8 gap-4">
