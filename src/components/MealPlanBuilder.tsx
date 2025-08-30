@@ -72,6 +72,7 @@ export const MealPlanBuilder = () => {
     
     const weekStart = new Date(today);
     weekStart.setDate(today.getDate() - daysSinceFirstDay);
+    weekStart.setHours(0, 0, 0, 0); // Ensure clean date
     return weekStart;
   };
 
