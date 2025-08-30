@@ -1103,7 +1103,7 @@ export const MealPlanBuilder = () => {
             
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="default" className="absolute right-0">
+                <Button variant="default">
                   Get grocery list
                 </Button>
               </SheetTrigger>
