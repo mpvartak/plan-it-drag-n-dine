@@ -63,11 +63,20 @@ export const MealPlanBuilder = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const calculateWeekStart = (date: Date, firstDay: string) => {
+    const today = new Date(date);
     const firstDayIndex = ALL_DAYS.indexOf(firstDay);
-    const currentDayIndex = (date.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0 format
-    const dayOffset = (currentDayIndex - firstDayIndex + 7) % 7;
-    const weekStart = new Date(date);
-    weekStart.setDate(date.getDate() - dayOffset);
+    const todayDayIndex = (today.getDay() + 6) % 7; // Convert Sunday=0 to Monday=0 format
+    
+    // Calculate days until the next occurrence of firstDay
+    let daysUntilFirstDay = (firstDayIndex - todayDayIndex + 7) % 7;
+    
+    // If today is the first day, move to next week
+    if (daysUntilFirstDay === 0) {
+      daysUntilFirstDay = 7;
+    }
+    
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() + daysUntilFirstDay);
     return weekStart;
   };
 
