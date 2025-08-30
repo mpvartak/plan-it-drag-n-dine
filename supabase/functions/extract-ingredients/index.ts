@@ -39,7 +39,7 @@ serve(async (req) => {
 
 For each meal, provide the key grocery ingredients needed to make it. Return ONLY a JSON array of ingredient objects with this exact format:
 [
-  {"name": "ingredient name", "quantity": "amount with unit", "category": "produce|meat|dairy|pantry|spices|frozen"},
+  {"name": "ingredient name", "quantity": "amount with unit", "category": "produce|meat|dairy|pantry|spices|frozen", "forDishes": ["dish1", "dish2"]},
   ...
 ]
 
@@ -48,8 +48,10 @@ Rules:
 - Use realistic quantities for a typical household
 - Categorize ingredients properly
 - If a meal mentions "out" or restaurant names, skip it
-- Combine similar ingredients (e.g., if multiple meals need onions, list it once with appropriate quantity)
-- Keep ingredient names simple and common grocery store terms`;
+- For each ingredient, list ALL the dishes that need it in the "forDishes" array
+- Combine similar ingredients and show which dishes use them
+- Keep ingredient names simple and common grocery store terms
+- Keep dish names short and clear in the forDishes array`;
 
     console.log('Sending request to OpenAI...');
 

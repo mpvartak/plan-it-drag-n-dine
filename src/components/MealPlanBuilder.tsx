@@ -966,6 +966,11 @@ export const MealPlanBuilder = () => {
                                     {ingredient.quantity}
                                   </div>
                                 )}
+                                {ingredient.forDishes && ingredient.forDishes.length > 0 && (
+                                  <div className="text-xs text-muted-foreground italic">
+                                    For: {ingredient.forDishes.join(", ")}
+                                  </div>
+                                )}
                               </div>
                               {ingredient.category && (
                                 <Badge variant="outline" className="text-xs">
