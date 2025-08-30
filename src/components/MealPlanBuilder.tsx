@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Checkbox } from '@/components/ui/checkbox';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud, X, ChevronLeft, ChevronRight, Copy, Printer } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -801,66 +802,105 @@ export const MealPlanBuilder = () => {
                   Get grocery list
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-96">
-                <SheetHeader className="mb-4">
-                  <SheetTitle>Grocery List</SheetTitle>
-                  <div className="text-sm text-muted-foreground">
-                    Week of {formatDate(weekDates[0])} - {formatDate(weekDates[6])}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Total items: {groceryList.length}
-                  </div>
-                </SheetHeader>
-                
-                {/* Action buttons */}
-                <div className="flex gap-2 mb-4">
-                  <Button variant="outline" size="sm" onClick={copyGroceryList}>
-                    <Copy className="h-4 w-4 mr-1" />
-                    Copy
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={printGroceryList}>
-                    <Printer className="h-4 w-4 mr-1" />
-                    Print
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setCheckedItems({})}
-                    className="ml-auto"
-                  >
-                    Clear checks
-                  </Button>
-                </div>
+               <SheetContent side="right" className="w-96">
+                 <SheetHeader className="mb-4">
+                   <SheetTitle>Grocery List</SheetTitle>
+                   <div className="text-sm text-muted-foreground">
+                     Week of {formatDate(weekDates[0])} - {formatDate(weekDates[6])}
+                   </div>
+                 </SheetHeader>
+                 
+                 <Tabs defaultValue="meals" className="h-full">
+                   <TabsList className="grid w-full grid-cols-2">
+                     <TabsTrigger value="meals">Meal List</TabsTrigger>
+                     <TabsTrigger value="grocery">Grocery List</TabsTrigger>
+                   </TabsList>
+                   
+                   <TabsContent value="meals" className="space-y-4 mt-4">
+                     <div className="text-xs text-muted-foreground">
+                       Total items: {groceryList.length}
+                     </div>
+                     
+                     {/* Action buttons */}
+                     <div className="flex gap-2">
+                       <Button variant="outline" size="sm" onClick={copyGroceryList}>
+                         <Copy className="h-4 w-4 mr-1" />
+                         Copy
+                       </Button>
+                       <Button variant="outline" size="sm" onClick={printGroceryList}>
+                         <Printer className="h-4 w-4 mr-1" />
+                         Print
+                       </Button>
+                       <Button 
+                         variant="outline" 
+                         size="sm" 
+                         onClick={() => setCheckedItems({})}
+                         className="ml-auto"
+                       >
+                         Clear checks
+                       </Button>
+                     </div>
 
-                {/* Grocery list */}
-                <div className="space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
-                  {groceryList.length === 0 ? (
-                    <div className="text-center text-muted-foreground py-8">
-                      <UtensilsCrossed className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                      <p>No items in your meal plan yet.</p>
-                      <p className="text-xs">Add meals to see your grocery list here.</p>
-                    </div>
-                  ) : (
-                    groceryList.map((item, index) => (
-                      <div key={index} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded">
-                        <Checkbox
-                          checked={checkedItems[item.text] || false}
-                          onCheckedChange={(checked) => 
-                            setCheckedItems(prev => ({ ...prev, [item.text]: checked as boolean }))
-                          }
-                        />
-                        <span className={`flex-1 ${checkedItems[item.text] ? 'line-through text-muted-foreground' : ''}`}>
-                          {item.text}
-                        </span>
-                        {item.count > 1 && (
-                          <Badge variant="secondary" className="text-xs">
-                            x{item.count}
-                          </Badge>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
+                     {/* Meal list */}
+                     <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto">
+                       {groceryList.length === 0 ? (
+                         <div className="text-center text-muted-foreground py-8">
+                           <UtensilsCrossed className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                           <p>No items in your meal plan yet.</p>
+                           <p className="text-xs">Add meals to see your meal list here.</p>
+                         </div>
+                       ) : (
+                         groceryList.map((item, index) => (
+                           <div key={index} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded">
+                             <Checkbox
+                               checked={checkedItems[item.text] || false}
+                               onCheckedChange={(checked) => 
+                                 setCheckedItems(prev => ({ ...prev, [item.text]: checked as boolean }))
+                               }
+                             />
+                             <span className={`flex-1 ${checkedItems[item.text] ? 'line-through text-muted-foreground' : ''}`}>
+                               {item.text}
+                             </span>
+                             {item.count > 1 && (
+                               <Badge variant="secondary" className="text-xs">
+                                 x{item.count}
+                               </Badge>
+                             )}
+                           </div>
+                         ))
+                       )}
+                     </div>
+                   </TabsContent>
+                   
+                   <TabsContent value="grocery" className="space-y-4 mt-4">
+                     <div className="text-xs text-muted-foreground">
+                       Shopping list items: 5
+                     </div>
+                     
+                     {/* Grocery list with placeholder items */}
+                     <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto">
+                       {[
+                         { text: 'Chicken breast (2 lbs)', checked: false },
+                         { text: 'Fresh vegetables (mixed)', checked: false },
+                         { text: 'Rice (1 bag)', checked: false },
+                         { text: 'Olive oil', checked: false },
+                         { text: 'Onions (3 lbs)', checked: false }
+                       ].map((item, index) => (
+                         <div key={index} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded">
+                           <Checkbox
+                             checked={checkedItems[`grocery-${item.text}`] || false}
+                             onCheckedChange={(checked) => 
+                               setCheckedItems(prev => ({ ...prev, [`grocery-${item.text}`]: checked as boolean }))
+                             }
+                           />
+                           <span className={`flex-1 ${checkedItems[`grocery-${item.text}`] ? 'line-through text-muted-foreground' : ''}`}>
+                             {item.text}
+                           </span>
+                         </div>
+                       ))}
+                     </div>
+                   </TabsContent>
+                 </Tabs>
               </SheetContent>
             </Sheet>
           </div>
