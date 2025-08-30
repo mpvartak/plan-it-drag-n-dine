@@ -679,7 +679,7 @@ export const MealPlanBuilder = () => {
       <Card className="p-6 overflow-x-auto">
         <div className="min-w-[800px]">
           {/* Week Navigation */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-center mb-6 relative">
             <div className="flex items-center gap-4">
               <Button variant="outline" size="sm" onClick={goToPreviousWeek}>
                 <ChevronLeft className="h-4 w-4" />
@@ -693,7 +693,7 @@ export const MealPlanBuilder = () => {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <Button variant="default">
+            <Button variant="default" className="absolute right-0">
               Get grocery list
             </Button>
           </div>
