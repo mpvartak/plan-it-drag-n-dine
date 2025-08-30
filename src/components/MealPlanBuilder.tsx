@@ -679,17 +679,22 @@ export const MealPlanBuilder = () => {
       <Card className="p-6 overflow-x-auto">
         <div className="min-w-[800px]">
           {/* Week Navigation */}
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <Button variant="outline" size="sm" onClick={goToPreviousWeek}>
-              <ChevronLeft className="h-4 w-4" />
-              Previous Week
-            </Button>
-            <div className="text-lg font-medium">
-              {formatDate(weekDates[0])} - {formatDate(weekDates[6])}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" size="sm" onClick={goToPreviousWeek}>
+                <ChevronLeft className="h-4 w-4" />
+                Previous Week
+              </Button>
+              <div className="text-lg font-medium">
+                {formatDate(weekDates[0])} - {formatDate(weekDates[6])}
+              </div>
+              <Button variant="outline" size="sm" onClick={goToNextWeek}>
+                Next Week
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
-            <Button variant="outline" size="sm" onClick={goToNextWeek}>
-              Next Week
-              <ChevronRight className="h-4 w-4" />
+            <Button variant="default">
+              Get grocery list
             </Button>
           </div>
 
