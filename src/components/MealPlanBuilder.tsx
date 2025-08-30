@@ -132,6 +132,8 @@ export const MealPlanBuilder = () => {
   const [aiGeneratedIngredients, setAiGeneratedIngredients] = useState<any[]>([]);
   const [isGeneratingIngredients, setIsGeneratingIngredients] = useState(false);
   const [removedIngredients, setRemovedIngredients] = useState<Set<string>>(new Set());
+  const [savedGroceryListId, setSavedGroceryListId] = useState<string | null>(null);
+  const [isSavingGroceryList, setIsSavingGroceryList] = useState(false);
 
   const handleAddToInventory = (itemName: string, mealType: string) => {
     // This will be handled by the RecipeInventory component via a custom event
@@ -315,6 +317,86 @@ export const MealPlanBuilder = () => {
       items: groups[category]
     }));
   }, [aiGeneratedIngredients, removedIngredients]);
+
+  // Save grocery list to database
+  const saveGroceryListToDatabase = async () => {
+    if (!user || aiGeneratedIngredients.length === 0) return;
+
+    setIsSavingGroceryList(true);
+    try {
+      const weekStartDate = currentWeekStart.toISOString().split('T')[0];
+      
+      const { data, error } = await supabase
+        .from('grocery_lists')
+        .upsert({
+          user_id: user.id,
+          week_start_date: weekStartDate,
+          ingredients: aiGeneratedIngredients.filter(ingredient => 
+            !removedIngredients.has(ingredient.name)
+          )
+        }, {
+          onConflict: 'user_id,week_start_date'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setSavedGroceryListId(data.id);
+      toast({
+        title: "Grocery list saved!",
+        description: "Your grocery list has been saved to the database.",
+      });
+    } catch (error) {
+      console.error('Error saving grocery list:', error);
+      toast({
+        title: "Failed to save grocery list",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingGroceryList(false);
+    }
+  };
+
+  // Load grocery list from database
+  const loadGroceryListFromDatabase = async () => {
+    if (!user) return;
+
+    try {
+      const weekStartDate = currentWeekStart.toISOString().split('T')[0];
+      
+      const { data, error } = await supabase
+        .from('grocery_lists')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('week_start_date', weekStartDate)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setAiGeneratedIngredients((data.ingredients as any[]) || []);
+        setSavedGroceryListId(data.id);
+        setRemovedIngredients(new Set()); // Reset removed ingredients when loading
+        console.log('Loaded grocery list from database:', (data.ingredients as any[])?.length || 0, 'ingredients');
+      } else {
+        // No saved grocery list for this week
+        setAiGeneratedIngredients([]);
+        setSavedGroceryListId(null);
+        setRemovedIngredients(new Set());
+      }
+    } catch (error) {
+      console.error('Error loading grocery list:', error);
+    }
+  };
+
+  // Load grocery list when week changes
+  useEffect(() => {
+    if (user) {
+      loadGroceryListFromDatabase();
+    }
+  }, [user, currentWeekStart]);
 
   // Save to localStorage whenever settings change
   useEffect(() => {
@@ -971,20 +1053,35 @@ export const MealPlanBuilder = () => {
                      </div>
                    </TabsContent>
                    
-                    <TabsContent value="grocery" className="space-y-4 mt-4">
-                      <div className="flex items-center justify-between">
-                        <div className="text-xs text-muted-foreground">
-                          AI-generated ingredients: {aiGeneratedIngredients.length}
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={generateIngredients}
-                          disabled={isGeneratingIngredients}
-                        >
-                          {isGeneratingIngredients ? 'Generating...' : 'Generate'}
-                        </Button>
-                      </div>
+                     <TabsContent value="grocery" className="space-y-4 mt-4">
+                       <div className="flex items-center justify-between">
+                         <div className="text-xs text-muted-foreground">
+                           AI-generated ingredients: {organizedIngredients.reduce((total, cat) => total + cat.items.length, 0)}
+                           {savedGroceryListId && (
+                             <span className="text-green-600 ml-2">✓ Saved</span>
+                           )}
+                         </div>
+                         <div className="flex gap-2">
+                           <Button 
+                             variant="outline" 
+                             size="sm" 
+                             onClick={generateIngredients}
+                             disabled={isGeneratingIngredients}
+                           >
+                             {isGeneratingIngredients ? 'Generating...' : 'Generate'}
+                           </Button>
+                           {organizedIngredients.length > 0 && (
+                             <Button 
+                               variant="default" 
+                               size="sm" 
+                               onClick={saveGroceryListToDatabase}
+                               disabled={isSavingGroceryList}
+                             >
+                               {isSavingGroceryList ? 'Saving...' : savedGroceryListId ? 'Update' : 'Save'}
+                             </Button>
+                           )}
+                         </div>
+                       </div>
                       
                        {/* AI-generated grocery list organized by category */}
                        <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto">

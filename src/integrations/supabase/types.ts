@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      grocery_lists: {
+        Row: {
+          created_at: string
+          id: string
+          ingredients: Json
+          updated_at: string
+          user_id: string
+          week_start_date: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ingredients?: Json
+          updated_at?: string
+          user_id: string
+          week_start_date: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ingredients?: Json
+          updated_at?: string
+          user_id?: string
+          week_start_date?: string
+        }
+        Relationships: []
+      }
       meal_plans: {
         Row: {
           created_at: string
