@@ -129,6 +129,8 @@ export const MealPlanBuilder = () => {
   const [notesOpen, setNotesOpen] = useState<{[day: string]: boolean}>({});
   const [showSettings, setShowSettings] = useState(false);
   const [checkedItems, setCheckedItems] = useState<{[key: string]: boolean}>({});
+  const [aiGeneratedIngredients, setAiGeneratedIngredients] = useState<any[]>([]);
+  const [isGeneratingIngredients, setIsGeneratingIngredients] = useState(false);
 
   const handleAddToInventory = (itemName: string, mealType: string) => {
     // This will be handled by the RecipeInventory component via a custom event
@@ -214,6 +216,57 @@ export const MealPlanBuilder = () => {
       printWindow.document.write(printContent);
       printWindow.document.close();
       printWindow.print();
+    }
+  };
+
+  // Generate ingredients from meal items using AI
+  const generateIngredients = async () => {
+    setIsGeneratingIngredients(true);
+    try {
+      // Collect all meal items from current week
+      const allMealItems: { text: string }[] = [];
+      orderedDays.forEach(day => {
+        allMealTypes.forEach(mealType => {
+          const items = mealPlan[day]?.[mealType] || [];
+          items.forEach(item => {
+            allMealItems.push({ text: item.text });
+          });
+        });
+      });
+
+      if (allMealItems.length === 0) {
+        toast({
+          title: "No meals found",
+          description: "Add some meals to your plan first.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Generating ingredients for meals:', allMealItems);
+
+      const { data, error } = await supabase.functions.invoke('extract-ingredients', {
+        body: { mealItems: allMealItems }
+      });
+
+      if (error) throw error;
+
+      console.log('Generated ingredients:', data.ingredients);
+      setAiGeneratedIngredients(data.ingredients || []);
+      
+      toast({
+        title: "Ingredients generated!",
+        description: `Found ${data.ingredients?.length || 0} ingredients for your meals.`,
+      });
+    } catch (error) {
+      console.error('Error generating ingredients:', error);
+      toast({
+        title: "Failed to generate ingredients",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingIngredients(false);
     }
   };
 
@@ -872,33 +925,57 @@ export const MealPlanBuilder = () => {
                      </div>
                    </TabsContent>
                    
-                   <TabsContent value="grocery" className="space-y-4 mt-4">
-                     <div className="text-xs text-muted-foreground">
-                       Shopping list items: 5
-                     </div>
-                     
-                     {/* Grocery list with placeholder items */}
-                     <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto">
-                       {[
-                         { text: 'Chicken breast (2 lbs)', checked: false },
-                         { text: 'Fresh vegetables (mixed)', checked: false },
-                         { text: 'Rice (1 bag)', checked: false },
-                         { text: 'Olive oil', checked: false },
-                         { text: 'Onions (3 lbs)', checked: false }
-                       ].map((item, index) => (
-                         <div key={index} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded">
-                           <Checkbox
-                             checked={checkedItems[`grocery-${item.text}`] || false}
-                             onCheckedChange={(checked) => 
-                               setCheckedItems(prev => ({ ...prev, [`grocery-${item.text}`]: checked as boolean }))
-                             }
-                           />
-                           <span className={`flex-1 ${checkedItems[`grocery-${item.text}`] ? 'line-through text-muted-foreground' : ''}`}>
-                             {item.text}
-                           </span>
-                         </div>
-                       ))}
-                     </div>
+                    <TabsContent value="grocery" className="space-y-4 mt-4">
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs text-muted-foreground">
+                          AI-generated ingredients: {aiGeneratedIngredients.length}
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={generateIngredients}
+                          disabled={isGeneratingIngredients}
+                        >
+                          {isGeneratingIngredients ? 'Generating...' : 'Generate'}
+                        </Button>
+                      </div>
+                      
+                      {/* AI-generated grocery list */}
+                      <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto">
+                        {aiGeneratedIngredients.length === 0 ? (
+                          <div className="text-center text-muted-foreground py-8">
+                            <UtensilsCrossed className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                            <p>No grocery list generated yet.</p>
+                            <p className="text-xs">Click "Generate" to create a shopping list from your meals.</p>
+                          </div>
+                        ) : (
+                          aiGeneratedIngredients.map((ingredient, index) => (
+                            <div key={index} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded">
+                              <Checkbox
+                                checked={checkedItems[`ai-${ingredient.name}`] || false}
+                                onCheckedChange={(checked) => 
+                                  setCheckedItems(prev => ({ ...prev, [`ai-${ingredient.name}`]: checked as boolean }))
+                                }
+                              />
+                              <div className="flex-1">
+                                <div className={`${checkedItems[`ai-${ingredient.name}`] ? 'line-through text-muted-foreground' : ''}`}>
+                                  {ingredient.name}
+                                </div>
+                                {ingredient.quantity && (
+                                  <div className="text-xs text-muted-foreground">
+                                    {ingredient.quantity}
+                                  </div>
+                                )}
+                              </div>
+                              {ingredient.category && (
+                                <Badge variant="outline" className="text-xs">
+                                  {ingredient.category}
+                                </Badge>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
                    </TabsContent>
                  </Tabs>
               </SheetContent>
