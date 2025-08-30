@@ -10,10 +10,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud, X, ChevronLeft, ChevronRight, Copy, Printer } from 'lucide-react';
+import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud, X, ChevronLeft, ChevronRight, Copy, Printer, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { MealCell } from './MealCell';
 import { RecipeInventory } from './RecipeInventory';
+import { CopyWeekModal } from './CopyWeekModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -128,6 +129,7 @@ export const MealPlanBuilder = () => {
   const [dayNotes, setDayNotes] = useState<DayNotes>({});
   const [notesOpen, setNotesOpen] = useState<{[day: string]: boolean}>({});
   const [showSettings, setShowSettings] = useState(false);
+  const [showCopyWeekModal, setShowCopyWeekModal] = useState(false);
   const [checkedItems, setCheckedItems] = useState<{[key: string]: boolean}>({});
   const [aiGeneratedIngredients, setAiGeneratedIngredients] = useState<any[]>([]);
   const [isGeneratingIngredients, setIsGeneratingIngredients] = useState(false);
@@ -609,6 +611,117 @@ export const MealPlanBuilder = () => {
     setCurrentWeekStart(newWeekStart);
   };
 
+  // Copy meal plan from another week
+  const copyWeekFrom = async (fromWeekStart: Date, replaceAll: boolean) => {
+    if (!user) return;
+
+    try {
+      // Get dates for the source week
+      const fromOrderedDays = getOrderedDays(firstDayOfWeek);
+      const fromWeekDates = fromOrderedDays.map((_, index) => {
+        const date = new Date(fromWeekStart);
+        date.setDate(fromWeekStart.getDate() + index);
+        return date;
+      });
+
+      const startDate = fromWeekDates[0].toISOString().split('T')[0];
+      const endDate = fromWeekDates[fromWeekDates.length - 1].toISOString().split('T')[0];
+
+      // Fetch meal plans from source week
+      const { data, error } = await supabase
+        .from('meal_plans')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('date', startDate)
+        .lte('date', endDate);
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        toast({
+          title: "No meals found",
+          description: "The selected week doesn't have any meal plans to copy.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Convert database format to meal plan format
+      const sourceMealPlan: MealPlan = {};
+      ALL_DAYS.forEach(day => {
+        sourceMealPlan[day] = {};
+        [...DEFAULT_MEAL_TYPES, ...customMealTypes].forEach(mealType => {
+          sourceMealPlan[day][mealType] = [];
+        });
+      });
+
+      // Fill with database data
+      data.forEach(record => {
+        const date = new Date(record.date + 'T00:00:00');
+        const fromWeekStartDate = new Date(fromWeekStart.getFullYear(), fromWeekStart.getMonth(), fromWeekStart.getDate());
+        const recordDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const daysDiff = Math.floor((recordDate.getTime() - fromWeekStartDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysDiff >= 0 && daysDiff < 7) {
+          const dayName = fromOrderedDays[daysDiff];
+          if (sourceMealPlan[dayName] && record.meal_items && Array.isArray(record.meal_items)) {
+            const items = (record.meal_items as unknown) as MealItem[];
+            sourceMealPlan[dayName][record.meal_type] = items;
+          }
+        }
+      });
+
+      // Apply to current week
+      let updatedPlan: MealPlan;
+      if (replaceAll) {
+        // Replace entire week
+        updatedPlan = { ...sourceMealPlan };
+      } else {
+        // Add to existing meals
+        updatedPlan = { ...mealPlan };
+        orderedDays.forEach(day => {
+          allMealTypes.forEach(mealType => {
+            const existingItems = updatedPlan[day][mealType] || [];
+            const sourceItems = sourceMealPlan[day][mealType] || [];
+            // Create new items with unique IDs to avoid conflicts
+            const newItems = sourceItems.map(item => ({
+              ...item,
+              id: `${item.id}-copy-${Date.now()}-${Math.random()}`
+            }));
+            updatedPlan[day][mealType] = [...existingItems, ...newItems];
+          });
+        });
+      }
+
+      // Save to database and update state
+      setMealPlan(updatedPlan);
+      
+      // Save each day/meal type to database
+      const savePromises: Promise<any>[] = [];
+      orderedDays.forEach(day => {
+        allMealTypes.forEach(mealType => {
+          const items = updatedPlan[day][mealType] || [];
+          savePromises.push(saveMealPlanToDatabase(day, mealType, items));
+        });
+      });
+
+      await Promise.all(savePromises);
+
+      toast({
+        title: "Week copied!",
+        description: `Meal plan has been ${replaceAll ? 'copied' : 'merged'} from the selected week.`,
+      });
+
+    } catch (error) {
+      console.error('Error copying week:', error);
+      toast({
+        title: "Failed to copy week",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Generate mock weather data based on zip code
   const generateMockWeather = (zip: string) => {
     if (!zip) return;
@@ -963,7 +1076,17 @@ export const MealPlanBuilder = () => {
       <Card className="p-6 overflow-x-auto">
         <div className="min-w-[800px]">
           {/* Week Navigation */}
-          <div className="flex items-center justify-center mb-6 relative">
+          <div className="flex items-center justify-between mb-6">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowCopyWeekModal(true)}
+              className="flex items-center gap-2"
+            >
+              <Copy className="h-4 w-4" />
+              Copy from week
+            </Button>
+            
             <div className="flex items-center gap-4">
               <Button variant="outline" size="sm" onClick={goToPreviousWeek}>
                 <ChevronLeft className="h-4 w-4" />
@@ -977,6 +1100,7 @@ export const MealPlanBuilder = () => {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
+            
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="default" className="absolute right-0">
@@ -1144,6 +1268,15 @@ export const MealPlanBuilder = () => {
               </SheetContent>
             </Sheet>
           </div>
+
+          {/* Copy Week Modal */}
+          <CopyWeekModal
+            open={showCopyWeekModal}
+            onOpenChange={setShowCopyWeekModal}
+            onCopyWeek={copyWeekFrom}
+            currentWeekStart={currentWeekStart}
+            firstDayOfWeek={firstDayOfWeek}
+          />
 
           <div className="grid grid-cols-8 gap-4">
             {/* Header row with dates and weather */}
