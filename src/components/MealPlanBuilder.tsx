@@ -131,6 +131,7 @@ export const MealPlanBuilder = () => {
   const [checkedItems, setCheckedItems] = useState<{[key: string]: boolean}>({});
   const [aiGeneratedIngredients, setAiGeneratedIngredients] = useState<any[]>([]);
   const [isGeneratingIngredients, setIsGeneratingIngredients] = useState(false);
+  const [removedIngredients, setRemovedIngredients] = useState<Set<string>>(new Set());
 
   const handleAddToInventory = (itemName: string, mealType: string) => {
     // This will be handled by the RecipeInventory component via a custom event
@@ -269,6 +270,51 @@ export const MealPlanBuilder = () => {
       setIsGeneratingIngredients(false);
     }
   };
+
+  // Remove ingredient from grocery list
+  const removeIngredient = (ingredientName: string) => {
+    setRemovedIngredients(prev => new Set([...prev, ingredientName]));
+    toast({
+      title: "Ingredient removed",
+      description: `${ingredientName} has been removed from your grocery list.`,
+    });
+  };
+
+  // Get filtered and sorted ingredients by category
+  const organizedIngredients = useMemo(() => {
+    const filtered = aiGeneratedIngredients.filter(ingredient => 
+      !removedIngredients.has(ingredient.name)
+    );
+
+    // Group by category
+    const groups: {[key: string]: any[]} = {};
+    const categoryOrder = ['produce', 'meat', 'dairy', 'pantry', 'spices', 'frozen'];
+    
+    filtered.forEach(ingredient => {
+      const category = ingredient.category || 'other';
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(ingredient);
+    });
+
+    // Sort ingredients within each category alphabetically
+    Object.keys(groups).forEach(category => {
+      groups[category].sort((a, b) => a.name.localeCompare(b.name));
+    });
+
+    // Return categories in preferred order
+    const orderedCategories = [
+      ...categoryOrder.filter(cat => groups[cat]),
+      ...Object.keys(groups).filter(cat => !categoryOrder.includes(cat))
+    ];
+
+    return orderedCategories.map(category => ({
+      name: category,
+      displayName: category.charAt(0).toUpperCase() + category.slice(1),
+      items: groups[category]
+    }));
+  }, [aiGeneratedIngredients, removedIngredients]);
 
   // Save to localStorage whenever settings change
   useEffect(() => {
@@ -940,46 +986,61 @@ export const MealPlanBuilder = () => {
                         </Button>
                       </div>
                       
-                      {/* AI-generated grocery list */}
-                      <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto">
-                        {aiGeneratedIngredients.length === 0 ? (
-                          <div className="text-center text-muted-foreground py-8">
-                            <UtensilsCrossed className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                            <p>No grocery list generated yet.</p>
-                            <p className="text-xs">Click "Generate" to create a shopping list from your meals.</p>
-                          </div>
-                        ) : (
-                          aiGeneratedIngredients.map((ingredient, index) => (
-                            <div key={index} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded">
-                              <Checkbox
-                                checked={checkedItems[`ai-${ingredient.name}`] || false}
-                                onCheckedChange={(checked) => 
-                                  setCheckedItems(prev => ({ ...prev, [`ai-${ingredient.name}`]: checked as boolean }))
-                                }
-                              />
-                              <div className="flex-1">
-                                <div className={`${checkedItems[`ai-${ingredient.name}`] ? 'line-through text-muted-foreground' : ''}`}>
-                                  {ingredient.name}
-                                </div>
-                                {ingredient.quantity && (
-                                  <div className="text-xs text-muted-foreground">
-                                    {ingredient.quantity}
-                                  </div>
-                                )}
-                                {ingredient.forDishes && ingredient.forDishes.length > 0 && (
-                                  <div className="text-xs text-muted-foreground italic">
-                                    For: {ingredient.forDishes.join(", ")}
-                                  </div>
-                                )}
-                              </div>
-                              {ingredient.category && (
-                                <Badge variant="outline" className="text-xs">
-                                  {ingredient.category}
-                                </Badge>
-                              )}
-                            </div>
-                          ))
-                        )}
+                       {/* AI-generated grocery list organized by category */}
+                       <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto">
+                         {organizedIngredients.length === 0 ? (
+                           <div className="text-center text-muted-foreground py-8">
+                             <UtensilsCrossed className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                             <p>No grocery list generated yet.</p>
+                             <p className="text-xs">Click "Generate" to create a shopping list from your meals.</p>
+                           </div>
+                         ) : (
+                           organizedIngredients.map((category) => (
+                             <div key={category.name} className="space-y-2">
+                               {/* Category header */}
+                               <div className="sticky top-0 bg-background border-b pb-1 mb-2">
+                                 <h4 className="font-semibold text-sm text-primary capitalize">
+                                   {category.displayName} ({category.items.length})
+                                 </h4>
+                               </div>
+                               
+                               {/* Category items */}
+                               {category.items.map((ingredient, index) => (
+                                 <div key={index} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded group">
+                                   <Checkbox
+                                     checked={checkedItems[`ai-${ingredient.name}`] || false}
+                                     onCheckedChange={(checked) => 
+                                       setCheckedItems(prev => ({ ...prev, [`ai-${ingredient.name}`]: checked as boolean }))
+                                     }
+                                   />
+                                   <div className="flex-1">
+                                     <div className={`${checkedItems[`ai-${ingredient.name}`] ? 'line-through text-muted-foreground' : ''}`}>
+                                       {ingredient.name}
+                                     </div>
+                                     {ingredient.quantity && (
+                                       <div className="text-xs text-muted-foreground">
+                                         {ingredient.quantity}
+                                       </div>
+                                     )}
+                                     {ingredient.forDishes && ingredient.forDishes.length > 0 && (
+                                       <div className="text-xs text-muted-foreground italic">
+                                         For: {ingredient.forDishes.join(", ")}
+                                       </div>
+                                     )}
+                                   </div>
+                                   <Button
+                                     variant="ghost"
+                                     size="sm"
+                                     onClick={() => removeIngredient(ingredient.name)}
+                                     className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground"
+                                   >
+                                     <X className="h-3 w-3" />
+                                   </Button>
+                                 </div>
+                               ))}
+                             </div>
+                           ))
+                         )}
                       </div>
                    </TabsContent>
                  </Tabs>
