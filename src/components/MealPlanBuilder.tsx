@@ -76,7 +76,14 @@ export const MealPlanBuilder = () => {
   };
 
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
-    return calculateWeekStart(new Date(), firstDayOfWeek);
+    const calculated = calculateWeekStart(new Date(), firstDayOfWeek);
+    console.log('🔄 Initial week calculation:', {
+      today: new Date().toISOString().split('T')[0],
+      firstDayOfWeek,
+      calculatedWeekStart: calculated.toISOString().split('T')[0],
+      todayDayOfWeek: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()]
+    });
+    return calculated;
   });
 
   // Get current week key for localStorage
