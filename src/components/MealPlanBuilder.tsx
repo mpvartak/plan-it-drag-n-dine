@@ -890,7 +890,43 @@ export const MealPlanBuilder = () => {
   }
   return <div className={`min-h-screen bg-background p-6 space-y-8 ${isDragging ? 'cursor-grabbing' : ''}`}>
       {/* Header */}
-      <div className="text-center space-y-6">
+      <div className="relative text-center space-y-6">
+        {/* Hamburger Menu - Top Right */}
+        <div className="absolute top-0 right-0">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Menu className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => setShowRecipeInventory(!showRecipeInventory)}>
+                <UtensilsCrossed className="h-4 w-4 mr-2" />
+                {showRecipeInventory ? 'Hide' : 'Show'} Recipe Inventory
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowSettings(true)}>
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={async () => {
+                  try {
+                    await supabase.auth.signOut();
+                    window.location.href = '/auth';
+                  } catch (error) {
+                    console.error('Error signing out:', error);
+                  }
+                }}
+                className="text-destructive focus:text-destructive"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        
         <div className="flex items-center justify-center gap-3">
           <UtensilsCrossed className="h-8 w-8 text-primary" />
           <h1 className="text-4xl font-bold text-foreground">Meal Plan Builder</h1>
@@ -901,41 +937,6 @@ export const MealPlanBuilder = () => {
           </div>}
       </div>
 
-      {/* Hamburger Menu */}
-      <div className="flex justify-end mb-6">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Menu className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={() => setShowRecipeInventory(!showRecipeInventory)}>
-              <UtensilsCrossed className="h-4 w-4 mr-2" />
-              {showRecipeInventory ? 'Hide' : 'Show'} Recipe Inventory
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setShowSettings(true)}>
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              onClick={async () => {
-                try {
-                  await supabase.auth.signOut();
-                  window.location.href = '/auth';
-                } catch (error) {
-                  console.error('Error signing out:', error);
-                }
-              }}
-              className="text-destructive focus:text-destructive"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
 
       {/* Settings Dialog - moved outside the card but kept for functionality */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
