@@ -9,8 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud, X, ChevronLeft, ChevronRight, Copy, Printer, Calendar, Menu, LogOut } from 'lucide-react';
+import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud, X, ChevronLeft, ChevronRight, Copy, Printer, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { MealCell } from './MealCell';
 import { RecipeInventory } from './RecipeInventory';
@@ -45,7 +44,19 @@ interface WeatherData {
 interface DayNotes {
   [day: string]: string;
 }
-export const MealPlanBuilder = () => {
+interface MealPlanBuilderProps {
+  showRecipeInventory: boolean;
+  setShowRecipeInventory: (show: boolean) => void;
+  showSettings: boolean;
+  setShowSettings: (show: boolean) => void;
+}
+
+export const MealPlanBuilder = ({ 
+  showRecipeInventory, 
+  setShowRecipeInventory, 
+  showSettings, 
+  setShowSettings 
+}: MealPlanBuilderProps) => {
   console.log('MealPlanBuilder component loaded');
   const {
     user
@@ -112,7 +123,6 @@ export const MealPlanBuilder = () => {
     return stored ? JSON.parse(stored) : [];
   });
   const [newMealType, setNewMealType] = useState('');
-  const [showRecipeInventory, setShowRecipeInventory] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [zipCode, setZipCode] = useState(() => {
     return localStorage.getItem('mealPlan_zipCode') || '';
@@ -124,7 +134,6 @@ export const MealPlanBuilder = () => {
   const [notesOpen, setNotesOpen] = useState<{
     [day: string]: boolean;
   }>({});
-  const [showSettings, setShowSettings] = useState(false);
   const [showCopyWeekModal, setShowCopyWeekModal] = useState(false);
   const [checkedItems, setCheckedItems] = useState<{
     [key: string]: boolean;
@@ -890,43 +899,7 @@ export const MealPlanBuilder = () => {
   }
   return <div className={`min-h-screen bg-background p-6 space-y-8 ${isDragging ? 'cursor-grabbing' : ''}`}>
       {/* Header */}
-      <div className="relative text-center space-y-6">
-        {/* Hamburger Menu - Top Right */}
-        <div className="absolute top-0 right-0">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Menu className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={() => setShowRecipeInventory(!showRecipeInventory)}>
-                <UtensilsCrossed className="h-4 w-4 mr-2" />
-                {showRecipeInventory ? 'Hide' : 'Show'} Recipe Inventory
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowSettings(true)}>
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                onClick={async () => {
-                  try {
-                    await supabase.auth.signOut();
-                    window.location.href = '/auth';
-                  } catch (error) {
-                    console.error('Error signing out:', error);
-                  }
-                }}
-                className="text-destructive focus:text-destructive"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        
+      <div className="text-center space-y-6">
         <div className="flex items-center justify-center gap-3">
           <UtensilsCrossed className="h-8 w-8 text-primary" />
           <h1 className="text-4xl font-bold text-foreground">Meal Plan Builder</h1>

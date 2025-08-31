@@ -1,11 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { MealPlanBuilder } from '@/components/MealPlanBuilder';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
+import { LogOut, Menu, UtensilsCrossed, Settings } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
+  const [showRecipeInventory, setShowRecipeInventory] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   
   console.log('Index component - user:', user?.email, 'loading:', loading);
 
@@ -36,20 +39,41 @@ const Index = () => {
             <span className="text-sm text-muted-foreground">
               Welcome, {user.email}
             </span>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={signOut}
-              className="flex items-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign Out
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => setShowRecipeInventory(!showRecipeInventory)}>
+                  <UtensilsCrossed className="h-4 w-4 mr-2" />
+                  {showRecipeInventory ? 'Hide' : 'Show'} Recipe Inventory
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowSettings(true)}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={signOut}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
       <main>
-        <MealPlanBuilder />
+        <MealPlanBuilder 
+          showRecipeInventory={showRecipeInventory}
+          setShowRecipeInventory={setShowRecipeInventory}
+          showSettings={showSettings}
+          setShowSettings={setShowSettings}
+        />
       </main>
     </div>
   );
