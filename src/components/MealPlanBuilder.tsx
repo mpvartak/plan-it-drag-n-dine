@@ -47,15 +47,11 @@ interface DayNotes {
 interface MealPlanBuilderProps {
   showRecipeInventory: boolean;
   setShowRecipeInventory: (show: boolean) => void;
-  showSettings: boolean;
-  setShowSettings: (show: boolean) => void;
 }
 
 export const MealPlanBuilder = ({ 
   showRecipeInventory, 
-  setShowRecipeInventory, 
-  showSettings, 
-  setShowSettings 
+  setShowRecipeInventory
 }: MealPlanBuilderProps) => {
   console.log('MealPlanBuilder component loaded');
   const {
@@ -69,6 +65,7 @@ export const MealPlanBuilder = ({
   const [firstDayOfWeek, setFirstDayOfWeek] = useState<string>(() => {
     return localStorage.getItem('mealPlan_firstDayOfWeek') || 'Monday';
   });
+
   const [mealPlans, setMealPlans] = useState<{
     [weekKey: string]: MealPlan;
   }>({});
@@ -152,6 +149,58 @@ export const MealPlanBuilder = ({
       }
     }));
   };
+
+  // Listen for changes to localStorage (when settings are updated from Settings page)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'mealPlan_firstDayOfWeek' && e.newValue) {
+        setFirstDayOfWeek(e.newValue);
+      }
+      if (e.key === 'mealPlan_customMealTypes' && e.newValue) {
+        try {
+          setCustomMealTypes(JSON.parse(e.newValue));
+        } catch (error) {
+          console.error('Failed to parse custom meal types from localStorage:', error);
+        }
+      }
+      if (e.key === 'mealPlan_zipCode' && e.newValue !== null) {
+        setZipCode(e.newValue);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check for changes when component gains focus (when navigating back from settings)
+    const handleFocus = () => {
+      const storedFirstDay = localStorage.getItem('mealPlan_firstDayOfWeek') || 'Monday';
+      const storedCustomMealTypes = localStorage.getItem('mealPlan_customMealTypes');
+      const storedZipCode = localStorage.getItem('mealPlan_zipCode') || '';
+      
+      if (storedFirstDay !== firstDayOfWeek) {
+        setFirstDayOfWeek(storedFirstDay);
+      }
+      if (storedCustomMealTypes) {
+        try {
+          const parsedTypes = JSON.parse(storedCustomMealTypes);
+          if (JSON.stringify(parsedTypes) !== JSON.stringify(customMealTypes)) {
+            setCustomMealTypes(parsedTypes);
+          }
+        } catch (error) {
+          console.error('Failed to parse custom meal types:', error);
+        }
+      }
+      if (storedZipCode !== zipCode) {
+        setZipCode(storedZipCode);
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [firstDayOfWeek, customMealTypes, zipCode]);
   const allMealTypes = [...DEFAULT_MEAL_TYPES, ...customMealTypes];
 
   // Aggregate grocery items from current meal plan
@@ -911,100 +960,6 @@ export const MealPlanBuilder = ({
       </div>
 
 
-      {/* Settings Dialog - moved outside the card but kept for functionality */}
-      <Dialog open={showSettings} onOpenChange={setShowSettings}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Settings</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-6">
-                {/* Weather Settings */}
-                <div>
-                  <h3 className="text-lg font-medium mb-3">Weather</h3>
-                  <div>
-                    <label className="text-sm font-medium text-foreground mb-2 block">
-                      Zip Code
-                    </label>
-                    <Input value={zipCode} onChange={e => setZipCode(e.target.value)} placeholder="Enter zip code" />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Enter your zip code to see weather information for each day
-                    </p>
-                  </div>
-                </div>
-
-                 {/* Week Settings */}
-                 <div>
-                   <h3 className="text-lg font-medium mb-3">Week Settings</h3>
-                   <div>
-                     <label className="text-sm font-medium text-foreground mb-2 block">
-                       First Day of Week
-                     </label>
-                     <Select value={firstDayOfWeek} onValueChange={setFirstDayOfWeek}>
-                       <SelectTrigger>
-                         <SelectValue />
-                       </SelectTrigger>
-                       <SelectContent>
-                         {ALL_DAYS.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}
-                       </SelectContent>
-                     </Select>
-                     <p className="text-xs text-muted-foreground mt-1">
-                       Choose which day your meal planning week should start with
-                     </p>
-                   </div>
-                 </div>
-
-                 {/* Custom Meal Types */}
-                <div>
-                  <h3 className="text-lg font-medium mb-3">Custom Meal Types</h3>
-                  <div className="space-y-3">
-                    <div className="flex gap-2">
-                      <Input value={newMealType} onChange={e => setNewMealType(e.target.value)} placeholder="e.g., Afternoon Snack, Pre-workout" onKeyPress={e => e.key === 'Enter' && addCustomMealType()} />
-                      <Button onClick={addCustomMealType} size="sm">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    {customMealTypes.length > 0 && <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">Custom meal types:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {customMealTypes.map(mealType => <Badge key={mealType} variant="secondary" className="flex items-center gap-1">
-                              {mealType}
-                              <Button size="sm" variant="ghost" onClick={() => removeCustomMealType(mealType)} className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground">
-                                <X className="h-2 w-2" />
-                              </Button>
-                            </Badge>)}
-                        </div>
-                      </div>}
-                  </div>
-                </div>
-
-                {/* Keyboard Shortcuts */}
-                <div>
-                  <h3 className="text-lg font-medium mb-3">Keyboard Shortcuts</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Copy items from cell</span>
-                      <kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+C</kbd>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Paste items to cell</span>
-                      <kbd className="px-2 py-1 bg-muted rounded text-xs">Ctrl+V</kbd>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Add new item</span>
-                      <kbd className="px-2 py-1 bg-muted rounded text-xs">Enter</kbd>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Cancel adding</span>
-                      <kbd className="px-2 py-1 bg-muted rounded text-xs">Escape</kbd>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-3">
-                      💡 Hover over any meal cell to activate keyboard shortcuts for that cell.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </DialogContent>
-      </Dialog>
 
 
       {/* Recipe Inventory */}

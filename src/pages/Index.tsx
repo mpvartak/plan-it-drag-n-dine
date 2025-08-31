@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { MealPlanBuilder } from '@/components/MealPlanBuilder';
 import { Button } from '@/components/ui/button';
-import { LogOut, Menu, UtensilsCrossed, Settings } from 'lucide-react';
+import { LogOut, Menu, UtensilsCrossed } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
   const [showRecipeInventory, setShowRecipeInventory] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   
   console.log('Index component - user:', user?.email, 'loading:', loading);
 
@@ -57,8 +58,7 @@ const Index = () => {
                     Meal Plan
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => setShowSettings(true)}>
-                  <Settings className="h-4 w-4 mr-2" />
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
                   Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -78,8 +78,6 @@ const Index = () => {
         <MealPlanBuilder 
           showRecipeInventory={showRecipeInventory}
           setShowRecipeInventory={setShowRecipeInventory}
-          showSettings={showSettings}
-          setShowSettings={setShowSettings}
         />
       </main>
     </div>
