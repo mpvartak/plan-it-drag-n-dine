@@ -46,10 +46,17 @@ const Index = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => setShowRecipeInventory(!showRecipeInventory)}>
-                  <UtensilsCrossed className="h-4 w-4 mr-2" />
-                  {showRecipeInventory ? 'Hide' : 'Show'} Recipe Inventory
-                </DropdownMenuItem>
+                {!showRecipeInventory ? (
+                  <DropdownMenuItem onClick={() => setShowRecipeInventory(true)}>
+                    <UtensilsCrossed className="h-4 w-4 mr-2" />
+                    Recipe Inventory
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={() => setShowRecipeInventory(false)}>
+                    <UtensilsCrossed className="h-4 w-4 mr-2" />
+                    Meal Plan
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => setShowSettings(true)}>
                   <Settings className="h-4 w-4 mr-2" />
                   Settings

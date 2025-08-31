@@ -1011,7 +1011,8 @@ export const MealPlanBuilder = ({
       {showRecipeInventory && <RecipeInventory />}
 
       {/* Meal Plan Table */}
-      <Card className="p-6 overflow-x-auto">
+      {!showRecipeInventory && (
+        <Card className="p-6 overflow-x-auto">
         <div className="min-w-[800px]">
           {/* Week Navigation */}
           <div className="flex items-center justify-between mb-6">
@@ -1206,6 +1207,7 @@ export const MealPlanBuilder = ({
               </div>)}
           </div>
         </div>
-      </Card>
+        </Card>
+      )}
     </div>;
 };
