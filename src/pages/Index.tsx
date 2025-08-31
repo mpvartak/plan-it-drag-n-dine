@@ -10,6 +10,16 @@ const Index = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [showRecipeInventory, setShowRecipeInventory] = useState(false);
+
+  // Check URL params for inventory parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('inventory') === 'true') {
+      setShowRecipeInventory(true);
+      // Clean up URL
+      navigate('/', { replace: true });
+    }
+  }, [navigate]);
   
   console.log('Index component - user:', user?.email, 'loading:', loading);
 

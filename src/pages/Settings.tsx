@@ -105,6 +105,10 @@ const Settings = () => {
                   <UtensilsCrossed className="h-4 w-4 mr-2" />
                   Meal Plan
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/?inventory=true')}>
+                  <UtensilsCrossed className="h-4 w-4 mr-2" />
+                  Recipe Inventory
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   onClick={signOut}
