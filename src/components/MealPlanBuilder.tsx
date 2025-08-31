@@ -9,7 +9,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud, X, ChevronLeft, ChevronRight, Copy, Printer, Calendar } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud, X, ChevronLeft, ChevronRight, Copy, Printer, Calendar, Menu, LogOut } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { MealCell } from './MealCell';
 import { RecipeInventory } from './RecipeInventory';
@@ -900,20 +901,44 @@ export const MealPlanBuilder = () => {
           </div>}
       </div>
 
-      {/* Controls */}
-      <Card className="p-6 shadow-card">
-        <div className="flex flex-wrap gap-4 items-end">
-          <Button onClick={() => setShowRecipeInventory(!showRecipeInventory)} variant="outline">
-            {showRecipeInventory ? 'Hide' : 'Show'} Recipe Inventory
-          </Button>
+      {/* Hamburger Menu */}
+      <div className="flex justify-end mb-6">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Menu className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={() => setShowRecipeInventory(!showRecipeInventory)}>
+              <UtensilsCrossed className="h-4 w-4 mr-2" />
+              {showRecipeInventory ? 'Hide' : 'Show'} Recipe Inventory
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShowSettings(true)}>
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={async () => {
+                try {
+                  await supabase.auth.signOut();
+                  window.location.href = '/auth';
+                } catch (error) {
+                  console.error('Error signing out:', error);
+                }
+              }}
+              className="text-destructive focus:text-destructive"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
-          <Dialog open={showSettings} onOpenChange={setShowSettings}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </Button>
-            </DialogTrigger>
+      {/* Settings Dialog - moved outside the card but kept for functionality */}
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Settings</DialogTitle>
@@ -1005,9 +1030,7 @@ export const MealPlanBuilder = () => {
                 </div>
               </div>
             </DialogContent>
-          </Dialog>
-        </div>
-      </Card>
+      </Dialog>
 
 
       {/* Recipe Inventory */}
