@@ -140,6 +140,11 @@ export const MealPlanBuilder = ({
   const [removedIngredients, setRemovedIngredients] = useState<Set<string>>(new Set());
   const [savedGroceryListId, setSavedGroceryListId] = useState<string | null>(null);
   const [isSavingGroceryList, setIsSavingGroceryList] = useState(false);
+  const [manualMealItems, setManualMealItems] = useState<Array<{ text: string; count: number }>>([]);
+  const [manualGroceryItems, setManualGroceryItems] = useState<Array<{ name: string; quantity?: string; category: string }>>([]);
+  const [newMealItem, setNewMealItem] = useState('');
+  const [newGroceryItem, setNewGroceryItem] = useState('');
+  const [newGroceryCategory, setNewGroceryCategory] = useState('other');
   const handleAddToInventory = (itemName: string, mealType: string) => {
     // This will be handled by the RecipeInventory component via a custom event
     window.dispatchEvent(new CustomEvent('addToInventory', {
@@ -220,13 +225,19 @@ export const MealPlanBuilder = ({
       });
     });
 
+    // Add manually added meal items
+    manualMealItems.forEach(item => {
+      const normalizedText = item.text.toLowerCase().trim();
+      itemCounts[normalizedText] = (itemCounts[normalizedText] || 0) + item.count;
+    });
+
     // Convert to array and sort alphabetically
     return Object.entries(itemCounts).map(([text, count]) => ({
       text: text.charAt(0).toUpperCase() + text.slice(1),
       // Capitalize first letter
       count
     })).sort((a, b) => a.text.localeCompare(b.text));
-  }, [mealPlan, orderedDays, allMealTypes]);
+  }, [mealPlan, orderedDays, allMealTypes, manualMealItems]);
 
   // Copy grocery list to clipboard
   const copyGroceryList = async () => {
@@ -868,6 +879,31 @@ export const MealPlanBuilder = ({
       description: `${mealTypeToRemove} has been removed from your meal plan.`
     });
   };
+
+  const addManualMealItem = () => {
+    if (newMealItem.trim()) {
+      setManualMealItems(prev => [...prev, { text: newMealItem.trim(), count: 1 }]);
+      setNewMealItem('');
+    }
+  };
+
+  const removeManualMealItem = (index: number) => {
+    setManualMealItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const addManualGroceryItem = () => {
+    if (newGroceryItem.trim()) {
+      setManualGroceryItems(prev => [...prev, { 
+        name: newGroceryItem.trim(), 
+        category: newGroceryCategory 
+      }]);
+      setNewGroceryItem('');
+    }
+  };
+
+  const removeManualGroceryItem = (itemName: string) => {
+    setManualGroceryItems(prev => prev.filter(item => item.name !== itemName));
+  };
   const updateMealPlan = (day: string, mealType: string, items: MealItem[]) => {
     console.log('🔄 [UPDATE] updateMealPlan called:', {
       day,
@@ -1015,20 +1051,34 @@ export const MealPlanBuilder = ({
                        Total items: {groceryList.length}
                      </div>
                      
-                     {/* Action buttons */}
-                     <div className="flex gap-2">
-                       <Button variant="outline" size="sm" onClick={copyGroceryList}>
-                         <Copy className="h-4 w-4 mr-1" />
-                         Copy
-                       </Button>
-                       <Button variant="outline" size="sm" onClick={printGroceryList}>
-                         <Printer className="h-4 w-4 mr-1" />
-                         Print
-                       </Button>
-                       <Button variant="outline" size="sm" onClick={() => setCheckedItems({})} className="ml-auto">
-                         Clear checks
-                       </Button>
-                     </div>
+                      {/* Add manual item */}
+                      <div className="flex gap-2 mb-4 p-3 bg-muted/50 rounded">
+                        <Input
+                          placeholder="Add item to meal list..."
+                          value={newMealItem}
+                          onChange={(e) => setNewMealItem(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && addManualMealItem()}
+                          className="flex-1"
+                        />
+                        <Button size="sm" onClick={addManualMealItem} disabled={!newMealItem.trim()}>
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={copyGroceryList}>
+                          <Copy className="h-4 w-4 mr-1" />
+                          Copy
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={printGroceryList}>
+                          <Printer className="h-4 w-4 mr-1" />
+                          Print
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setCheckedItems({})} className="ml-auto">
+                          Clear checks
+                        </Button>
+                      </div>
 
                      {/* Meal list */}
                      <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto">
@@ -1036,36 +1086,94 @@ export const MealPlanBuilder = ({
                            <UtensilsCrossed className="h-12 w-12 mx-auto mb-3 opacity-50" />
                            <p>No items in your meal plan yet.</p>
                            <p className="text-xs">Add meals to see your meal list here.</p>
-                         </div> : groceryList.map((item, index) => <div key={index} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded">
-                             <Checkbox checked={checkedItems[item.text] || false} onCheckedChange={checked => setCheckedItems(prev => ({
-                        ...prev,
-                        [item.text]: checked as boolean
-                      }))} />
-                             <span className={`flex-1 ${checkedItems[item.text] ? 'line-through text-muted-foreground' : ''}`}>
-                               {item.text}
-                             </span>
-                             {item.count > 1 && <Badge variant="secondary" className="text-xs">
-                                 x{item.count}
-                               </Badge>}
-                           </div>)}
+                          </div> : groceryList.map((item, index) => {
+                            const isManualItem = manualMealItems.some(manual => manual.text === item.text);
+                            return (
+                              <div key={index} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded group">
+                                <Checkbox 
+                                  checked={checkedItems[item.text] || false} 
+                                  onCheckedChange={checked => setCheckedItems(prev => ({
+                                    ...prev,
+                                    [item.text]: checked as boolean
+                                  }))} 
+                                />
+                                <div className="flex-1">
+                                  <span className={`${checkedItems[item.text] ? 'line-through text-muted-foreground' : ''}`}>
+                                    {item.text}
+                                  </span>
+                                  {isManualItem && (
+                                    <div className="text-xs text-muted-foreground italic">
+                                      Manually added
+                                    </div>
+                                  )}
+                                </div>
+                                {item.count > 1 && <Badge variant="secondary" className="text-xs">
+                                    x{item.count}
+                                  </Badge>}
+                                {isManualItem && (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => removeManualMealItem(manualMealItems.findIndex(manual => manual.text === item.text))}
+                                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            );
+                          })}
                      </div>
                    </TabsContent>
                    
-                     <TabsContent value="grocery" className="space-y-4 mt-4">
-                       <div className="flex items-center justify-between">
-                         <div className="text-xs text-muted-foreground">
-                           AI-generated ingredients: {organizedIngredients.reduce((total, cat) => total + cat.items.length, 0)}
-                           {savedGroceryListId && <span className="text-green-600 ml-2">✓ Saved</span>}
-                         </div>
-                         <div className="flex gap-2">
-                           <Button variant="outline" size="sm" onClick={generateIngredients} disabled={isGeneratingIngredients}>
-                             {isGeneratingIngredients ? 'Generating...' : 'Generate'}
-                           </Button>
-                           {organizedIngredients.length > 0 && <Button variant="default" size="sm" onClick={saveGroceryListToDatabase} disabled={isSavingGroceryList}>
-                               {isSavingGroceryList ? 'Saving...' : savedGroceryListId ? 'Update' : 'Save'}
-                             </Button>}
-                         </div>
-                       </div>
+                      <TabsContent value="grocery" className="space-y-4 mt-4">
+                        {/* Add manual item */}
+                        <div className="p-3 bg-muted/50 rounded space-y-3">
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Add ingredient..."
+                              value={newGroceryItem}
+                              onChange={(e) => setNewGroceryItem(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && addManualGroceryItem()}
+                              className="flex-1"
+                            />
+                            <Select value={newGroceryCategory} onValueChange={setNewGroceryCategory}>
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="produce">Produce</SelectItem>
+                                <SelectItem value="meat">Meat & Seafood</SelectItem>
+                                <SelectItem value="dairy">Dairy & Eggs</SelectItem>
+                                <SelectItem value="pantry">Pantry & Dry Goods</SelectItem>
+                                <SelectItem value="frozen">Frozen Foods</SelectItem>
+                                <SelectItem value="beverages">Beverages</SelectItem>
+                                <SelectItem value="condiments">Condiments & Sauces</SelectItem>
+                                <SelectItem value="bakery">Bakery</SelectItem>
+                                <SelectItem value="spices">Spices & Seasonings</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button size="sm" onClick={addManualGroceryItem} disabled={!newGroceryItem.trim()}>
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs text-muted-foreground">
+                            Total ingredients: {organizedIngredients.reduce((total, cat) => total + cat.items.length, 0)}
+                            {savedGroceryListId && <span className="text-green-600 ml-2">✓ Saved</span>}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={generateIngredients} disabled={isGeneratingIngredients}>
+                              {isGeneratingIngredients ? 'Generating...' : 'Generate'}
+                            </Button>
+                            {organizedIngredients.length > 0 && <Button variant="default" size="sm" onClick={saveGroceryListToDatabase} disabled={isSavingGroceryList}>
+                                {isSavingGroceryList ? 'Saving...' : savedGroceryListId ? 'Update' : 'Save'}
+                              </Button>}
+                          </div>
+                        </div>
                       
                        {/* AI-generated grocery list organized by category */}
                        <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto">
@@ -1081,27 +1189,40 @@ export const MealPlanBuilder = ({
                                  </h4>
                                </div>
                                
-                               {/* Category items */}
-                               {category.items.map((ingredient, index) => <div key={index} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded group">
-                                   <Checkbox checked={checkedItems[`ai-${ingredient.name}`] || false} onCheckedChange={checked => setCheckedItems(prev => ({
-                          ...prev,
-                          [`ai-${ingredient.name}`]: checked as boolean
-                        }))} />
-                                   <div className="flex-1">
-                                     <div className={`${checkedItems[`ai-${ingredient.name}`] ? 'line-through text-muted-foreground' : ''}`}>
-                                       {ingredient.name}
-                                     </div>
-                                     {ingredient.quantity && <div className="text-xs text-muted-foreground">
-                                         {ingredient.quantity}
-                                       </div>}
-                                     {ingredient.forDishes && ingredient.forDishes.length > 0 && <div className="text-xs text-muted-foreground italic">
-                                         For: {ingredient.forDishes.join(", ")}
-                                       </div>}
-                                   </div>
-                                   <Button variant="ghost" size="sm" onClick={() => removeIngredient(ingredient.name)} className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground">
-                                     <X className="h-3 w-3" />
-                                   </Button>
-                                 </div>)}
+                                {/* Category items */}
+                                {category.items.map((ingredient, index) => {
+                                  const isManualItem = ingredient.forDishes && ingredient.forDishes.includes('Manually added');
+                                  return (
+                                    <div key={index} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded group">
+                                      <Checkbox 
+                                        checked={checkedItems[`ai-${ingredient.name}`] || false} 
+                                        onCheckedChange={checked => setCheckedItems(prev => ({
+                                          ...prev,
+                                          [`ai-${ingredient.name}`]: checked as boolean
+                                        }))} 
+                                      />
+                                      <div className="flex-1">
+                                        <div className={`${checkedItems[`ai-${ingredient.name}`] ? 'line-through text-muted-foreground' : ''}`}>
+                                          {ingredient.name}
+                                        </div>
+                                        {ingredient.quantity && <div className="text-xs text-muted-foreground">
+                                            {ingredient.quantity}
+                                          </div>}
+                                        {ingredient.forDishes && ingredient.forDishes.length > 0 && <div className="text-xs text-muted-foreground italic">
+                                            {isManualItem ? 'Manually added' : `For: ${ingredient.forDishes.join(", ")}`}
+                                          </div>}
+                                      </div>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={() => isManualItem ? removeManualGroceryItem(ingredient.name) : removeIngredient(ingredient.name)}
+                                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  );
+                                })}
                              </div>)}
                       </div>
                    </TabsContent>
