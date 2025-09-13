@@ -1102,7 +1102,7 @@ export const MealPlanBuilder = ({
                   Get grocery list
                 </Button>
               </SheetTrigger>
-               <SheetContent side="right" className="w-96 h-full min-h-0 grid grid-rows-[auto_1fr]">
+               <SheetContent side="right" className="w-96 h-screen grid grid-rows-[auto_1fr]">
                  <SheetHeader className="mb-4">
                    <SheetTitle>Grocery List</SheetTitle>
                    <div className="text-sm text-muted-foreground">
@@ -1110,13 +1110,13 @@ export const MealPlanBuilder = ({
                    </div>
                  </SheetHeader>
                  
-                  <Tabs defaultValue="meals" className="flex flex-col h-full min-h-0">
+                  <Tabs defaultValue="meals" className="flex flex-col h-full min-h-0 overflow-hidden">
                     <TabsList className="grid w-full grid-cols-2 shrink-0">
                       <TabsTrigger value="meals">Meal List</TabsTrigger>
                       <TabsTrigger value="grocery">Grocery List</TabsTrigger>
                     </TabsList>
                     
-                     <TabsContent value="meals" className="flex flex-col space-y-4 mt-4 flex-1 min-h-0">
+                     <TabsContent value="meals" className="flex flex-col flex-1 min-h-0 overflow-hidden space-y-4">
                        <div className="text-xs text-muted-foreground shrink-0">
                          Total items: {groceryList.length}
                        </div>
@@ -1200,7 +1200,7 @@ export const MealPlanBuilder = ({
                       </div>
                      </TabsContent>
                     
-                      <TabsContent value="grocery" className="flex flex-col space-y-4 mt-4 flex-1 min-h-0">
+                      <TabsContent value="grocery" className="flex flex-col flex-1 min-h-0 overflow-hidden space-y-4">
                         {/* Add manual item */}
                         <div className="p-3 bg-muted/50 rounded space-y-3 shrink-0">
                           <div className="flex gap-2">
