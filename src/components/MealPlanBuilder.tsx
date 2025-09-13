@@ -1110,48 +1110,48 @@ export const MealPlanBuilder = ({
                    </div>
                  </SheetHeader>
                  
-                 <Tabs defaultValue="meals" className="h-full">
-                   <TabsList className="grid w-full grid-cols-2">
-                     <TabsTrigger value="meals">Meal List</TabsTrigger>
-                     <TabsTrigger value="grocery">Grocery List</TabsTrigger>
-                   </TabsList>
-                   
-                   <TabsContent value="meals" className="space-y-4 mt-4">
-                     <div className="text-xs text-muted-foreground">
-                       Total items: {groceryList.length}
-                     </div>
-                     
-                      {/* Add manual item */}
-                      <div className="flex gap-2 mb-4 p-3 bg-muted/50 rounded">
-                        <Input
-                          placeholder="Add item to meal list..."
-                          value={newMealItem}
-                          onChange={(e) => setNewMealItem(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && addManualMealItem()}
-                          className="flex-1"
-                        />
-                        <Button size="sm" onClick={addManualMealItem} disabled={!newMealItem.trim()}>
-                          <Plus className="h-4 w-4" />
-                        </Button>
+                  <Tabs defaultValue="meals" className="flex flex-col h-full">
+                    <TabsList className="grid w-full grid-cols-2 shrink-0">
+                      <TabsTrigger value="meals">Meal List</TabsTrigger>
+                      <TabsTrigger value="grocery">Grocery List</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="meals" className="flex flex-col space-y-4 mt-4 flex-1 min-h-0">
+                      <div className="text-xs text-muted-foreground shrink-0">
+                        Total items: {groceryList.length}
                       </div>
+                      
+                       {/* Add manual item */}
+                       <div className="flex gap-2 mb-4 p-3 bg-muted/50 rounded shrink-0">
+                         <Input
+                           placeholder="Add item to meal list..."
+                           value={newMealItem}
+                           onChange={(e) => setNewMealItem(e.target.value)}
+                           onKeyDown={(e) => e.key === 'Enter' && addManualMealItem()}
+                           className="flex-1"
+                         />
+                         <Button size="sm" onClick={addManualMealItem} disabled={!newMealItem.trim()}>
+                           <Plus className="h-4 w-4" />
+                         </Button>
+                       </div>
 
-                      {/* Action buttons */}
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={copyGroceryList}>
-                          <Copy className="h-4 w-4 mr-1" />
-                          Copy
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={printGroceryList}>
-                          <Printer className="h-4 w-4 mr-1" />
-                          Print
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => setCheckedItems({})} className="ml-auto">
-                          Clear checks
-                        </Button>
-                      </div>
+                       {/* Action buttons */}
+                       <div className="flex gap-2 shrink-0">
+                         <Button variant="outline" size="sm" onClick={copyGroceryList}>
+                           <Copy className="h-4 w-4 mr-1" />
+                           Copy
+                         </Button>
+                         <Button variant="outline" size="sm" onClick={printGroceryList}>
+                           <Printer className="h-4 w-4 mr-1" />
+                           Print
+                         </Button>
+                         <Button variant="outline" size="sm" onClick={() => setCheckedItems({})} className="ml-auto">
+                           Clear checks
+                         </Button>
+                       </div>
 
-                     {/* Meal list */}
-                     <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto">
+                      {/* Meal list */}
+                      <div className="flex-1 min-h-0 overflow-y-auto space-y-2">
                        {groceryList.length === 0 ? <div className="text-center text-muted-foreground py-8">
                            <UtensilsCrossed className="h-12 w-12 mx-auto mb-3 opacity-50" />
                            <p>No items in your meal plan yet.</p>
@@ -1194,11 +1194,11 @@ export const MealPlanBuilder = ({
                             );
                           })}
                      </div>
-                   </TabsContent>
-                   
-                      <TabsContent value="grocery" className="space-y-4 mt-4">
+                    </TabsContent>
+                    
+                      <TabsContent value="grocery" className="flex flex-col space-y-4 mt-4 flex-1 min-h-0">
                         {/* Add manual item */}
-                        <div className="p-3 bg-muted/50 rounded space-y-3">
+                        <div className="p-3 bg-muted/50 rounded space-y-3 shrink-0">
                           <div className="flex gap-2">
                             <Input
                               placeholder="Add ingredient..."
@@ -1225,7 +1225,7 @@ export const MealPlanBuilder = ({
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between shrink-0">
                           <div className="text-xs text-muted-foreground">
                             Total ingredients: {organizedIngredients.reduce((total, cat) => total + cat.items.length, 0)}
                             {savedGroceryListId && <span className="text-green-600 ml-2">✓ Saved</span>}
@@ -1239,9 +1239,9 @@ export const MealPlanBuilder = ({
                               </Button>}
                           </div>
                         </div>
-                      
-                       {/* AI-generated grocery list organized by category */}
-                       <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto">
+                       
+                        {/* AI-generated grocery list organized by category */}
+                        <div className="flex-1 min-h-0 overflow-y-auto space-y-2">
                          {organizedIngredients.length === 0 ? <div className="text-center text-muted-foreground py-8">
                              <UtensilsCrossed className="h-12 w-12 mx-auto mb-3 opacity-50" />
                              <p>No grocery list generated yet.</p>
