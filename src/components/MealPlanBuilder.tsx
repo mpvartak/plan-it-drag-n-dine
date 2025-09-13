@@ -356,6 +356,11 @@ export const MealPlanBuilder = ({
 
   // Get filtered and sorted ingredients by category
   const organizedIngredients = useMemo(() => {
+    console.log('Recalculating organizedIngredients with:', { 
+      aiCount: aiGeneratedIngredients.length, 
+      manualCount: manualGroceryItems.length 
+    });
+    
     const filtered = aiGeneratedIngredients.filter(ingredient => !removedIngredients.has(ingredient.name));
 
     // Group by category
@@ -363,12 +368,27 @@ export const MealPlanBuilder = ({
       [key: string]: any[];
     } = {};
     const categoryOrder = ['produce', 'meat', 'dairy', 'pantry', 'spices', 'frozen'];
+    
+    // Add AI generated ingredients
     filtered.forEach(ingredient => {
       const category = ingredient.category || 'other';
       if (!groups[category]) {
         groups[category] = [];
       }
       groups[category].push(ingredient);
+    });
+
+    // Add manual grocery items
+    manualGroceryItems.forEach(item => {
+      const category = item.category || 'other';
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push({
+        name: item.name,
+        category: item.category,
+        forDishes: ['Manually added']
+      });
     });
 
     // Sort ingredients within each category alphabetically
@@ -378,12 +398,55 @@ export const MealPlanBuilder = ({
 
     // Return categories in preferred order
     const orderedCategories = [...categoryOrder.filter(cat => groups[cat]), ...Object.keys(groups).filter(cat => !categoryOrder.includes(cat))];
-    return orderedCategories.map(category => ({
+    const result = orderedCategories.map(category => ({
       name: category,
       displayName: category.charAt(0).toUpperCase() + category.slice(1),
       items: groups[category]
     }));
-  }, [aiGeneratedIngredients, removedIngredients]);
+    
+    console.log('organizedIngredients result:', result);
+    return result;
+  }, [aiGeneratedIngredients, removedIngredients, manualGroceryItems]);
+
+  // Get available categories (existing categories + "other")
+  const availableCategories = useMemo(() => {
+    const existingCategories = new Set<string>();
+    
+    // Add categories from AI ingredients
+    aiGeneratedIngredients.forEach(ingredient => {
+      if (ingredient.category && !removedIngredients.has(ingredient.name)) {
+        existingCategories.add(ingredient.category);
+      }
+    });
+    
+    // Add categories from manual items
+    manualGroceryItems.forEach(item => {
+      existingCategories.add(item.category);
+    });
+    
+    // Always include "other" as an option
+    existingCategories.add('other');
+    
+    const categoryDisplayNames: { [key: string]: string } = {
+      'produce': 'Produce',
+      'meat': 'Meat & Seafood',
+      'dairy': 'Dairy & Eggs',
+      'pantry': 'Pantry & Dry Goods',
+      'frozen': 'Frozen Foods',
+      'beverages': 'Beverages',
+      'condiments': 'Condiments & Sauces',
+      'bakery': 'Bakery',
+      'spices': 'Spices & Seasonings',
+      'other': 'Other'
+    };
+    
+    return Array.from(existingCategories)
+      .sort()
+      .map(category => ({
+        value: category,
+        label: categoryDisplayNames[category] || category.charAt(0).toUpperCase() + category.slice(1)
+      }));
+  }, [aiGeneratedIngredients, manualGroceryItems, removedIngredients]);
 
   // Save grocery list to database
   const saveGroceryListToDatabase = async () => {
@@ -893,11 +956,16 @@ export const MealPlanBuilder = ({
   };
 
   const addManualGroceryItem = () => {
+    console.log('addManualGroceryItem called with:', newGroceryItem, 'category:', newGroceryCategory);
     if (newGroceryItem.trim()) {
-      setManualGroceryItems(prev => [...prev, { 
-        name: newGroceryItem.trim(), 
-        category: newGroceryCategory 
-      }]);
+      setManualGroceryItems(prev => {
+        const updated = [...prev, { 
+          name: newGroceryItem.trim(), 
+          category: newGroceryCategory 
+        }];
+        console.log('Updated manualGroceryItems:', updated);
+        return updated;
+      });
       setNewGroceryItem('');
     }
   };
@@ -1144,16 +1212,11 @@ export const MealPlanBuilder = ({
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="produce">Produce</SelectItem>
-                                <SelectItem value="meat">Meat & Seafood</SelectItem>
-                                <SelectItem value="dairy">Dairy & Eggs</SelectItem>
-                                <SelectItem value="pantry">Pantry & Dry Goods</SelectItem>
-                                <SelectItem value="frozen">Frozen Foods</SelectItem>
-                                <SelectItem value="beverages">Beverages</SelectItem>
-                                <SelectItem value="condiments">Condiments & Sauces</SelectItem>
-                                <SelectItem value="bakery">Bakery</SelectItem>
-                                <SelectItem value="spices">Spices & Seasonings</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
+                                {availableCategories.map((category) => (
+                                  <SelectItem key={category.value} value={category.value}>
+                                    {category.label}
+                                  </SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                             <Button size="sm" onClick={addManualGroceryItem} disabled={!newGroceryItem.trim()}>
