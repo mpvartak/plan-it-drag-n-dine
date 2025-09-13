@@ -881,6 +881,7 @@ export const MealPlanBuilder = ({
   };
 
   const addManualMealItem = () => {
+    console.log('addManualMealItem called');
     if (newMealItem.trim()) {
       setManualMealItems(prev => [...prev, { text: newMealItem.trim(), count: 1 }]);
       setNewMealItem('');
@@ -904,6 +905,7 @@ export const MealPlanBuilder = ({
   const removeManualGroceryItem = (itemName: string) => {
     setManualGroceryItems(prev => prev.filter(item => item.name !== itemName));
   };
+
   const updateMealPlan = (day: string, mealType: string, items: MealItem[]) => {
     console.log('🔄 [UPDATE] updateMealPlan called:', {
       day,
