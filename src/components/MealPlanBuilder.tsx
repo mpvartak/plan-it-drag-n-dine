@@ -1102,7 +1102,7 @@ export const MealPlanBuilder = ({
                   Get grocery list
                 </Button>
               </SheetTrigger>
-               <SheetContent side="right" className="w-96 h-screen grid grid-rows-[auto_1fr]">
+               <SheetContent side="right" className="w-96 h-screen flex flex-col">
                  <SheetHeader className="mb-4">
                    <SheetTitle>Grocery List</SheetTitle>
                    <div className="text-sm text-muted-foreground">
@@ -1110,7 +1110,8 @@ export const MealPlanBuilder = ({
                    </div>
                  </SheetHeader>
                  
-                  <Tabs defaultValue="meals" className="flex flex-col h-full min-h-0 overflow-hidden">
+                  <div className="flex-1 min-h-0 flex flex-col">
+                  <Tabs defaultValue="meals" className="flex flex-col flex-1 min-h-0 overflow-hidden">
                     <TabsList className="grid w-full grid-cols-2 shrink-0">
                       <TabsTrigger value="meals">Meal List</TabsTrigger>
                       <TabsTrigger value="grocery">Grocery List</TabsTrigger>
@@ -1295,8 +1296,9 @@ export const MealPlanBuilder = ({
                              </div>)}
                       </div>
                    </TabsContent>
-                 </Tabs>
-              </SheetContent>
+                  </Tabs>
+                </div>
+               </SheetContent>
             </Sheet>
           </div>
 
