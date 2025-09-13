@@ -1102,7 +1102,7 @@ export const MealPlanBuilder = ({
                   Get grocery list
                 </Button>
               </SheetTrigger>
-               <SheetContent side="right" className="w-96">
+               <SheetContent side="right" className="w-96 grid grid-rows-[auto_1fr]">
                  <SheetHeader className="mb-4">
                    <SheetTitle>Grocery List</SheetTitle>
                    <div className="text-sm text-muted-foreground">
