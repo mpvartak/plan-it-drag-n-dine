@@ -292,12 +292,12 @@ export const MealCell: React.FC<MealCellProps> = ({
             draggable
             onDragStart={(e) => handleDragStart(e, item)}
             onDragEnd={handleDragEnd}
-            className="group flex items-center gap-2 p-2 rounded-md bg-muted/50 cursor-move hover:bg-muted transition-colors"
+            className="group flex items-center gap-1.5 p-1.5 rounded-md bg-muted/50 cursor-move hover:bg-muted transition-colors"
           >
-            <GripVertical className="h-3 w-3 text-muted-foreground" />
+            <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
             <Badge 
               variant={item.isRecipe ? 'default' : 'secondary'} 
-              className="flex-1 justify-start"
+              className="flex-1 min-w-0 break-words text-left"
             >
               {item.text}
             </Badge>
