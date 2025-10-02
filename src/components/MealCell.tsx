@@ -297,7 +297,7 @@ export const MealCell: React.FC<MealCellProps> = ({
             <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
             <Badge 
               variant={item.isRecipe ? 'default' : 'secondary'} 
-              className="flex-1 min-w-0 break-words text-left"
+              className="flex-1 min-w-0 whitespace-normal leading-snug py-1 text-left"
             >
               {item.text}
             </Badge>
