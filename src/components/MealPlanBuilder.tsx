@@ -1343,7 +1343,7 @@ export const MealPlanBuilder = ({
 
             {/* Meal type rows */}
             {allMealTypes.map(mealType => <div key={mealType} className="contents">
-                <div className={`sticky left-0 z-20 p-3 flex items-center justify-between shadow-sm min-w-[160px] bg-${getMealTypeColor(mealType)} text-${getMealTypeColor(mealType)}-foreground`}>
+                <div className={`sticky left-0 z-20 p-3 flex items-center justify-between shadow-sm min-w-[160px] opacity-100 bg-${getMealTypeColor(mealType)} text-${getMealTypeColor(mealType)}-foreground`}>
                   <span className="font-medium">{mealType}</span>
                   {customMealTypes.includes(mealType) && <Button size="sm" variant="ghost" onClick={() => removeCustomMealType(mealType)} className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground">
                       <Trash2 className="h-3 w-3" />
