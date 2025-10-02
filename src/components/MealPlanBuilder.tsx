@@ -1305,9 +1305,9 @@ export const MealPlanBuilder = ({
           {/* Copy Week Modal */}
           <CopyWeekModal open={showCopyWeekModal} onOpenChange={setShowCopyWeekModal} onCopyWeek={copyWeekFrom} currentWeekStart={currentWeekStart} firstDayOfWeek={firstDayOfWeek} />
 
-          <div className="grid grid-cols-8 gap-4">
+          <div className="grid grid-cols-[160px_repeat(7,minmax(0,1fr))] gap-4">
             {/* Header row with dates and weather */}
-            <div className="sticky top-0 left-0 z-40 bg-card shadow-sm font-semibold text-center p-3 text-foreground border-b relative after:content-[''] after:absolute after:top-0 after:right-[-1rem] after:w-4 after:h-full after:bg-card">
+            <div className="sticky top-0 left-0 z-50 bg-card shadow-sm font-semibold text-center p-3 text-foreground border-b min-w-[160px]">
               Meal Type
             </div>
             {orderedDays.map((day, index) => <div key={day} className="sticky top-0 z-30 bg-card shadow-sm text-center p-3 space-y-1 border-b">
@@ -1323,7 +1323,7 @@ export const MealPlanBuilder = ({
 
             {/* Collapsible Notes row */}
             <div className="contents">
-              <div className="sticky left-0 z-10 bg-card shadow-sm p-3 rounded-lg relative after:content-[''] after:absolute after:top-0 after:right-[-1rem] after:w-4 after:h-full after:bg-card">
+              <div className="sticky left-0 z-20 bg-card shadow-sm p-3 min-w-[160px]">
                 <span className="font-medium text-muted-foreground">Notes</span>
               </div>
               {orderedDays.map(day => <div key={`notes-${day}`} className="p-2">
@@ -1343,7 +1343,7 @@ export const MealPlanBuilder = ({
 
             {/* Meal type rows */}
             {allMealTypes.map(mealType => <div key={mealType} className="contents">
-                <div className={`sticky left-0 z-10 p-3 rounded-lg flex items-center justify-between shadow-sm relative after:content-[''] after:absolute after:top-0 after:right-[-1rem] after:w-4 after:h-full after:bg-inherit bg-${getMealTypeColor(mealType)} text-${getMealTypeColor(mealType)}-foreground`}>
+                <div className={`sticky left-0 z-20 p-3 flex items-center justify-between shadow-sm min-w-[160px] bg-${getMealTypeColor(mealType)} text-${getMealTypeColor(mealType)}-foreground`}>
                   <span className="font-medium">{mealType}</span>
                   {customMealTypes.includes(mealType) && <Button size="sm" variant="ghost" onClick={() => removeCustomMealType(mealType)} className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground">
                       <Trash2 className="h-3 w-3" />
