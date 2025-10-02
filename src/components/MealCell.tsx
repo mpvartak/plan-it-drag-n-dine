@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, X, GripVertical } from 'lucide-react';
 import { MealItem } from './MealPlanBuilder';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface MealCellProps {
   day: string;
@@ -32,6 +33,7 @@ export const MealCell: React.FC<MealCellProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [draggedItem, setDraggedItem] = useState<MealItem | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const { toast } = useToast();
   const cellRef = useRef<HTMLDivElement>(null);
 
@@ -297,7 +299,14 @@ export const MealCell: React.FC<MealCellProps> = ({
             <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
             <Badge 
               variant={item.isRecipe ? 'default' : 'secondary'} 
-              className="flex-1 min-w-0 whitespace-normal leading-snug py-1 text-left"
+              className={cn(
+                "flex-1 min-w-0 text-left cursor-pointer",
+                expandedItemId === item.id ? "whitespace-normal" : "truncate"
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpandedItemId(expandedItemId === item.id ? null : item.id);
+              }}
             >
               {item.text}
             </Badge>
