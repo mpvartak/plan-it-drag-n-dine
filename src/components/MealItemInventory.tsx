@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, X, ChefHat, Search, Edit2, ExternalLink, FileText, Trash2 } from 'lucide-react';
+import { Plus, X, ChefHat, Search, Edit2, ExternalLink, FileText, Trash2, Image as ImageIcon, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,6 +40,9 @@ export const MealItemInventory: React.FC = () => {
   const [selectedMealItem, setSelectedMealItem] = useState<MealItem | null>(null);
   const [pendingOpenId, setPendingOpenId] = useState<string | null>(null);
   const [newRecipe, setNewRecipe] = useState({ type: 'url' as 'url' | 'instructions', title: '', content: '' });
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -185,10 +188,62 @@ export const MealItemInventory: React.FC = () => {
     };
   }, [mealItems, user, toast]);
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>, isNewItem: boolean = true) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (file: File, itemId: string): Promise<string | null> => {
+    if (!user) return null;
+    
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${itemId}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('meal-item-images')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('meal-item-images')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Failed to upload image",
+        description: "Please try again later.",
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
+
   const addMealItem = async () => {
     if (!user || !newMealItem.name.trim()) return;
 
     try {
+      setUploadingImage(true);
+      
       const { data, error } = await supabase
         .from('meal_items')
         .insert({
@@ -201,8 +256,23 @@ export const MealItemInventory: React.FC = () => {
 
       if (error) throw error;
 
-      setMealItems(prev => [...prev, { ...data, recipes: [] }]);
+      let imageUrl = null;
+      if (selectedImage) {
+        imageUrl = await uploadImage(selectedImage, data.id);
+        if (imageUrl) {
+          const { error: updateError } = await supabase
+            .from('meal_items')
+            .update({ image_url: imageUrl })
+            .eq('id', data.id);
+          
+          if (updateError) console.error('Error updating image URL:', updateError);
+        }
+      }
+
+      setMealItems(prev => [...prev, { ...data, image_url: imageUrl, recipes: [] }]);
       setNewMealItem({ name: '', category: 'Breakfast' });
+      setSelectedImage(null);
+      setImagePreview(null);
       toast({
         title: "Meal item added",
         description: `"${data.name}" has been added to your inventory.`,
@@ -222,6 +292,48 @@ export const MealItemInventory: React.FC = () => {
           variant: "destructive"
         });
       }
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const updateMealItemImage = async (itemId: string, file: File) => {
+    if (!user) return;
+    
+    try {
+      setUploadingImage(true);
+      const imageUrl = await uploadImage(file, itemId);
+      
+      if (imageUrl) {
+        const { error } = await supabase
+          .from('meal_items')
+          .update({ image_url: imageUrl })
+          .eq('id', itemId);
+        
+        if (error) throw error;
+
+        setMealItems(prev => prev.map(item => 
+          item.id === itemId ? { ...item, image_url: imageUrl } : item
+        ));
+        
+        if (selectedMealItem?.id === itemId) {
+          setSelectedMealItem(prev => prev ? { ...prev, image_url: imageUrl } : null);
+        }
+
+        toast({
+          title: "Image updated",
+          description: "The meal item image has been updated.",
+        });
+      }
+    } catch (error) {
+      console.error('Error updating image:', error);
+      toast({
+        title: "Failed to update image",
+        description: "Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -438,11 +550,42 @@ export const MealItemInventory: React.FC = () => {
                 <option key={category} value={category}>{category}</option>
               ))}
             </select>
-            <Button onClick={addMealItem} className="w-full sm:w-auto">
+            <Button 
+              variant="outline" 
+              className="w-full sm:w-auto" 
+              onClick={() => document.getElementById('new-item-image-upload')?.click()}
+            >
+              <ImageIcon className="h-4 w-4 mr-1 sm:mr-0" />
+              <span className="sm:hidden">Image</span>
+            </Button>
+            <input
+              id="new-item-image-upload"
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleImageSelect(e, true)}
+              className="hidden"
+            />
+            <Button onClick={addMealItem} disabled={uploadingImage} className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-1 sm:mr-0" />
-              <span className="sm:hidden">Add Item</span>
+              <span className="sm:hidden">{uploadingImage ? 'Adding...' : 'Add Item'}</span>
             </Button>
           </div>
+          {imagePreview && (
+            <div className="flex items-center gap-2 p-2 bg-background rounded border">
+              <img src={imagePreview} alt="Preview" className="w-12 h-12 object-cover rounded" />
+              <span className="text-sm text-muted-foreground flex-1">Image selected</span>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                onClick={() => {
+                  setSelectedImage(null);
+                  setImagePreview(null);
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
 
         <Separator />
@@ -519,15 +662,46 @@ export const MealItemInventory: React.FC = () => {
                 </DialogHeader>
                 
                 <div className="space-y-4">
-                  {item.image_url && (
-                    <div className="flex justify-center">
-                      <img 
-                        src={item.image_url} 
-                        alt={item.name} 
-                        className="w-48 h-48 object-cover rounded-lg"
-                      />
-                    </div>
-                  )}
+                  <div className="flex flex-col items-center gap-2">
+                    {item.image_url ? (
+                      <div className="relative">
+                        <img 
+                          src={item.image_url} 
+                          alt={item.name} 
+                          className="w-48 h-48 object-cover rounded-lg"
+                        />
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="absolute bottom-2 right-2"
+                          onClick={() => document.getElementById(`item-image-upload-${item.id}`)?.click()}
+                          disabled={uploadingImage}
+                        >
+                          <Upload className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        onClick={() => document.getElementById(`item-image-upload-${item.id}`)?.click()}
+                        disabled={uploadingImage}
+                        className="gap-2"
+                      >
+                        <Upload className="h-4 w-4" />
+                        {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                      </Button>
+                    )}
+                    <input
+                      id={`item-image-upload-${item.id}`}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) updateMealItemImage(item.id, file);
+                      }}
+                      className="hidden"
+                    />
+                  </div>
                   
                   {/* Delete button moved here */}
                   <div className="flex justify-end">
