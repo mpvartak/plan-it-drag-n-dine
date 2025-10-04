@@ -106,17 +106,25 @@ export const MealItemInventory: React.FC = () => {
   // Listen for open meal item event from meal plan
   useEffect(() => {
     const handleOpenMealItem = (event: CustomEvent) => {
+      console.log('🔍 openMealItemInventory event received:', event.detail);
       const { meal_item_id } = event.detail;
-      if (!meal_item_id) return;
+      if (!meal_item_id) {
+        console.log('❌ No meal_item_id provided');
+        return;
+      }
       
+      console.log('🔍 Looking for meal item:', meal_item_id, 'in', mealItems.length, 'items');
       const item = mealItems.find(i => i.id === meal_item_id);
       if (item) {
+        console.log('✅ Found meal item:', item.name);
         setSelectedMealItem(item);
         // Scroll to inventory section if not visible
         const inventorySection = document.getElementById('meal-item-inventory');
         if (inventorySection) {
           inventorySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+      } else {
+        console.log('❌ Meal item not found');
       }
     };
 
