@@ -25,8 +25,9 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage }: ChatInterf
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const scrollContainer = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (scrollContainer) {
+      scrollContainer.scrollTop = scrollContainer.scrollHeight;
     }
   }, [messages]);
 
@@ -54,9 +55,10 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage }: ChatInterf
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 min-h-0 px-4" ref={scrollRef}>
-        <div className="space-y-4">
-          {messages.length === 0 && (
+      <div className="flex-1 min-h-0 overflow-hidden px-4">
+        <ScrollArea className="h-full" ref={scrollRef}>
+          <div className="space-y-4 py-4">
+            {messages.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <p className="mb-2">👋 Hi! I'm your meal planning assistant.</p>
               <p className="text-sm">Try asking me:</p>
@@ -109,9 +111,10 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage }: ChatInterf
                 </div>
               </div>
             </div>
-          )}
-        </div>
-      </ScrollArea>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
 
       {/* Input */}
       <div className="p-4 border-t shrink-0">
