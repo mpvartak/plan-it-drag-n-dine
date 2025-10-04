@@ -1321,26 +1321,6 @@ export const MealPlanBuilder = ({
                   </div>}
               </div>)}
 
-            {/* Collapsible Notes row */}
-            <div className="contents">
-              <div className="sticky left-0 z-40 bg-background border-r border-b border-border p-4 min-w-[160px] w-full relative after:content-[''] after:absolute after:top-0 after:right-[-1px] after:w-[1px] after:h-full after:bg-border">
-                <span className="text-sm font-medium text-muted-foreground">Notes</span>
-              </div>
-              {orderedDays.map(day => <div key={`notes-${day}`} className="p-3 border-r border-b border-border">
-                  <Collapsible open={notesOpen[day]} onOpenChange={() => toggleNotesSection(day)}>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="w-full justify-between p-2 hover:bg-muted/50">
-                        <span className="text-xs text-muted-foreground">Daily Notes</span>
-                        {notesOpen[day] ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <Textarea value={dayNotes[day] || ''} onChange={e => updateDayNotes(day, e.target.value)} placeholder={`Notes for ${day}...`} className="mt-2 min-h-[60px] text-xs border-border" />
-                    </CollapsibleContent>
-                  </Collapsible>
-                </div>)}
-            </div>
-
             {/* Meal type rows */}
             {allMealTypes.map(mealType => <div key={mealType} className="contents">
                 <div className="sticky left-0 z-40 bg-background border-r border-b border-border p-4 flex items-center justify-between min-w-[160px] w-full relative after:content-[''] after:absolute after:top-0 after:right-[-1px] after:w-[1px] after:h-full after:bg-border">
