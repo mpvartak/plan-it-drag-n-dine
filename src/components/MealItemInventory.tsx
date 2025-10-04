@@ -515,20 +515,7 @@ export const MealItemInventory: React.FC = () => {
               
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle className="flex items-center justify-between">
-                    <span>{item.name}</span>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => {
-                        if (confirm('Are you sure you want to delete this meal item and all its recipes?')) {
-                          deleteMealItem(item.id);
-                        }
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </DialogTitle>
+                  <DialogTitle>{item.name}</DialogTitle>
                 </DialogHeader>
                 
                 <div className="space-y-4">
@@ -541,6 +528,23 @@ export const MealItemInventory: React.FC = () => {
                       />
                     </div>
                   )}
+                  
+                  {/* Delete button moved here */}
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => {
+                        if (confirm('Are you sure you want to delete this meal item and all its recipes?')) {
+                          deleteMealItem(item.id);
+                        }
+                      }}
+                      className="gap-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete Meal Item
+                    </Button>
+                  </div>
                   
                   {/* Existing recipes */}
                   <div>
