@@ -60,7 +60,7 @@ const Index = () => {
                 {!showRecipeInventory ? (
                   <DropdownMenuItem onClick={() => setShowRecipeInventory(true)}>
                     <UtensilsCrossed className="h-4 w-4 mr-2" />
-                    Recipe Inventory
+                    Meal Item Inventory
                   </DropdownMenuItem>
                 ) : (
                   <DropdownMenuItem onClick={() => setShowRecipeInventory(false)}>

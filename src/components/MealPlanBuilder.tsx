@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud, X, ChevronLeft, ChevronRight, Copy, Printer, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { MealCell } from './MealCell';
-import { RecipeInventory } from './RecipeInventory';
+import { MealItemInventory } from './MealItemInventory';
 import { CopyWeekModal } from './CopyWeekModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -146,7 +146,7 @@ export const MealPlanBuilder = ({
   const [newGroceryItem, setNewGroceryItem] = useState('');
   const [newGroceryCategory, setNewGroceryCategory] = useState('other');
   const handleAddToInventory = (itemName: string, mealType: string) => {
-    // This will be handled by the RecipeInventory component via a custom event
+    // This will be handled by the MealItemInventory component via a custom event
     window.dispatchEvent(new CustomEvent('addToInventory', {
       detail: {
         itemName,
@@ -1068,8 +1068,8 @@ export const MealPlanBuilder = ({
 
 
 
-      {/* Recipe Inventory */}
-      {showRecipeInventory && <RecipeInventory />}
+      {/* Meal Item Inventory */}
+      {showRecipeInventory && <MealItemInventory />}
 
       {/* Meal Plan Table */}
       {!showRecipeInventory && (
