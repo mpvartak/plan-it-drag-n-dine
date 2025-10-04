@@ -38,6 +38,7 @@ export const MealItemInventory: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [draggedItem, setDraggedItem] = useState<MealItem | null>(null);
   const [selectedMealItem, setSelectedMealItem] = useState<MealItem | null>(null);
+  const [pendingOpenId, setPendingOpenId] = useState<string | null>(null);
   const [newRecipe, setNewRecipe] = useState({ type: 'url' as 'url' | 'instructions', title: '', content: '' });
   const { user } = useAuth();
   const { toast } = useToast();
@@ -103,36 +104,43 @@ export const MealItemInventory: React.FC = () => {
     loadMealItems();
   }, [user]);
 
-  // Listen for open meal item event from meal plan
+  // Fallback: check sessionStorage for a pending open id
+  useEffect(() => {
+    const id = sessionStorage.getItem('pendingMealItemId');
+    if (id) {
+      setPendingOpenId(id);
+      try { sessionStorage.removeItem('pendingMealItemId'); } catch {}
+    }
+  }, []);
+
+  // Listen for open meal item event from meal plan (set pending id immediately)
   useEffect(() => {
     const handleOpenMealItem = (event: CustomEvent) => {
-      console.log('🔍 openMealItemInventory event received:', event.detail);
-      const { meal_item_id } = event.detail;
-      if (!meal_item_id) {
-        console.log('❌ No meal_item_id provided');
-        return;
-      }
-      
-      console.log('🔍 Looking for meal item:', meal_item_id, 'in', mealItems.length, 'items');
-      const item = mealItems.find(i => i.id === meal_item_id);
-      if (item) {
-        console.log('✅ Found meal item:', item.name);
-        setSelectedMealItem(item);
-        // Scroll to inventory section if not visible
-        const inventorySection = document.getElementById('meal-item-inventory');
-        if (inventorySection) {
-          inventorySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      } else {
-        console.log('❌ Meal item not found');
-      }
+      const { meal_item_id } = event.detail || {};
+      console.log('📨 openMealItemInventory received. pending id =', meal_item_id);
+      if (meal_item_id) setPendingOpenId(meal_item_id);
     };
 
     window.addEventListener('openMealItemInventory', handleOpenMealItem as EventListener);
     return () => {
       window.removeEventListener('openMealItemInventory', handleOpenMealItem as EventListener);
     };
-  }, [mealItems]);
+  }, []);
+
+  // When data loads or pending id changes, open the dialog
+  useEffect(() => {
+    if (!pendingOpenId) return;
+    const item = mealItems.find(i => i.id === pendingOpenId);
+    console.log('🔎 Resolving pendingOpenId:', pendingOpenId, 'found?', !!item);
+    if (item) {
+      setSelectedMealItem(item);
+      const inventorySection = document.getElementById('meal-item-inventory');
+      if (inventorySection) {
+        inventorySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      setPendingOpenId(null);
+    }
+  }, [pendingOpenId, mealItems]);
 
   // Listen for add to inventory events from meal plan
   useEffect(() => {
@@ -464,7 +472,7 @@ export const MealItemInventory: React.FC = () => {
         {/* Meal items grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {filteredMealItems.map(item => (
-            <Dialog key={item.id} onOpenChange={(open) => { 
+            <Dialog key={item.id} open={selectedMealItem?.id === item.id} onOpenChange={(open) => { 
               if (open) setSelectedMealItem(item); 
               else { setSelectedMealItem(null); setNewRecipe({ type: 'url', title: '', content: '' }); }
             }}>

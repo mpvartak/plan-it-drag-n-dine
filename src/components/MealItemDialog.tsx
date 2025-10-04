@@ -30,8 +30,10 @@ export const MealItemDialog: React.FC<MealItemDialogProps> = ({
   const handleViewDetails = () => {
     console.log('🔘 View Details clicked, mealItemId:', mealItemId);
     if (mealItemId) {
-      console.log('🔘 Dispatching openMealItemInventory event');
-      
+      // Persist pending id as a fallback in case the event fires before the listener mounts
+      try { sessionStorage.setItem('pendingMealItemId', mealItemId); } catch {}
+
+      console.log('🔘 Dispatching showInventory + openMealItemInventory');
       // First, trigger showing the inventory
       window.dispatchEvent(new CustomEvent('showInventory'));
       
@@ -40,7 +42,7 @@ export const MealItemDialog: React.FC<MealItemDialogProps> = ({
         window.dispatchEvent(new CustomEvent('openMealItemInventory', {
           detail: { meal_item_id: mealItemId }
         }));
-      }, 100);
+      }, 250);
       
       onOpenChange(false);
     } else {
