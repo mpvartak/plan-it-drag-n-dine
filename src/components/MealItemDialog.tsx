@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Copy, Trash2 } from 'lucide-react';
+import poheImage from '@/assets/pohe.png';
 
 interface MealItemDialogProps {
   open: boolean;
@@ -30,6 +31,15 @@ export const MealItemDialog: React.FC<MealItemDialogProps> = ({
           <DialogTitle>Meal Item</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          {itemText.toLowerCase() === 'pohe' && (
+            <div className="flex justify-center">
+              <img 
+                src={poheImage} 
+                alt="Pohe" 
+                className="w-48 h-48 object-cover rounded-lg"
+              />
+            </div>
+          )}
           <p className="text-sm whitespace-pre-wrap break-words">{itemText}</p>
           <div className="flex gap-2 justify-end">
             <Button
