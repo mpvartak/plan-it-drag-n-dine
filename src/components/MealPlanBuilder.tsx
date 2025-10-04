@@ -1305,15 +1305,15 @@ export const MealPlanBuilder = ({
           {/* Copy Week Modal */}
           <CopyWeekModal open={showCopyWeekModal} onOpenChange={setShowCopyWeekModal} onCopyWeek={copyWeekFrom} currentWeekStart={currentWeekStart} firstDayOfWeek={firstDayOfWeek} />
 
-          <div className="grid grid-cols-[160px_repeat(7,minmax(0,1fr))] gap-4">
+          <div className="grid grid-cols-[160px_repeat(7,minmax(0,1fr))] gap-0 border border-border">
             {/* Header row with dates and weather */}
-            <div className="sticky top-0 left-0 z-50 bg-card shadow-sm font-semibold text-center p-3 text-foreground border-b min-w-[160px] w-full relative after:content-[''] after:absolute after:top-0 after:right-[-1rem] after:w-4 after:h-full after:bg-card">
-              Meal Type
+            <div className="sticky top-0 left-0 z-50 bg-background border-r border-b border-border p-4 min-w-[160px] w-full relative after:content-[''] after:absolute after:top-0 after:right-[-1px] after:w-[1px] after:h-full after:bg-border">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Meal Type</span>
             </div>
-            {orderedDays.map((day, index) => <div key={day} className="sticky top-0 z-30 bg-card shadow-sm text-center p-3 space-y-1 border-b">
-                <div className="font-semibold text-foreground">{day}</div>
-                <div className="text-sm text-muted-foreground">
-                  {formatDate(weekDates[index])}
+            {orderedDays.map((day, index) => <div key={day} className="sticky top-0 z-30 bg-background border-r border-b border-border text-center p-4 space-y-1">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{day.substring(0, 3)}</div>
+                <div className="text-2xl font-normal text-foreground">
+                  {new Date(weekDates[index]).getDate()}
                 </div>
                 {weather[day] && <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
                     <Cloud className="h-3 w-3" />
@@ -1323,19 +1323,19 @@ export const MealPlanBuilder = ({
 
             {/* Collapsible Notes row */}
             <div className="contents">
-              <div className="sticky left-0 z-40 bg-card shadow-sm p-3 min-w-[160px] w-full relative after:content-[''] after:absolute after:top-0 after:right-[-1rem] after:w-4 after:h-full after:bg-card">
-                <span className="font-medium text-muted-foreground">Notes</span>
+              <div className="sticky left-0 z-40 bg-background border-r border-b border-border p-4 min-w-[160px] w-full relative after:content-[''] after:absolute after:top-0 after:right-[-1px] after:w-[1px] after:h-full after:bg-border">
+                <span className="text-sm font-medium text-muted-foreground">Notes</span>
               </div>
-              {orderedDays.map(day => <div key={`notes-${day}`} className="p-2">
+              {orderedDays.map(day => <div key={`notes-${day}`} className="p-3 border-r border-b border-border">
                   <Collapsible open={notesOpen[day]} onOpenChange={() => toggleNotesSection(day)}>
                     <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="w-full justify-between p-2">
-                        <span className="text-xs">Daily Notes</span>
+                      <Button variant="ghost" size="sm" className="w-full justify-between p-2 hover:bg-muted/50">
+                        <span className="text-xs text-muted-foreground">Daily Notes</span>
                         {notesOpen[day] ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                       </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <Textarea value={dayNotes[day] || ''} onChange={e => updateDayNotes(day, e.target.value)} placeholder={`Notes for ${day}...`} className="mt-2 min-h-[60px] text-xs" />
+                      <Textarea value={dayNotes[day] || ''} onChange={e => updateDayNotes(day, e.target.value)} placeholder={`Notes for ${day}...`} className="mt-2 min-h-[60px] text-xs border-border" />
                     </CollapsibleContent>
                   </Collapsible>
                 </div>)}
@@ -1343,9 +1343,9 @@ export const MealPlanBuilder = ({
 
             {/* Meal type rows */}
             {allMealTypes.map(mealType => <div key={mealType} className="contents">
-                <div className={`sticky left-0 z-40 p-3 flex items-center justify-between shadow-sm min-w-[160px] w-full opacity-100 relative after:content-[''] after:absolute after:top-0 after:right-[-1rem] after:w-4 after:h-full after:bg-inherit bg-${getMealTypeColor(mealType)} text-${getMealTypeColor(mealType)}-foreground`}>
-                  <span className="font-medium">{mealType}</span>
-                  {customMealTypes.includes(mealType) && <Button size="sm" variant="ghost" onClick={() => removeCustomMealType(mealType)} className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground">
+                <div className="sticky left-0 z-40 bg-background border-r border-b border-border p-4 flex items-center justify-between min-w-[160px] w-full relative after:content-[''] after:absolute after:top-0 after:right-[-1px] after:w-[1px] after:h-full after:bg-border">
+                  <span className="text-sm text-muted-foreground">{mealType}</span>
+                  {customMealTypes.includes(mealType) && <Button size="sm" variant="ghost" onClick={() => removeCustomMealType(mealType)} className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive">
                       <Trash2 className="h-3 w-3" />
                     </Button>}
                 </div>

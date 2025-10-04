@@ -271,12 +271,12 @@ export const MealCell: React.FC<MealCellProps> = ({
   };
 
   return (
-    <Card 
+    <div 
       ref={cellRef}
-      className={`p-3 min-h-24 transition-all duration-200 hover:shadow-md cursor-pointer ${
-        isDragOver ? 'ring-2 ring-primary bg-primary/5 shadow-lg' : ''
+      className={`p-3 min-h-24 bg-background border-r border-b border-border transition-all duration-200 cursor-pointer ${
+        isDragOver ? 'bg-primary/5' : ''
       } ${
-        currentCell === cellId ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:ring-1 hover:ring-primary/30'
+        currentCell === cellId ? 'bg-accent/20' : 'hover:bg-accent/5'
       }`}
       onDragOver={handleDragOver}
       onDragEnter={handleDragEnter}
@@ -294,13 +294,12 @@ export const MealCell: React.FC<MealCellProps> = ({
             draggable
             onDragStart={(e) => handleDragStart(e, item)}
             onDragEnd={handleDragEnd}
-            className="group flex items-center gap-1.5 p-1.5 rounded-md bg-muted/50 cursor-move hover:bg-muted transition-colors"
+            className="group flex items-center gap-2 p-2.5 rounded-lg bg-primary text-primary-foreground cursor-move hover:bg-primary/90 transition-colors shadow-sm"
           >
-            <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
-            <Badge 
-              variant={item.isRecipe ? 'default' : 'secondary'} 
+            <GripVertical className="h-3.5 w-3.5 shrink-0 opacity-60" />
+            <span 
               className={cn(
-                "flex-1 min-w-0 text-left cursor-pointer",
+                "flex-1 min-w-0 text-sm font-medium cursor-pointer",
                 expandedItemId === item.id ? "whitespace-normal" : "truncate"
               )}
               onClick={(e) => {
@@ -309,12 +308,12 @@ export const MealCell: React.FC<MealCellProps> = ({
               }}
             >
               {item.text}
-            </Badge>
+            </span>
             <Button
               size="sm"
               variant="ghost"
               onClick={() => removeItem(item.id)}
-              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground"
+              className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary-foreground/20"
             >
               <X className="h-3 w-3" />
             </Button>
@@ -332,12 +331,13 @@ export const MealCell: React.FC<MealCellProps> = ({
                 if (e.key === 'Escape') setIsAdding(false);
               }}
               autoFocus
+              className="text-sm border-border"
             />
             <div className="flex gap-2">
-              <Button size="sm" onClick={addItem}>
+              <Button size="sm" onClick={addItem} className="text-xs">
                 Add
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setIsAdding(false)}>
+              <Button size="sm" variant="outline" onClick={() => setIsAdding(false)} className="text-xs">
                 Cancel
               </Button>
             </div>
@@ -347,7 +347,7 @@ export const MealCell: React.FC<MealCellProps> = ({
             size="sm"
             variant="ghost"
             onClick={() => setIsAdding(true)}
-            className="w-full h-8 border-2 border-dashed border-muted-foreground/25 hover:border-primary/50 hover:bg-primary/5"
+            className="w-full h-8 border border-dashed border-border hover:border-primary/50 hover:bg-accent/50 text-muted-foreground"
             title="Add item"
           >
             <Plus className="h-4 w-4" />
@@ -355,6 +355,6 @@ export const MealCell: React.FC<MealCellProps> = ({
         )}
 
       </div>
-    </Card>
+    </div>
   );
 };
