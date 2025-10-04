@@ -20,6 +20,18 @@ const Index = () => {
       navigate('/', { replace: true });
     }
   }, [navigate]);
+
+  // Listen for showInventory event
+  useEffect(() => {
+    const handleShowInventory = () => {
+      setShowRecipeInventory(true);
+    };
+
+    window.addEventListener('showInventory', handleShowInventory);
+    return () => {
+      window.removeEventListener('showInventory', handleShowInventory);
+    };
+  }, []);
   
   console.log('Index component - user:', user?.email, 'loading:', loading);
 

@@ -31,9 +31,17 @@ export const MealItemDialog: React.FC<MealItemDialogProps> = ({
     console.log('🔘 View Details clicked, mealItemId:', mealItemId);
     if (mealItemId) {
       console.log('🔘 Dispatching openMealItemInventory event');
-      window.dispatchEvent(new CustomEvent('openMealItemInventory', {
-        detail: { meal_item_id: mealItemId }
-      }));
+      
+      // First, trigger showing the inventory
+      window.dispatchEvent(new CustomEvent('showInventory'));
+      
+      // Then after a short delay, open the specific item
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('openMealItemInventory', {
+          detail: { meal_item_id: mealItemId }
+        }));
+      }, 100);
+      
       onOpenChange(false);
     } else {
       console.log('❌ No mealItemId provided');
