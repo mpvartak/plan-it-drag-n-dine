@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useLongPress } from '@/hooks/useLongPress';
 import { MealItemContextMenu } from './MealItemContextMenu';
+import { MealItemDialog } from './MealItemDialog';
 
 interface MealCellProps {
   day: string;
@@ -36,7 +37,7 @@ export const MealCell: React.FC<MealCellProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [draggedItem, setDraggedItem] = useState<MealItem | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [dialogItemId, setDialogItemId] = useState<string | null>(null);
   const [contextMenuOpen, setContextMenuOpen] = useState<string | null>(null);
   const { toast } = useToast();
   const cellRef = useRef<HTMLDivElement>(null);
@@ -151,14 +152,15 @@ export const MealCell: React.FC<MealCellProps> = ({
   const copyItemToClipboard = (itemText: string) => {
     clipboard = [{ id: `clipboard-${Date.now()}`, text: itemText, isRecipe: false }];
     setContextMenuOpen(null);
+    setDialogItemId(null);
     toast({
       title: "Copied!",
       description: `"${itemText}" copied to clipboard`,
     });
   };
 
-  const toggleExpanded = (itemId: string) => {
-    setExpandedItemId(expandedItemId === itemId ? null : itemId);
+  const openDialog = (itemId: string) => {
+    setDialogItemId(itemId);
     setContextMenuOpen(null);
   };
 
@@ -311,18 +313,18 @@ export const MealCell: React.FC<MealCellProps> = ({
         {items.map((item) => {
           const MealItemWrapper = ({ children }: { children: React.ReactNode }) => {
             if (isMobile) {
-              // Mobile: Use context menu with long press
+              // Mobile: Use long press for context menu
               const longPressHandlers = useLongPress({
                 onLongPress: () => setContextMenuOpen(item.id),
-                onClick: () => toggleExpanded(item.id),
+                onClick: () => openDialog(item.id),
                 delay: 500,
               });
 
               return (
                 <MealItemContextMenu
                   itemText={item.text}
-                  isExpanded={expandedItemId === item.id}
-                  onToggleExpand={() => toggleExpanded(item.id)}
+                  isExpanded={false}
+                  onToggleExpand={() => openDialog(item.id)}
                   onDelete={() => removeItem(item.id)}
                   onCopy={() => copyItemToClipboard(item.text)}
                   open={contextMenuOpen === item.id}
@@ -334,12 +336,12 @@ export const MealCell: React.FC<MealCellProps> = ({
                 </MealItemContextMenu>
               );
             } else {
-              // Desktop: Right-click for context menu
+              // Desktop: Right-click for context menu, click for dialog
               return (
                 <MealItemContextMenu
                   itemText={item.text}
-                  isExpanded={expandedItemId === item.id}
-                  onToggleExpand={() => toggleExpanded(item.id)}
+                  isExpanded={false}
+                  onToggleExpand={() => openDialog(item.id)}
                   onDelete={() => removeItem(item.id)}
                   onCopy={() => copyItemToClipboard(item.text)}
                 >
@@ -356,43 +358,39 @@ export const MealCell: React.FC<MealCellProps> = ({
                 onDragStart={(e) => handleDragStart(e, item)}
                 onDragEnd={handleDragEnd}
                 className={cn(
-                  "group flex items-center gap-2 p-2.5 rounded-lg bg-primary text-primary-foreground transition-colors shadow-sm",
+                  "p-2.5 rounded-lg bg-primary text-primary-foreground transition-colors shadow-sm",
                   isMobile ? "touch-manipulation active:scale-[0.98]" : "cursor-move hover:bg-primary/90"
                 )}
               >
-                <span
-                  className={cn(
-                    "flex-1 min-w-0 text-sm font-medium",
-                    expandedItemId === item.id ? "whitespace-normal" : "truncate"
-                  )}
+                <span 
+                  className="block text-sm font-medium truncate"
                   onClick={(e) => {
                     if (!isMobile) {
                       e.stopPropagation();
-                      toggleExpanded(item.id);
+                      openDialog(item.id);
                     }
                   }}
                 >
                   {item.text}
                 </span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeItem(item.id);
-                  }}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  className={cn(
-                    "h-6 w-6 p-0 hover:bg-primary-foreground/20 flex-shrink-0",
-                    isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100 transition-opacity"
-                  )}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
               </div>
             </MealItemWrapper>
           );
         })}
+        
+        {/* Dialog for viewing full item details */}
+        {dialogItemId && (() => {
+          const dialogItem = items.find(item => item.id === dialogItemId);
+          return dialogItem ? (
+            <MealItemDialog
+              open={true}
+              onOpenChange={(open) => !open && setDialogItemId(null)}
+              itemText={dialogItem.text}
+              onDelete={() => removeItem(dialogItem.id)}
+              onCopy={() => copyItemToClipboard(dialogItem.text)}
+            />
+          ) : null;
+        })()}
 
         {isAdding ? (
           <div className="space-y-2">
