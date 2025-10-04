@@ -46,9 +46,15 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage }: ChatInterf
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
+      <div className="px-4 pt-4 pb-2 shrink-0">
+        <p className="text-sm text-muted-foreground">
+          Ask me to add, remove, or suggest meals for your week
+        </p>
+      </div>
+
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+      <ScrollArea className="flex-1 min-h-0 px-4" ref={scrollRef}>
         <div className="space-y-4">
           {messages.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
@@ -108,7 +114,7 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage }: ChatInterf
       </ScrollArea>
 
       {/* Input */}
-      <div className="p-4 border-t">
+      <div className="p-4 border-t shrink-0">
         <form onSubmit={handleSubmit} className="flex gap-2">
           <Input
             ref={inputRef}

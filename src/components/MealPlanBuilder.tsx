@@ -1438,8 +1438,8 @@ export const MealPlanBuilder = ({
               <ResizableHandle withHandle />
               
               <ResizablePanel defaultSize={35} minSize={25} maxSize={60}>
-                <Card className="h-full flex flex-col">
-                  <div className="flex items-center justify-between p-4 border-b">
+                <Card className="h-full flex flex-col overflow-hidden">
+                  <div className="flex items-center justify-between p-4 border-b shrink-0">
                     <h2 className="text-lg font-semibold">Meal Planning Assistant</h2>
                     <Button
                       variant="ghost"
@@ -1450,7 +1450,7 @@ export const MealPlanBuilder = ({
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-                  <div className="flex-1 overflow-hidden">
+                  <div className="flex-1 min-h-0 overflow-hidden">
                     <ChatInterface 
                       messages={messages}
                       isLoading={isChatLoading}
