@@ -93,12 +93,11 @@ export const useMealPlanChat = (weekStartDate: Date, onMealPlanUpdate?: () => vo
         }));
         recentMessages.push({ role: 'user', content });
 
-        // Call edge function with streaming
+        // Call edge function (userId extracted from JWT on backend)
         const response = await supabase.functions.invoke('meal-plan-chat', {
           body: {
             messages: recentMessages,
             weekStartDate: weekStart,
-            userId: user.id,
           },
           method: 'POST',
         });
