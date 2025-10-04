@@ -150,7 +150,7 @@ Guidelines:
 - Suggest variety across the week
 - Be concise but friendly`;
 
-    // Call OpenAI API with streaming
+    // Call OpenAI API without streaming
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -158,13 +158,13 @@ Guidelines:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages
         ],
         tools,
-        stream: true,
+        stream: false,
       }),
     });
 
@@ -174,91 +174,64 @@ Guidelines:
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
-    // Handle streaming response
-    const encoder = new TextEncoder();
-    const stream = new ReadableStream({
-      async start(controller) {
-        const reader = response.body?.getReader();
-        if (!reader) {
-          controller.close();
-          return;
-        }
+    const completion = await response.json();
+    const assistantMessage = completion.choices[0].message;
+    let mealPlanUpdated = false;
 
-        const decoder = new TextDecoder();
-        let buffer = '';
+    // Handle tool calls if present
+    if (assistantMessage.tool_calls) {
+      for (const toolCall of assistantMessage.tool_calls) {
+        console.log('Executing tool:', toolCall.function.name, toolCall.function.arguments);
+        
+        const result = await executeToolCall(
+          toolCall.function.name,
+          JSON.parse(toolCall.function.arguments),
+          userId,
+          weekStartDate,
+          supabase
+        );
 
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
-
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (!trimmed || trimmed === 'data: [DONE]') continue;
-              if (!trimmed.startsWith('data: ')) continue;
-
-              try {
-                const jsonStr = trimmed.slice(6);
-                const parsed = JSON.parse(jsonStr);
-
-                // Handle tool calls
-                if (parsed.choices?.[0]?.delta?.tool_calls) {
-                  const toolCalls = parsed.choices[0].delta.tool_calls;
-                  for (const toolCall of toolCalls) {
-                    if (toolCall.function?.name) {
-                      console.log('Tool call:', toolCall.function.name, toolCall.function.arguments);
-                      
-                      // Execute tool call
-                      const result = await executeToolCall(
-                        toolCall.function.name,
-                        JSON.parse(toolCall.function.arguments || '{}'),
-                        userId,
-                        weekStartDate,
-                        supabase
-                      );
-
-                      // Send tool result back to stream
-                      controller.enqueue(
-                        encoder.encode(`data: ${JSON.stringify({
-                          type: 'tool_result',
-                          tool: toolCall.function.name,
-                          result
-                        })}\n\n`)
-                      );
-                    }
-                  }
-                }
-
-                // Forward content delta
-                if (parsed.choices?.[0]?.delta?.content) {
-                  controller.enqueue(encoder.encode(`data: ${jsonStr}\n\n`));
-                }
-              } catch (e) {
-                console.error('Error parsing SSE line:', e, trimmed);
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Stream error:', error);
-        } finally {
-          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-          controller.close();
+        if (result.success) {
+          mealPlanUpdated = true;
         }
       }
-    });
 
-    return new Response(stream, {
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    });
+      // If tool was called, get a follow-up response from AI
+      const followUpResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages,
+            assistantMessage,
+            { role: 'user', content: 'Confirm the action you just took in a friendly way.' }
+          ],
+          stream: false,
+        }),
+      });
+
+      const followUpCompletion = await followUpResponse.json();
+      const content = followUpCompletion.choices[0].message.content;
+
+      return new Response(
+        JSON.stringify({ content, mealPlanUpdated }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Return regular response if no tools were called
+    return new Response(
+      JSON.stringify({ 
+        content: assistantMessage.content,
+        mealPlanUpdated 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('Chat error:', error);
