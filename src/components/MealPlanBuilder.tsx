@@ -1131,6 +1131,9 @@ export const MealPlanBuilder = ({
       {/* Meal Plan with Optional Chat */}
       {!showRecipeInventory && (
         <>
+          {/* Copy Week Modal */}
+          <CopyWeekModal open={showCopyWeekModal} onOpenChange={setShowCopyWeekModal} onCopyWeek={copyWeekFrom} currentWeekStart={currentWeekStart} firstDayOfWeek={firstDayOfWeek} />
+          
           {/* Desktop/Tablet: Resizable Panels when chat is open */}
           {!isMobile && showChat ? (
             <ResizablePanelGroup direction="horizontal" className="min-h-[calc(100vh-200px)] gap-2">
@@ -1369,9 +1372,6 @@ export const MealPlanBuilder = ({
             </Sheet>
           </div>
 
-          {/* Copy Week Modal */}
-          <CopyWeekModal open={showCopyWeekModal} onOpenChange={setShowCopyWeekModal} onCopyWeek={copyWeekFrom} currentWeekStart={currentWeekStart} firstDayOfWeek={firstDayOfWeek} />
-
           {/* Mobile: Scrollable grid with fixed left column */}
           <div className="relative -mx-3 sm:mx-0">
             <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-280px)] sm:max-h-[70vh]">
@@ -1449,7 +1449,302 @@ export const MealPlanBuilder = ({
             </ResizablePanelGroup>
           ) : (
             <Card className="p-3 sm:p-6">
-              {/* Meal plan grid content - same as above */}
+              {/* Week Navigation */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowCopyWeekModal(true)} 
+                  className="flex items-center gap-2 justify-center"
+                >
+                  <Copy className="h-4 w-4" />
+                  <span className="hidden sm:inline">Copy from week</span>
+                  <span className="sm:hidden">Copy Week</span>
+                </Button>
+                
+                <div className="flex items-center gap-2 sm:gap-4 flex-1 justify-center">
+                  <Button variant="outline" size="sm" onClick={goToPreviousWeek} className="px-2 sm:px-3">
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">Previous</span>
+                  </Button>
+                  <div className="text-sm sm:text-lg font-medium text-center whitespace-nowrap">
+                    {formatDate(weekDates[0])} - {formatDate(weekDates[6])}
+                  </div>
+                  <Button variant="outline" size="sm" onClick={goToNextWeek} className="px-2 sm:px-3">
+                    <span className="hidden sm:inline mr-1">Next</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="default" className="w-full sm:w-auto">
+                      Get grocery list
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-96 h-screen flex flex-col">
+                    <SheetHeader className="mb-4">
+                      <SheetTitle>Grocery List</SheetTitle>
+                      <div className="text-sm text-muted-foreground">
+                        Week of {formatDate(weekDates[0])} - {formatDate(weekDates[6])}
+                      </div>
+                    </SheetHeader>
+                    
+                    <div className="flex-1 min-h-0 flex flex-col">
+                      <Tabs defaultValue="meals" className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                        <TabsList className="grid w-full grid-cols-2 shrink-0">
+                          <TabsTrigger value="meals">Meal List</TabsTrigger>
+                          <TabsTrigger value="grocery">Grocery List</TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="meals" className="flex flex-col flex-1 min-h-0 overflow-hidden space-y-4">
+                          <div className="text-xs text-muted-foreground shrink-0">
+                            Total items: {groceryList.length}
+                          </div>
+                          
+                          <div className="flex gap-2 mb-4 p-3 bg-muted/50 rounded shrink-0">
+                            <Input
+                              placeholder="Add item to meal list..."
+                              value={newMealItem}
+                              onChange={(e) => setNewMealItem(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && addManualMealItem()}
+                              className="flex-1"
+                            />
+                            <Button size="sm" onClick={addManualMealItem} disabled={!newMealItem.trim()}>
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <div className="flex gap-2 shrink-0">
+                            <Button variant="outline" size="sm" onClick={copyGroceryList}>
+                              <Copy className="h-4 w-4 mr-1" />
+                              Copy
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={printGroceryList}>
+                              <Printer className="h-4 w-4 mr-1" />
+                              Print
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => setCheckedItems({})} className="ml-auto">
+                              Clear checks
+                            </Button>
+                          </div>
+
+                          <div className="flex-1 min-h-0 overflow-y-auto space-y-2 border rounded p-2">
+                            {groceryList.length === 0 ? (
+                              <div className="text-center text-muted-foreground py-8">
+                                <UtensilsCrossed className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                <p>No items in your meal plan yet.</p>
+                                <p className="text-xs">Add meals to see your meal list here.</p>
+                              </div>
+                            ) : (
+                              groceryList.map((item, index) => {
+                                const isManualItem = manualMealItems.some(manual => manual.text === item.text);
+                                return (
+                                  <div key={index} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded group">
+                                    <Checkbox 
+                                      checked={checkedItems[item.text] || false} 
+                                      onCheckedChange={checked => setCheckedItems(prev => ({
+                                        ...prev,
+                                        [item.text]: checked as boolean
+                                      }))} 
+                                    />
+                                    <div className="flex-1">
+                                      <span className={`${checkedItems[item.text] ? 'line-through text-muted-foreground' : ''}`}>
+                                        {item.text}
+                                      </span>
+                                      {isManualItem && (
+                                        <div className="text-xs text-muted-foreground italic">
+                                          Manually added
+                                        </div>
+                                      )}
+                                    </div>
+                                    {item.count > 1 && <Badge variant="secondary" className="text-xs">x{item.count}</Badge>}
+                                    {isManualItem && (
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={() => removeManualMealItem(manualMealItems.findIndex(manual => manual.text === item.text))}
+                                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground"
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                        </TabsContent>
+                        
+                        <TabsContent value="grocery" className="flex flex-col flex-1 min-h-0 overflow-hidden space-y-4">
+                          <div className="p-3 bg-muted/50 rounded space-y-3 shrink-0">
+                            <div className="flex gap-2">
+                              <Input
+                                placeholder="Add ingredient..."
+                                value={newGroceryItem}
+                                onChange={(e) => setNewGroceryItem(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && addManualGroceryItem()}
+                                className="flex-1"
+                              />
+                              <Select value={newGroceryCategory} onValueChange={setNewGroceryCategory}>
+                                <SelectTrigger className="w-32">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {availableCategories.map((category) => (
+                                    <SelectItem key={category.value} value={category.value}>
+                                      {category.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Button size="sm" onClick={addManualGroceryItem} disabled={!newGroceryItem.trim()}>
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between shrink-0">
+                            <div className="text-xs text-muted-foreground">
+                              Total ingredients: {organizedIngredients.reduce((total, cat) => total + cat.items.length, 0)}
+                              {savedGroceryListId && <span className="text-green-600 ml-2">✓ Saved</span>}
+                            </div>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" onClick={generateIngredients} disabled={isGeneratingIngredients}>
+                                {isGeneratingIngredients ? 'Generating...' : 'Generate'}
+                              </Button>
+                              {organizedIngredients.length > 0 && (
+                                <Button variant="default" size="sm" onClick={saveGroceryListToDatabase} disabled={isSavingGroceryList}>
+                                  {isSavingGroceryList ? 'Saving...' : savedGroceryListId ? 'Update' : 'Save'}
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        
+                          <div className="flex-1 min-h-0 overflow-y-auto space-y-2">
+                            {organizedIngredients.length === 0 ? (
+                              <div className="text-center text-muted-foreground py-8">
+                                <UtensilsCrossed className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                <p>No grocery list generated yet.</p>
+                                <p className="text-xs">Click "Generate" to create a shopping list from your meals.</p>
+                              </div>
+                            ) : (
+                              organizedIngredients.map(category => (
+                                <div key={category.name} className="space-y-2">
+                                  <div className="sticky top-0 bg-background border-b pb-1 mb-2">
+                                    <h4 className="font-semibold text-sm text-primary capitalize">
+                                      {category.displayName} ({category.items.length})
+                                    </h4>
+                                  </div>
+                                  
+                                  {category.items.map((ingredient, index) => {
+                                    const isManualItem = ingredient.forDishes && ingredient.forDishes.includes('Manually added');
+                                    return (
+                                      <div key={index} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded group">
+                                        <Checkbox 
+                                          checked={checkedItems[`ai-${ingredient.name}`] || false} 
+                                          onCheckedChange={checked => setCheckedItems(prev => ({
+                                            ...prev,
+                                            [`ai-${ingredient.name}`]: checked as boolean
+                                          }))} 
+                                        />
+                                        <div className="flex-1">
+                                          <div className={`${checkedItems[`ai-${ingredient.name}`] ? 'line-through text-muted-foreground' : ''}`}>
+                                            {ingredient.name}
+                                          </div>
+                                          {ingredient.quantity && (
+                                            <div className="text-xs text-muted-foreground">
+                                              {ingredient.quantity}
+                                            </div>
+                                          )}
+                                          {ingredient.forDishes && ingredient.forDishes.length > 0 && (
+                                            <div className="text-xs text-muted-foreground italic">
+                                              {isManualItem ? 'Manually added' : `For: ${ingredient.forDishes.join(", ")}`}
+                                            </div>
+                                          )}
+                                        </div>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          onClick={() => isManualItem ? removeManualGroceryItem(ingredient.name) : removeIngredient(ingredient.name)}
+                                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground"
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
+
+              {/* Mobile: Scrollable grid */}
+              <div className="relative -mx-3 sm:mx-0">
+                <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-280px)] sm:max-h-[70vh]">
+                  <div className="inline-block min-w-full">
+                    <div className="grid grid-cols-[100px_repeat(7,minmax(140px,1fr))] sm:grid-cols-[160px_repeat(7,minmax(0,1fr))] gap-0 border border-border">
+                      {/* Header row */}
+                      <div className="sticky top-0 left-0 z-50 bg-background border-r border-b border-border p-2 sm:p-4 w-[100px] sm:w-[160px]">
+                        <span className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">Meal</span>
+                      </div>
+                      {orderedDays.map((day, index) => (
+                        <div key={day} className="sticky top-0 z-40 bg-background border-r border-b border-border text-center p-2 sm:p-4 space-y-0.5 sm:space-y-1 min-w-[140px]">
+                          <div className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                            {day.substring(0, 3)}
+                          </div>
+                          <div className="text-xl sm:text-2xl font-normal text-foreground">
+                            {new Date(weekDates[index]).getDate()}
+                          </div>
+                          {weather[day] && (
+                            <div className="flex items-center justify-center gap-1 text-[10px] sm:text-xs text-muted-foreground">
+                              <Cloud className="h-3 w-3" />
+                              <span>{weather[day].temp}°F</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+
+                      {/* Meal type rows */}
+                      {allMealTypes.map(mealType => (
+                        <div key={mealType} className="contents">
+                          <div className="sticky left-0 z-30 bg-background border-r border-b border-border p-2 sm:p-4 flex items-center justify-between w-[100px] sm:w-[160px]">
+                            <span className="text-xs sm:text-sm text-muted-foreground truncate">{mealType}</span>
+                            {customMealTypes.includes(mealType) && (
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                onClick={() => removeCustomMealType(mealType)} 
+                                className="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-destructive/10 hover:text-destructive ml-1 flex-shrink-0"
+                              >
+                                <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                              </Button>
+                            )}
+                          </div>
+
+                          {orderedDays.map(day => (
+                            <MealCell 
+                              key={`${day}-${mealType}`} 
+                              day={day} 
+                              mealType={mealType} 
+                              items={mealPlan[day][mealType] || []} 
+                              onItemsChange={items => updateMealPlan(day, mealType, items)} 
+                              onRemoveFromSource={removeItemFromSource} 
+                              onAddToInventory={itemName => handleAddToInventory(itemName, mealType)} 
+                            />
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </Card>
           )}
           
