@@ -1310,7 +1310,7 @@ export const MealPlanBuilder = ({
             <div className="sticky top-0 left-0 z-50 bg-background border-r border-b border-border p-4 min-w-[160px] w-full relative after:content-[''] after:absolute after:top-0 after:right-[-1px] after:w-[1px] after:h-full after:bg-border">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Meal Type</span>
             </div>
-            {orderedDays.map((day, index) => <div key={day} className="sticky top-0 z-30 bg-background border-r border-b border-border text-center p-4 space-y-1">
+            {orderedDays.map((day, index) => <div key={day} className="sticky top-0 z-40 bg-background border-r border-b border-border text-center p-4 space-y-1">
                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{day.substring(0, 3)}</div>
                 <div className="text-2xl font-normal text-foreground">
                   {new Date(weekDates[index]).getDate()}
