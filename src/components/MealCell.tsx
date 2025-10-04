@@ -8,8 +8,6 @@ import { MealItem } from './MealPlanBuilder';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useLongPress } from '@/hooks/useLongPress';
-import { MealItemContextMenu } from './MealItemContextMenu';
 import { MealItemDialog } from './MealItemDialog';
 
 interface MealCellProps {
@@ -38,7 +36,6 @@ export const MealCell: React.FC<MealCellProps> = ({
   const [draggedItem, setDraggedItem] = useState<MealItem | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [dialogItemId, setDialogItemId] = useState<string | null>(null);
-  const [contextMenuOpen, setContextMenuOpen] = useState<string | null>(null);
   const { toast } = useToast();
   const cellRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -146,12 +143,10 @@ export const MealCell: React.FC<MealCellProps> = ({
 
   const removeItem = (itemId: string) => {
     onItemsChange(items.filter(item => item.id !== itemId));
-    setContextMenuOpen(null);
   };
 
   const copyItemToClipboard = (itemText: string) => {
     clipboard = [{ id: `clipboard-${Date.now()}`, text: itemText, isRecipe: false }];
-    setContextMenuOpen(null);
     setDialogItemId(null);
     toast({
       title: "Copied!",
@@ -161,7 +156,6 @@ export const MealCell: React.FC<MealCellProps> = ({
 
   const openDialog = (itemId: string) => {
     setDialogItemId(itemId);
-    setContextMenuOpen(null);
   };
 
   const handleDragStart = (e: React.DragEvent, item: MealItem) => {
@@ -310,73 +304,26 @@ export const MealCell: React.FC<MealCellProps> = ({
       tabIndex={0}
     >
       <div className="space-y-2">
-        {items.map((item) => {
-          const MealItemWrapper = ({ children }: { children: React.ReactNode }) => {
-            if (isMobile) {
-              // Mobile: Use long press for context menu
-              const longPressHandlers = useLongPress({
-                onLongPress: () => setContextMenuOpen(item.id),
-                onClick: () => openDialog(item.id),
-                delay: 500,
-              });
-
-              return (
-                <MealItemContextMenu
-                  itemText={item.text}
-                  isExpanded={false}
-                  onToggleExpand={() => openDialog(item.id)}
-                  onDelete={() => removeItem(item.id)}
-                  onCopy={() => copyItemToClipboard(item.text)}
-                  open={contextMenuOpen === item.id}
-                  onOpenChange={(open) => setContextMenuOpen(open ? item.id : null)}
-                >
-                  <div {...longPressHandlers}>
-                    {children}
-                  </div>
-                </MealItemContextMenu>
-              );
-            } else {
-              // Desktop: Right-click for context menu, click for dialog
-              return (
-                <MealItemContextMenu
-                  itemText={item.text}
-                  isExpanded={false}
-                  onToggleExpand={() => openDialog(item.id)}
-                  onDelete={() => removeItem(item.id)}
-                  onCopy={() => copyItemToClipboard(item.text)}
-                >
-                  {children}
-                </MealItemContextMenu>
-              );
-            }
-          };
-
-          return (
-            <MealItemWrapper key={item.id}>
-              <div
-                draggable
-                onDragStart={(e) => handleDragStart(e, item)}
-                onDragEnd={handleDragEnd}
-                className={cn(
-                  "p-2.5 rounded-lg bg-primary text-primary-foreground transition-colors shadow-sm",
-                  isMobile ? "touch-manipulation active:scale-[0.98]" : "cursor-move hover:bg-primary/90"
-                )}
-              >
-                <span 
-                  className="block text-sm font-medium truncate"
-                  onClick={(e) => {
-                    if (!isMobile) {
-                      e.stopPropagation();
-                      openDialog(item.id);
-                    }
-                  }}
-                >
-                  {item.text}
-                </span>
-              </div>
-            </MealItemWrapper>
-          );
-        })}
+        {items.map((item) => (
+          <div
+            key={item.id}
+            draggable
+            onDragStart={(e) => handleDragStart(e, item)}
+            onDragEnd={handleDragEnd}
+            onClick={(e) => {
+              e.stopPropagation();
+              openDialog(item.id);
+            }}
+            className={cn(
+              "p-2.5 rounded-lg bg-primary text-primary-foreground transition-colors shadow-sm cursor-pointer",
+              isMobile ? "touch-manipulation active:scale-[0.98]" : "hover:bg-primary/90"
+            )}
+          >
+            <span className="block text-sm font-medium truncate">
+              {item.text}
+            </span>
+          </div>
+        ))}
         
         {/* Dialog for viewing full item details */}
         {dialogItemId && (() => {
