@@ -492,6 +492,16 @@ export const MealItemInventory: React.FC = () => {
                 </DialogHeader>
                 
                 <div className="space-y-4">
+                  {item.name.toLowerCase() === 'pohe' && (
+                    <div className="flex justify-center">
+                      <img 
+                        src={poheImage} 
+                        alt="Pohe" 
+                        className="w-48 h-48 object-cover rounded-lg"
+                      />
+                    </div>
+                  )}
+                  
                   {/* Existing recipes */}
                   <div>
                     <h4 className="font-semibold mb-2">Recipes ({item.recipes?.length || 0})</h4>
