@@ -10,6 +10,7 @@ import { Plus, X, ChefHat, Search, Edit2, ExternalLink, FileText, Trash2 } from 
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import poheImage from '@/assets/pohe.png';
 
 export interface Recipe {
   id: string;
@@ -461,6 +462,13 @@ export const MealItemInventory: React.FC = () => {
                         )}
                       </div>
                     </div>
+                    {item.name.toLowerCase() === 'pohe' && (
+                      <img 
+                        src={poheImage} 
+                        alt="Pohe" 
+                        className="w-16 h-16 object-cover rounded-md"
+                      />
+                    )}
                   </div>
                 </div>
               </DialogTrigger>
