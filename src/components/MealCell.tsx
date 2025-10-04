@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MealItemDialog } from './MealItemDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface MealCellProps {
   day: string;
@@ -36,11 +38,94 @@ export const MealCell: React.FC<MealCellProps> = ({
   const [draggedItem, setDraggedItem] = useState<MealItem | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [dialogItemId, setDialogItemId] = useState<string | null>(null);
+  const [inventoryItems, setInventoryItems] = useState<Array<{ id: string; name: string; image_url?: string }>>([]);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<Array<{ id: string; name: string; image_url?: string }>>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
   const cellRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
   const cellId = `${day}-${mealType}`;
+
+  // Load inventory items from database
+  useEffect(() => {
+    const loadInventoryItems = async () => {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('meal_items')
+        .select('id, name, image_url')
+        .eq('user_id', user.id);
+      
+      if (error) {
+        console.error('Error loading inventory items:', error);
+        return;
+      }
+      
+      if (data) {
+        setInventoryItems(data);
+      }
+    };
+    
+    loadInventoryItems();
+  }, [user]);
+
+  // Handle input change and filter suggestions
+  const handleInputChange = (value: string) => {
+    setNewItemText(value);
+    
+    if (value.trim().length === 0) {
+      setFilteredSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    
+    const filtered = inventoryItems
+      .filter(item => item.name.toLowerCase().includes(value.toLowerCase()))
+      .slice(0, 5);
+    
+    setFilteredSuggestions(filtered);
+    setShowSuggestions(filtered.length > 0);
+  };
+
+  // Select a suggestion
+  const selectSuggestion = (suggestion: { id: string; name: string; image_url?: string }) => {
+    const newItem: MealItem = {
+      id: `${cellId}-${Date.now()}-${Math.random()}`,
+      text: suggestion.name,
+      isRecipe: false,
+      meal_item_id: suggestion.id,
+      image_url: suggestion.image_url,
+    };
+    
+    onItemsChange([...items, newItem]);
+    setNewItemText('');
+    setShowSuggestions(false);
+    setIsAdding(false);
+    
+    toast({
+      title: "Item added",
+      description: `"${newItem.text}" added to ${day} ${mealType}.`,
+    });
+  };
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        inputRef.current && !inputRef.current.contains(event.target as Node) &&
+        suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Simple copy/paste functionality - rewritten from scratch
   useEffect(() => {
@@ -351,23 +436,59 @@ export const MealCell: React.FC<MealCellProps> = ({
         })()}
 
         {isAdding ? (
-          <div className="space-y-2">
+          <div className="space-y-2 relative">
             <Input
+              ref={inputRef}
               value={newItemText}
-              onChange={(e) => setNewItemText(e.target.value)}
+              onChange={(e) => handleInputChange(e.target.value)}
               placeholder="Enter meal..."
               onKeyPress={(e) => {
-                if (e.key === 'Enter') addItem();
-                if (e.key === 'Escape') setIsAdding(false);
+                if (e.key === 'Enter') {
+                  if (showSuggestions && filteredSuggestions.length > 0) {
+                    selectSuggestion(filteredSuggestions[0]);
+                  } else {
+                    addItem();
+                  }
+                }
+                if (e.key === 'Escape') {
+                  setShowSuggestions(false);
+                  setIsAdding(false);
+                }
               }}
               autoFocus
               className="text-xs sm:text-sm border-border"
             />
+            
+            {/* Autocomplete suggestions */}
+            {showSuggestions && filteredSuggestions.length > 0 && (
+              <div 
+                ref={suggestionsRef}
+                className="absolute z-50 w-full bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto"
+              >
+                {filteredSuggestions.map((suggestion) => (
+                  <div
+                    key={suggestion.id}
+                    onClick={() => selectSuggestion(suggestion)}
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-accent cursor-pointer"
+                  >
+                    {suggestion.image_url && (
+                      <img 
+                        src={suggestion.image_url} 
+                        alt={suggestion.name} 
+                        className="w-8 h-8 object-cover rounded flex-shrink-0"
+                      />
+                    )}
+                    <span className="text-xs sm:text-sm">{suggestion.name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            
             <div className="flex gap-2">
               <Button size="sm" onClick={addItem} className="text-xs flex-1 sm:flex-initial">
                 Add
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setIsAdding(false)} className="text-xs flex-1 sm:flex-initial">
+              <Button size="sm" variant="outline" onClick={() => { setIsAdding(false); setShowSuggestions(false); }} className="text-xs flex-1 sm:flex-initial">
                 Cancel
               </Button>
             </div>
