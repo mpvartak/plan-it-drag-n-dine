@@ -1,1 +1,7 @@
 project_id = "eucwtwejktcjxowiybjy"
+
+[functions.extract-ingredients]
+verify_jwt = true
+
+[functions.meal-plan-chat]
+verify_jwt = true

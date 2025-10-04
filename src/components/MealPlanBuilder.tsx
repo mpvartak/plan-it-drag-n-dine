@@ -11,12 +11,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud, X, ChevronLeft, ChevronRight, Copy, Printer, Calendar } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { MealCell } from './MealCell';
 import { MealItemInventory } from './MealItemInventory';
 import { CopyWeekModal } from './CopyWeekModal';
+import { ChatInterface } from './ChatInterface';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useMealPlanChat } from '@/hooks/useMealPlanChat';
 export interface MealItem {
   id: string;
   text: string;
@@ -49,11 +53,15 @@ interface DayNotes {
 interface MealPlanBuilderProps {
   showRecipeInventory: boolean;
   setShowRecipeInventory: (show: boolean) => void;
+  showChat: boolean;
+  setShowChat: (show: boolean) => void;
 }
 
 export const MealPlanBuilder = ({ 
   showRecipeInventory, 
-  setShowRecipeInventory
+  setShowRecipeInventory,
+  showChat,
+  setShowChat
 }: MealPlanBuilderProps) => {
   console.log('MealPlanBuilder component loaded');
   const {
@@ -62,6 +70,7 @@ export const MealPlanBuilder = ({
   const {
     toast
   } = useToast();
+  const isMobile = useIsMobile();
 
   // Load settings from localStorage (non-critical settings can stay local)
   const [firstDayOfWeek, setFirstDayOfWeek] = useState<string>(() => {
@@ -147,6 +156,8 @@ export const MealPlanBuilder = ({
   const [newMealItem, setNewMealItem] = useState('');
   const [newGroceryItem, setNewGroceryItem] = useState('');
   const [newGroceryCategory, setNewGroceryCategory] = useState('other');
+  const [shouldReloadMealPlans, setShouldReloadMealPlans] = useState(0);
+  
   const handleAddToInventory = (itemName: string, mealType: string) => {
     // This will be handled by the MealItemInventory component via a custom event
     window.dispatchEvent(new CustomEvent('addToInventory', {
@@ -660,6 +671,20 @@ export const MealPlanBuilder = ({
       setIsLoading(false);
     }
   };
+  
+  // Chat hook - initialized after loadMealPlansFromDatabase is defined
+  const { messages, isLoading: isChatLoading, sendMessage } = useMealPlanChat(
+    currentWeekStart,
+    () => setShouldReloadMealPlans(prev => prev + 1)
+  );
+  
+  // Reload meal plans when chat updates them
+  useEffect(() => {
+    if (shouldReloadMealPlans > 0) {
+      loadMealPlansFromDatabase();
+    }
+  }, [shouldReloadMealPlans]);
+  
   const saveMealPlanToDatabase = async (day: string, mealType: string, items: MealItem[]) => {
     if (!user) return;
     console.log('💾 [SAVE START] Saving to database:', {
@@ -1100,15 +1125,17 @@ export const MealPlanBuilder = ({
           </div>}
       </div>
 
-
-
-
       {/* Meal Item Inventory */}
       {showRecipeInventory && <MealItemInventory />}
 
-      {/* Meal Plan Table */}
+      {/* Meal Plan with Optional Chat */}
       {!showRecipeInventory && (
-        <Card className="p-3 sm:p-6">
+        <>
+          {/* Desktop/Tablet: Resizable Panels when chat is open */}
+          {!isMobile && showChat ? (
+            <ResizablePanelGroup direction="horizontal" className="min-h-[calc(100vh-200px)] gap-2">
+              <ResizablePanel defaultSize={65} minSize={40}>
+                <Card className="p-3 sm:p-6 h-full overflow-auto">
           {/* Week Navigation */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
             <Button 
@@ -1401,11 +1428,44 @@ export const MealPlanBuilder = ({
                       ))}
                     </div>
                   ))}
-                </div>
+                 </div>
               </div>
             </div>
           </div>
         </Card>
+              </ResizablePanel>
+              
+              <ResizableHandle withHandle />
+              
+              <ResizablePanel defaultSize={35} minSize={25} maxSize={60}>
+                <Card className="h-full">
+                  <ChatInterface 
+                    messages={messages}
+                    isLoading={isChatLoading}
+                    onSendMessage={sendMessage}
+                  />
+                </Card>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          ) : (
+            <Card className="p-3 sm:p-6">
+              {/* Meal plan grid content - same as above */}
+            </Card>
+          )}
+          
+          {/* Mobile: Bottom Sheet for Chat */}
+          {isMobile && showChat && (
+            <Sheet open={showChat} onOpenChange={setShowChat}>
+              <SheetContent side="bottom" className="h-[80vh]">
+                <ChatInterface 
+                  messages={messages}
+                  isLoading={isChatLoading}
+                  onSendMessage={sendMessage}
+                />
+              </SheetContent>
+            </Sheet>
+          )}
+        </>
       )}
     </div>;
 };
