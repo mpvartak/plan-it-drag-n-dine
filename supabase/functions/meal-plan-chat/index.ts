@@ -170,7 +170,7 @@ serve(async (req) => {
         type: "function",
         function: {
           name: "add_to_inventory",
-          description: "Add a new meal item to the inventory",
+          description: "Add a new meal item to the inventory, optionally with a recipe (URL or instructions)",
           parameters: {
             type: "object",
             properties: {
@@ -181,6 +181,19 @@ serve(async (req) => {
               category: {
                 type: "string",
                 description: "Category (e.g., breakfast, lunch, dinner, snack)"
+              },
+              recipeType: {
+                type: "string",
+                description: "Type of recipe: 'url' for a recipe URL, or 'instructions' for recipe text (optional)",
+                enum: ["url", "instructions"]
+              },
+              recipeTitle: {
+                type: "string",
+                description: "Recipe title (optional)"
+              },
+              recipeContent: {
+                type: "string",
+                description: "Recipe URL or instructions text (optional)"
               }
             },
             required: ["name"]
@@ -522,7 +535,7 @@ async function executeToolCall(
 
   // Handle add_to_inventory
   if (toolName === 'add_to_inventory') {
-    const { data, error } = await supabase
+    const { data: mealItem, error } = await supabase
       .from('meal_items')
       .insert({
         user_id: userId,
@@ -536,9 +549,36 @@ async function executeToolCall(
       return { success: false, error: error.message };
     }
 
+    // If recipe information is provided, create the recipe
+    if (args.recipeContent && args.recipeType) {
+      const { error: recipeError } = await supabase
+        .from('recipes')
+        .insert({
+          user_id: userId,
+          meal_item_id: mealItem.id,
+          title: args.recipeTitle || null,
+          content: args.recipeContent,
+          recipe_type: args.recipeType
+        });
+
+      if (recipeError) {
+        return { 
+          success: true, 
+          item: mealItem,
+          message: `Added "${args.name}" to inventory, but failed to add recipe: ${recipeError.message}`
+        };
+      }
+
+      return {
+        success: true,
+        item: mealItem,
+        message: `Added "${args.name}" to inventory with recipe`
+      };
+    }
+
     return {
       success: true,
-      item: data,
+      item: mealItem,
       message: `Added "${args.name}" to inventory`
     };
   }
