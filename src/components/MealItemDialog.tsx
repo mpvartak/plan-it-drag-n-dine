@@ -28,11 +28,15 @@ export const MealItemDialog: React.FC<MealItemDialogProps> = ({
   mealItemId,
 }) => {
   const handleViewDetails = () => {
+    console.log('🔘 View Details clicked, mealItemId:', mealItemId);
     if (mealItemId) {
+      console.log('🔘 Dispatching openMealItemInventory event');
       window.dispatchEvent(new CustomEvent('openMealItemInventory', {
         detail: { meal_item_id: mealItemId }
       }));
       onOpenChange(false);
+    } else {
+      console.log('❌ No mealItemId provided');
     }
   };
   return (
