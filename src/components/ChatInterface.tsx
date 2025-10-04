@@ -47,7 +47,7 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage }: ChatInterf
   };
 
   return (
-    <div className="grid grid-rows-[auto_1fr_auto] h-full min-h-0">
+    <div className="grid grid-rows-[auto_minmax(0,1fr)_auto] h-full min-h-0">
       <div className="px-4 pt-4 pb-2 shrink-0">
         <p className="text-sm text-muted-foreground">
           Ask me to add, remove, or suggest meals for your week
@@ -55,7 +55,7 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage }: ChatInterf
       </div>
 
       {/* Messages */}
-      <div className="min-h-0 overflow-hidden">
+      <div className="h-full min-h-0 overflow-hidden">
         <div ref={scrollRef} className="h-full max-h-full overflow-y-auto px-4">
           <div className="space-y-4 py-4">
             {messages.length === 0 && (
