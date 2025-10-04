@@ -328,6 +328,34 @@ async function executeToolCall(
 ): Promise<any> {
   console.log('Executing tool:', toolName, args);
 
+  // Handle suggest_meals separately (no day required)
+  if (toolName === 'suggest_meals') {
+    return {
+      success: true,
+      message: 'I can help you with meal suggestions!'
+    };
+  }
+
+  // Handle get_meal_plan separately (no day required)
+  if (toolName === 'get_meal_plan') {
+    const startDate = weekStartDate;
+    const endDate = new Date(new Date(weekStartDate).getTime() + 6 * 24 * 60 * 60 * 1000)
+      .toISOString().split('T')[0];
+
+    const { data: mealPlans } = await supabase
+      .from('meal_plans')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('date', startDate)
+      .lte('date', endDate);
+
+    return {
+      success: true,
+      mealPlan: formatMealPlanContext(mealPlans || [], weekStartDate)
+    };
+  }
+
+  // For add_meal_item and remove_meal_item, validate day
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const dayIndex = days.indexOf(args.day);
   if (dayIndex === -1) {
@@ -409,32 +437,6 @@ async function executeToolCall(
       }
 
       return { success: true, message: `Removed "${args.itemName}" from ${args.day} ${args.mealType}` };
-    }
-
-    case 'get_meal_plan': {
-      const startDate = weekStartDate;
-      const endDate = new Date(new Date(weekStartDate).getTime() + 6 * 24 * 60 * 60 * 1000)
-        .toISOString().split('T')[0];
-
-      const { data: mealPlans } = await supabase
-        .from('meal_plans')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('date', startDate)
-        .lte('date', endDate);
-
-      return {
-        success: true,
-        mealPlan: formatMealPlanContext(mealPlans || [], weekStartDate)
-      };
-    }
-
-    case 'suggest_meals': {
-      // This is handled by the AI itself, just acknowledge
-      return {
-        success: true,
-        message: 'I can help you with meal suggestions!'
-      };
     }
 
     default:
