@@ -296,13 +296,14 @@ export const MealCell: React.FC<MealCellProps> = ({
             onDragEnd={handleDragEnd}
             className="group flex items-center gap-2 p-2.5 rounded-lg bg-primary text-primary-foreground cursor-move hover:bg-primary/90 transition-colors shadow-sm"
           >
-            <span
+            <span 
               className={cn(
-                "flex-1 min-w-0 text-sm font-medium cursor-pointer",
+                "flex-1 min-w-0 text-sm font-medium select-none",
                 expandedItemId === item.id ? "whitespace-normal" : "truncate"
               )}
-              onClick={(e) => {
+              onDoubleClick={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 setExpandedItemId(expandedItemId === item.id ? null : item.id);
               }}
             >
@@ -311,7 +312,11 @@ export const MealCell: React.FC<MealCellProps> = ({
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => removeItem(item.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                removeItem(item.id);
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
               className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary-foreground/20"
             >
               <X className="h-3 w-3" />
