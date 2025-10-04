@@ -240,7 +240,11 @@ Guidelines:
           supabase
         );
 
-        if (result.success) {
+        // Only trigger reload for tools that actually modify the meal plan
+        if (result.success && (
+          toolCall.function.name === 'add_meal_item' || 
+          toolCall.function.name === 'remove_meal_item'
+        )) {
           mealPlanUpdated = true;
         }
       }
