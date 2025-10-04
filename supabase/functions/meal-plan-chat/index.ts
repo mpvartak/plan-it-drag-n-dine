@@ -175,6 +175,13 @@ Guidelines:
     }
 
     const completion = await response.json();
+    
+    // Validate response structure
+    if (!completion.choices || completion.choices.length === 0) {
+      console.error('Invalid OpenAI response:', completion);
+      throw new Error('Invalid response from AI');
+    }
+    
     const assistantMessage = completion.choices[0].message;
     let mealPlanUpdated = false;
 
@@ -216,6 +223,13 @@ Guidelines:
       });
 
       const followUpCompletion = await followUpResponse.json();
+      
+      // Validate follow-up response
+      if (!followUpCompletion.choices || followUpCompletion.choices.length === 0) {
+        console.error('Invalid follow-up response:', followUpCompletion);
+        throw new Error('Invalid follow-up response from AI');
+      }
+      
       const content = followUpCompletion.choices[0].message.content;
 
       return new Response(
