@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { Loader2, Send } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 
@@ -25,9 +25,9 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage }: ChatInterf
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    const scrollContainer = scrollRef.current?.querySelector('[data-radix-scroll-area-viewport]');
-    if (scrollContainer) {
-      scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    const container = scrollRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
     }
   }, [messages]);
 
@@ -47,7 +47,7 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage }: ChatInterf
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="grid grid-rows-[auto_1fr_auto] h-full min-h-0">
       <div className="px-4 pt-4 pb-2 shrink-0">
         <p className="text-sm text-muted-foreground">
           Ask me to add, remove, or suggest meals for your week
@@ -55,8 +55,8 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage }: ChatInterf
       </div>
 
       {/* Messages */}
-      <div className="flex-1 min-h-0 overflow-hidden px-4">
-        <ScrollArea className="h-full" ref={scrollRef}>
+      <div className="min-h-0 overflow-hidden">
+        <div ref={scrollRef} className="h-full max-h-full overflow-y-auto px-4">
           <div className="space-y-4 py-4">
             {messages.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
@@ -113,7 +113,7 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage }: ChatInterf
             </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       {/* Input */}
