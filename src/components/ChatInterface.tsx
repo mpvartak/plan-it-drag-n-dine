@@ -99,7 +99,7 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage, weekStartDat
     <div className="grid grid-rows-[auto_minmax(0,1fr)_auto] h-full min-h-0">
       <div className="px-4 pt-4 pb-2 shrink-0 flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Ask me to add, remove, or suggest meals for your week
+          Ask me about meals, inventory, or recipes
         </p>
         {messages.length > 0 && (
           <AlertDialog>
@@ -142,7 +142,9 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage, weekStartDat
               <ul className="text-sm mt-2 space-y-1">
                 <li>"Add chicken tacos for Tuesday dinner"</li>
                 <li>"What should I make for Monday lunch?"</li>
-                <li>"Suggest healthy breakfast ideas"</li>
+                <li>"Show me my meal inventory"</li>
+                <li>"Add scrambled eggs to my inventory"</li>
+                <li>"Do you have any pasta recipes?"</li>
               </ul>
             </div>
           )}
@@ -201,7 +203,7 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage, weekStartDat
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask me to help with your meal plan..."
+            placeholder="Ask about meals, inventory, or recipes..."
             disabled={isLoading}
             className="flex-1"
           />

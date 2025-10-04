@@ -154,11 +154,88 @@ serve(async (req) => {
             }
           }
         }
+      },
+      {
+        type: "function",
+        function: {
+          name: "get_meal_items",
+          description: "Get all meal items from the inventory",
+          parameters: {
+            type: "object",
+            properties: {}
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "add_to_inventory",
+          description: "Add a new meal item to the inventory",
+          parameters: {
+            type: "object",
+            properties: {
+              name: {
+                type: "string",
+                description: "Name of the meal item"
+              },
+              category: {
+                type: "string",
+                description: "Category (e.g., breakfast, lunch, dinner, snack)"
+              }
+            },
+            required: ["name"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "get_recipes",
+          description: "Get recipes, optionally filtered by meal item",
+          parameters: {
+            type: "object",
+            properties: {
+              mealItemName: {
+                type: "string",
+                description: "Filter recipes by meal item name (optional)"
+              }
+            }
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_recipe",
+          description: "Create a new recipe for a meal item",
+          parameters: {
+            type: "object",
+            properties: {
+              mealItemId: {
+                type: "string",
+                description: "ID of the meal item"
+              },
+              title: {
+                type: "string",
+                description: "Recipe title"
+              },
+              content: {
+                type: "string",
+                description: "Recipe instructions and ingredients"
+              },
+              recipeType: {
+                type: "string",
+                description: "Type of recipe (e.g., main, side, dessert)"
+              }
+            },
+            required: ["mealItemId", "content", "recipeType"]
+          }
+        }
       }
     ];
 
     // Build system prompt with meal plan context
-    const systemPrompt = `You are a helpful meal planning assistant. You help users plan their weekly meals by adding, removing, and suggesting meal items.
+    const systemPrompt = `You are a helpful meal planning assistant. You help users plan their weekly meals by adding, removing, and suggesting meal items. You can also help manage their meal inventory and recipes.
 
 Current Week's Meal Plan:
 ${mealPlanContext}
@@ -167,11 +244,18 @@ When the user asks you to add or modify meals, use the appropriate tool to make 
 
 Available meal types: Breakfast, Lunch, Dinner, School Snacks, Prep (and any custom types the user has added).
 
+Capabilities:
+- Add/remove meals from the weekly plan
+- View and suggest meals
+- Manage meal inventory (view items, add new items)
+- Access and create recipes for meal items
+
 Guidelines:
 - Be proactive in suggesting meals when asked
 - Confirm changes after making them
 - If a meal already exists, ask if they want to replace or add to it
 - Suggest variety across the week
+- Help organize their meal inventory
 - Be concise but friendly`;
 
     // Call OpenAI API without streaming
@@ -414,6 +498,107 @@ async function executeToolCall(
     return {
       success: true,
       mealPlan: formatMealPlanContext(mealPlans || [], weekStartDate)
+    };
+  }
+
+  // Handle get_meal_items
+  if (toolName === 'get_meal_items') {
+    const { data: mealItems, error } = await supabase
+      .from('meal_items')
+      .select('id, name, category, image_url')
+      .eq('user_id', userId)
+      .order('name');
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      items: mealItems || [],
+      message: `Found ${mealItems?.length || 0} meal items in inventory`
+    };
+  }
+
+  // Handle add_to_inventory
+  if (toolName === 'add_to_inventory') {
+    const { data, error } = await supabase
+      .from('meal_items')
+      .insert({
+        user_id: userId,
+        name: args.name,
+        category: args.category || null
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      item: data,
+      message: `Added "${args.name}" to inventory`
+    };
+  }
+
+  // Handle get_recipes
+  if (toolName === 'get_recipes') {
+    let query = supabase
+      .from('recipes')
+      .select('id, title, content, recipe_type, meal_item_id, meal_items(name)')
+      .eq('user_id', userId);
+
+    // If filtering by meal item name
+    if (args.mealItemName) {
+      const { data: mealItem } = await supabase
+        .from('meal_items')
+        .select('id')
+        .eq('user_id', userId)
+        .ilike('name', args.mealItemName)
+        .single();
+
+      if (mealItem) {
+        query = query.eq('meal_item_id', mealItem.id);
+      }
+    }
+
+    const { data: recipes, error } = await query;
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      recipes: recipes || [],
+      message: `Found ${recipes?.length || 0} recipes`
+    };
+  }
+
+  // Handle create_recipe
+  if (toolName === 'create_recipe') {
+    const { data, error } = await supabase
+      .from('recipes')
+      .insert({
+        user_id: userId,
+        meal_item_id: args.mealItemId,
+        title: args.title || null,
+        content: args.content,
+        recipe_type: args.recipeType
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      recipe: data,
+      message: `Created recipe "${args.title || 'Untitled'}"`
     };
   }
 
