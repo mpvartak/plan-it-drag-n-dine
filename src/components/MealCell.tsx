@@ -289,7 +289,7 @@ export const MealCell: React.FC<MealCellProps> = ({
   return (
     <div 
       ref={cellRef}
-      className={`p-3 min-h-24 bg-background border-r border-b border-border transition-all duration-200 cursor-pointer ${
+      className={`p-2 sm:p-3 min-h-20 sm:min-h-24 bg-background border-r border-b border-border transition-all duration-200 cursor-pointer ${
         isDragOver ? 'bg-primary/5' : ''
       } ${
         currentCell === cellId ? 'bg-accent/20' : 'hover:bg-accent/5'
@@ -315,11 +315,11 @@ export const MealCell: React.FC<MealCellProps> = ({
               openDialog(item.id);
             }}
             className={cn(
-              "p-2.5 rounded-lg bg-primary text-primary-foreground transition-colors shadow-sm cursor-pointer",
+              "p-2 sm:p-2.5 rounded-lg bg-primary text-primary-foreground transition-colors shadow-sm cursor-pointer",
               isMobile ? "touch-manipulation active:scale-[0.98]" : "hover:bg-primary/90"
             )}
           >
-            <span className="block text-sm font-medium truncate">
+            <span className="block text-xs sm:text-sm font-medium truncate">
               {item.text}
             </span>
           </div>
@@ -344,19 +344,19 @@ export const MealCell: React.FC<MealCellProps> = ({
             <Input
               value={newItemText}
               onChange={(e) => setNewItemText(e.target.value)}
-              placeholder="Enter meal or recipe name..."
+              placeholder="Enter meal..."
               onKeyPress={(e) => {
                 if (e.key === 'Enter') addItem();
                 if (e.key === 'Escape') setIsAdding(false);
               }}
               autoFocus
-              className="text-sm border-border"
+              className="text-xs sm:text-sm border-border"
             />
             <div className="flex gap-2">
-              <Button size="sm" onClick={addItem} className="text-xs">
+              <Button size="sm" onClick={addItem} className="text-xs flex-1 sm:flex-initial">
                 Add
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setIsAdding(false)} className="text-xs">
+              <Button size="sm" variant="outline" onClick={() => setIsAdding(false)} className="text-xs flex-1 sm:flex-initial">
                 Cancel
               </Button>
             </div>
@@ -366,10 +366,10 @@ export const MealCell: React.FC<MealCellProps> = ({
             size="sm"
             variant="ghost"
             onClick={() => setIsAdding(true)}
-            className="w-full h-8 border border-dashed border-border hover:border-primary/50 hover:bg-accent/50 text-muted-foreground"
+            className="w-full h-7 sm:h-8 border border-dashed border-border hover:border-primary/50 hover:bg-accent/50 text-muted-foreground"
             title="Add item"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
         )}
 

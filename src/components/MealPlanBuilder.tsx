@@ -1052,15 +1052,15 @@ export const MealPlanBuilder = ({
         </Card>
       </div>;
   }
-  return <div className={`min-h-screen bg-background p-6 space-y-8 ${isDragging ? 'cursor-grabbing' : ''}`}>
+  return <div className={`min-h-screen bg-background p-3 sm:p-6 space-y-4 sm:space-y-8 ${isDragging ? 'cursor-grabbing' : ''}`}>
       {/* Header */}
-      <div className="text-center space-y-6">
-        <div className="flex items-center justify-center gap-3">
-          <UtensilsCrossed className="h-8 w-8 text-primary" />
-          <h1 className="text-4xl font-bold text-foreground">Meal Plan Builder</h1>
+      <div className="text-center space-y-3 sm:space-y-6">
+        <div className="flex items-center justify-center gap-2 sm:gap-3">
+          <UtensilsCrossed className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+          <h1 className="text-2xl sm:text-4xl font-bold text-foreground">Meal Plan Builder</h1>
         </div>
-        <p className="text-lg text-muted-foreground">Plan your week, check your pantry, get groceries, cook!</p>
-        {isDragging && <div className="text-sm text-orange-600 font-medium">
+        <p className="text-sm sm:text-lg text-muted-foreground px-4">Plan your week, check your pantry, get groceries, cook!</p>
+        {isDragging && <div className="text-xs sm:text-sm text-orange-600 font-medium">
             🎯 Dragging in progress - Drop on any meal cell
           </div>}
       </div>
@@ -1073,32 +1073,37 @@ export const MealPlanBuilder = ({
 
       {/* Meal Plan Table */}
       {!showRecipeInventory && (
-        <Card className="p-6">
-        <div className="min-w-[800px]">
+        <Card className="p-3 sm:p-6">
           {/* Week Navigation */}
-          <div className="flex items-center justify-between mb-6">
-            <Button variant="outline" size="sm" onClick={() => setShowCopyWeekModal(true)} className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowCopyWeekModal(true)} 
+              className="flex items-center gap-2 justify-center"
+            >
               <Copy className="h-4 w-4" />
-              Copy from week
+              <span className="hidden sm:inline">Copy from week</span>
+              <span className="sm:hidden">Copy Week</span>
             </Button>
             
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" onClick={goToPreviousWeek}>
+            <div className="flex items-center gap-2 sm:gap-4 flex-1 justify-center">
+              <Button variant="outline" size="sm" onClick={goToPreviousWeek} className="px-2 sm:px-3">
                 <ChevronLeft className="h-4 w-4" />
-                Previous Week
+                <span className="hidden sm:inline ml-1">Previous</span>
               </Button>
-              <div className="text-lg font-medium">
+              <div className="text-sm sm:text-lg font-medium text-center whitespace-nowrap">
                 {formatDate(weekDates[0])} - {formatDate(weekDates[6])}
               </div>
-              <Button variant="outline" size="sm" onClick={goToNextWeek}>
-                Next Week
+              <Button variant="outline" size="sm" onClick={goToNextWeek} className="px-2 sm:px-3">
+                <span className="hidden sm:inline mr-1">Next</span>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
             
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="default">
+                <Button variant="default" className="w-full sm:w-auto">
                   Get grocery list
                 </Button>
               </SheetTrigger>
@@ -1305,37 +1310,66 @@ export const MealPlanBuilder = ({
           {/* Copy Week Modal */}
           <CopyWeekModal open={showCopyWeekModal} onOpenChange={setShowCopyWeekModal} onCopyWeek={copyWeekFrom} currentWeekStart={currentWeekStart} firstDayOfWeek={firstDayOfWeek} />
 
-           <div className="relative max-h-[70vh] overflow-auto">
-             <div className="grid grid-cols-[160px_repeat(7,minmax(0,1fr))] gap-0 border border-border">
-            {/* Header row with dates and weather */}
-            <div className="sticky top-0 left-0 z-50 bg-background border-r border-b border-border p-4 min-w-[160px] w-full relative after:content-[''] after:absolute after:top-0 after:right-[-1px] after:w-[1px] after:h-full after:bg-border">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Meal Type</span>
-            </div>
-            {orderedDays.map((day, index) => <div key={day} className="sticky top-0 z-40 bg-background border-r border-b border-border text-center p-4 space-y-1">
-                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{day.substring(0, 3)}</div>
-                <div className="text-2xl font-normal text-foreground">
-                  {new Date(weekDates[index]).getDate()}
-                </div>
-                {weather[day] && <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                    <Cloud className="h-3 w-3" />
-                    <span>{weather[day].temp}°F</span>
-                  </div>}
-              </div>)}
+          {/* Mobile: Scrollable grid with fixed left column */}
+          <div className="relative -mx-3 sm:mx-0">
+            <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-280px)] sm:max-h-[70vh]">
+              <div className="inline-block min-w-full">
+                <div className="grid grid-cols-[100px_repeat(7,minmax(140px,1fr))] sm:grid-cols-[160px_repeat(7,minmax(0,1fr))] gap-0 border border-border">
+                  {/* Header row with dates and weather */}
+                  <div className="sticky top-0 left-0 z-50 bg-background border-r border-b border-border p-2 sm:p-4 w-[100px] sm:w-[160px]">
+                    <span className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">Meal</span>
+                  </div>
+                  {orderedDays.map((day, index) => (
+                    <div key={day} className="sticky top-0 z-40 bg-background border-r border-b border-border text-center p-2 sm:p-4 space-y-0.5 sm:space-y-1 min-w-[140px]">
+                      <div className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        {day.substring(0, 3)}
+                      </div>
+                      <div className="text-xl sm:text-2xl font-normal text-foreground">
+                        {new Date(weekDates[index]).getDate()}
+                      </div>
+                      {weather[day] && (
+                        <div className="flex items-center justify-center gap-1 text-[10px] sm:text-xs text-muted-foreground">
+                          <Cloud className="h-3 w-3" />
+                          <span>{weather[day].temp}°F</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
 
-            {/* Meal type rows */}
-            {allMealTypes.map(mealType => <div key={mealType} className="contents">
-                <div className="sticky left-0 z-30 bg-background border-r border-b border-border p-4 flex items-center justify-between min-w-[160px] w-full relative after:content-[''] after:absolute after:top-0 after:right-[-1px] after:w-[1px] after:h-full after:bg-border">
-                  <span className="text-sm text-muted-foreground">{mealType}</span>
-                  {customMealTypes.includes(mealType) && <Button size="sm" variant="ghost" onClick={() => removeCustomMealType(mealType)} className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive">
-                      <Trash2 className="h-3 w-3" />
-                    </Button>}
-                </div>
+                  {/* Meal type rows */}
+                  {allMealTypes.map(mealType => (
+                    <div key={mealType} className="contents">
+                      <div className="sticky left-0 z-30 bg-background border-r border-b border-border p-2 sm:p-4 flex items-center justify-between w-[100px] sm:w-[160px]">
+                        <span className="text-xs sm:text-sm text-muted-foreground truncate">{mealType}</span>
+                        {customMealTypes.includes(mealType) && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => removeCustomMealType(mealType)} 
+                            className="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-destructive/10 hover:text-destructive ml-1 flex-shrink-0"
+                          >
+                            <Trash2 className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                          </Button>
+                        )}
+                      </div>
 
-                {orderedDays.map(day => <MealCell key={`${day}-${mealType}`} day={day} mealType={mealType} items={mealPlan[day][mealType] || []} onItemsChange={items => updateMealPlan(day, mealType, items)} onRemoveFromSource={removeItemFromSource} onAddToInventory={itemName => handleAddToInventory(itemName, mealType)} />)}
-              </div>)}
+                      {orderedDays.map(day => (
+                        <MealCell 
+                          key={`${day}-${mealType}`} 
+                          day={day} 
+                          mealType={mealType} 
+                          items={mealPlan[day][mealType] || []} 
+                          onItemsChange={items => updateMealPlan(day, mealType, items)} 
+                          onRemoveFromSource={removeItemFromSource} 
+                          onAddToInventory={itemName => handleAddToInventory(itemName, mealType)} 
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
         </Card>
       )}
     </div>;

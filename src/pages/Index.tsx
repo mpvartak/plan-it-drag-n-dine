@@ -43,12 +43,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Meal Planner</h1>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              Welcome, {user.email}
+      <header className="border-b bg-card sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
+          <h1 className="text-lg sm:text-2xl font-bold truncate">Meal Planner</h1>
+          <div className="flex items-center gap-2 sm:gap-4">
+            <span className="text-xs sm:text-sm text-muted-foreground hidden md:inline truncate max-w-[150px]">
+              {user.email}
             </span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -84,7 +84,7 @@ const Index = () => {
           </div>
         </div>
       </header>
-      <main>
+      <main className="pb-6">
         <MealPlanBuilder 
           showRecipeInventory={showRecipeInventory}
           setShowRecipeInventory={setShowRecipeInventory}
