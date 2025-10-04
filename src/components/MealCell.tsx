@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, X, GripVertical } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { MealItem } from './MealPlanBuilder';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -296,8 +296,7 @@ export const MealCell: React.FC<MealCellProps> = ({
             onDragEnd={handleDragEnd}
             className="group flex items-center gap-2 p-2.5 rounded-lg bg-primary text-primary-foreground cursor-move hover:bg-primary/90 transition-colors shadow-sm"
           >
-            <GripVertical className="h-3.5 w-3.5 shrink-0 opacity-60" />
-            <span 
+            <span
               className={cn(
                 "flex-1 min-w-0 text-sm font-medium cursor-pointer",
                 expandedItemId === item.id ? "whitespace-normal" : "truncate"
