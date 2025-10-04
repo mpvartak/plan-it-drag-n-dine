@@ -3,10 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, GripVertical } from 'lucide-react';
 import { MealItem } from './MealPlanBuilder';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useLongPress } from '@/hooks/useLongPress';
+import { MealItemContextMenu } from './MealItemContextMenu';
 
 interface MealCellProps {
   day: string;
@@ -34,8 +37,10 @@ export const MealCell: React.FC<MealCellProps> = ({
   const [draggedItem, setDraggedItem] = useState<MealItem | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+  const [contextMenuOpen, setContextMenuOpen] = useState<string | null>(null);
   const { toast } = useToast();
   const cellRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   const cellId = `${day}-${mealType}`;
 
@@ -140,6 +145,21 @@ export const MealCell: React.FC<MealCellProps> = ({
 
   const removeItem = (itemId: string) => {
     onItemsChange(items.filter(item => item.id !== itemId));
+    setContextMenuOpen(null);
+  };
+
+  const copyItemToClipboard = (itemText: string) => {
+    clipboard = [{ id: `clipboard-${Date.now()}`, text: itemText, isRecipe: false }];
+    setContextMenuOpen(null);
+    toast({
+      title: "Copied!",
+      description: `"${itemText}" copied to clipboard`,
+    });
+  };
+
+  const toggleExpanded = (itemId: string) => {
+    setExpandedItemId(expandedItemId === itemId ? null : itemId);
+    setContextMenuOpen(null);
   };
 
   const handleDragStart = (e: React.DragEvent, item: MealItem) => {
@@ -288,41 +308,94 @@ export const MealCell: React.FC<MealCellProps> = ({
       tabIndex={0}
     >
       <div className="space-y-2">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            draggable
-            onDragStart={(e) => handleDragStart(e, item)}
-            onDragEnd={handleDragEnd}
-            className="group flex items-center gap-2 p-2.5 rounded-lg bg-primary text-primary-foreground cursor-move hover:bg-primary/90 transition-colors shadow-sm"
-          >
-            <span 
-              className={cn(
-                "flex-1 min-w-0 text-sm font-medium select-none",
-                expandedItemId === item.id ? "whitespace-normal" : "truncate"
-              )}
-              onDoubleClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                setExpandedItemId(expandedItemId === item.id ? null : item.id);
-              }}
-            >
-              {item.text}
-            </span>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                removeItem(item.id);
-              }}
-              onMouseDown={(e) => e.stopPropagation()}
-              className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary-foreground/20"
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          </div>
-        ))}
+        {items.map((item) => {
+          const MealItemWrapper = ({ children }: { children: React.ReactNode }) => {
+            if (isMobile) {
+              // Mobile: Use context menu with long press
+              const longPressHandlers = useLongPress({
+                onLongPress: () => setContextMenuOpen(item.id),
+                onClick: () => toggleExpanded(item.id),
+                delay: 500,
+              });
+
+              return (
+                <MealItemContextMenu
+                  itemText={item.text}
+                  isExpanded={expandedItemId === item.id}
+                  onToggleExpand={() => toggleExpanded(item.id)}
+                  onDelete={() => removeItem(item.id)}
+                  onCopy={() => copyItemToClipboard(item.text)}
+                  open={contextMenuOpen === item.id}
+                  onOpenChange={(open) => setContextMenuOpen(open ? item.id : null)}
+                >
+                  <div {...longPressHandlers}>
+                    {children}
+                  </div>
+                </MealItemContextMenu>
+              );
+            } else {
+              // Desktop: Right-click for context menu
+              return (
+                <MealItemContextMenu
+                  itemText={item.text}
+                  isExpanded={expandedItemId === item.id}
+                  onToggleExpand={() => toggleExpanded(item.id)}
+                  onDelete={() => removeItem(item.id)}
+                  onCopy={() => copyItemToClipboard(item.text)}
+                >
+                  {children}
+                </MealItemContextMenu>
+              );
+            }
+          };
+
+          return (
+            <MealItemWrapper key={item.id}>
+              <div
+                draggable
+                onDragStart={(e) => handleDragStart(e, item)}
+                onDragEnd={handleDragEnd}
+                className={cn(
+                  "group flex items-center gap-2 p-2.5 rounded-lg bg-primary text-primary-foreground transition-colors shadow-sm",
+                  isMobile ? "touch-manipulation active:scale-[0.98]" : "cursor-move hover:bg-primary/90"
+                )}
+              >
+                {isMobile && (
+                  <GripVertical className="h-4 w-4 opacity-50 flex-shrink-0" />
+                )}
+                <span 
+                  className={cn(
+                    "flex-1 min-w-0 text-sm font-medium",
+                    expandedItemId === item.id ? "whitespace-normal" : "truncate"
+                  )}
+                  onClick={(e) => {
+                    if (!isMobile) {
+                      e.stopPropagation();
+                      toggleExpanded(item.id);
+                    }
+                  }}
+                >
+                  {item.text}
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeItem(item.id);
+                  }}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  className={cn(
+                    "h-6 w-6 p-0 hover:bg-primary-foreground/20 flex-shrink-0",
+                    isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100 transition-opacity"
+                  )}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            </MealItemWrapper>
+          );
+        })}
 
         {isAdding ? (
           <div className="space-y-2">
