@@ -10,7 +10,6 @@ import { Plus, X, ChefHat, Search, Edit2, ExternalLink, FileText, Trash2 } from 
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import poheImage from '@/assets/pohe.png';
 
 export interface Recipe {
   id: string;
@@ -28,6 +27,7 @@ export interface MealItem {
   notes: string | null;
   recipes?: Recipe[];
   created_at?: string;
+  image_url?: string | null;
 }
 
 export const MealItemInventory: React.FC = () => {
@@ -72,6 +72,7 @@ export const MealItemInventory: React.FC = () => {
         name: item.name,
         category: item.category,
         notes: item.notes,
+        image_url: item.image_url,
         created_at: item.created_at,
         recipes: (recipesData || [])
           .filter(recipe => recipe.meal_item_id === item.id)
@@ -101,6 +102,29 @@ export const MealItemInventory: React.FC = () => {
   useEffect(() => {
     loadMealItems();
   }, [user]);
+
+  // Listen for open meal item event from meal plan
+  useEffect(() => {
+    const handleOpenMealItem = (event: CustomEvent) => {
+      const { meal_item_id } = event.detail;
+      if (!meal_item_id) return;
+      
+      const item = mealItems.find(i => i.id === meal_item_id);
+      if (item) {
+        setSelectedMealItem(item);
+        // Scroll to inventory section if not visible
+        const inventorySection = document.getElementById('meal-item-inventory');
+        if (inventorySection) {
+          inventorySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    };
+
+    window.addEventListener('openMealItemInventory', handleOpenMealItem as EventListener);
+    return () => {
+      window.removeEventListener('openMealItemInventory', handleOpenMealItem as EventListener);
+    };
+  }, [mealItems]);
 
   // Listen for add to inventory events from meal plan
   useEffect(() => {
@@ -361,7 +385,7 @@ export const MealItemInventory: React.FC = () => {
   }
 
   return (
-    <Card className="p-3 sm:p-6">
+    <Card className="p-3 sm:p-6" id="meal-item-inventory">
       <div className="space-y-4">
         <div className="flex items-center gap-3">
           <ChefHat className="h-6 w-6 text-primary" />
@@ -462,10 +486,10 @@ export const MealItemInventory: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    {item.name.toLowerCase() === 'pohe' && (
+                    {item.image_url && (
                       <img 
-                        src={poheImage} 
-                        alt="Pohe" 
+                        src={item.image_url} 
+                        alt={item.name} 
                         className="w-16 h-16 object-cover rounded-md"
                       />
                     )}
@@ -492,11 +516,11 @@ export const MealItemInventory: React.FC = () => {
                 </DialogHeader>
                 
                 <div className="space-y-4">
-                  {item.name.toLowerCase() === 'pohe' && (
+                  {item.image_url && (
                     <div className="flex justify-center">
                       <img 
-                        src={poheImage} 
-                        alt="Pohe" 
+                        src={item.image_url} 
+                        alt={item.name} 
                         className="w-48 h-48 object-cover rounded-lg"
                       />
                     </div>

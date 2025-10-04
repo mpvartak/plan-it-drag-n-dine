@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MealItemDialog } from './MealItemDialog';
-import poheImage from '@/assets/pohe.png';
 
 interface MealCellProps {
   day: string;
@@ -156,6 +155,17 @@ export const MealCell: React.FC<MealCellProps> = ({
   };
 
   const openDialog = (itemId: string) => {
+    const item = items.find(i => i.id === itemId);
+    
+    // If the item has a meal_item_id, navigate to inventory instead
+    if (item?.meal_item_id) {
+      // Dispatch event to open the meal item in inventory
+      window.dispatchEvent(new CustomEvent('openMealItemInventory', {
+        detail: { meal_item_id: item.meal_item_id }
+      }));
+      return;
+    }
+    
     setDialogItemId(itemId);
   };
 
@@ -324,10 +334,10 @@ export const MealCell: React.FC<MealCellProps> = ({
               <span className="block text-xs sm:text-sm font-medium truncate">
                 {item.text}
               </span>
-              {item.text.toLowerCase() === 'pohe' && (
+              {item.image_url && (
                 <img 
-                  src={poheImage} 
-                  alt="Pohe" 
+                  src={item.image_url} 
+                  alt={item.text} 
                   className="w-8 h-8 object-cover rounded flex-shrink-0"
                 />
               )}
@@ -343,6 +353,7 @@ export const MealCell: React.FC<MealCellProps> = ({
               open={true}
               onOpenChange={(open) => !open && setDialogItemId(null)}
               itemText={dialogItem.text}
+              imageUrl={dialogItem.image_url}
               onDelete={() => removeItem(dialogItem.id)}
               onCopy={() => copyItemToClipboard(dialogItem.text)}
             />

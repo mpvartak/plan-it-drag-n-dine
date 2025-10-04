@@ -22,6 +22,8 @@ export interface MealItem {
   text: string;
   isRecipe?: boolean;
   recipeId?: string;
+  meal_item_id?: string;
+  image_url?: string;
 }
 export interface MealPlan {
   [day: string]: {
@@ -608,6 +610,39 @@ export const MealPlanBuilder = ({
           });
         }
       });
+
+      // Fetch meal items from inventory to enrich with images and IDs
+      const { data: mealItemsData } = await supabase
+        .from('meal_items')
+        .select('id, name, image_url')
+        .eq('user_id', user.id);
+
+      // Create a map of meal item names to their data (case-insensitive)
+      const mealItemMap = new Map<string, { id: string; image_url: string | null }>();
+      mealItemsData?.forEach(item => {
+        mealItemMap.set(item.name.toLowerCase(), {
+          id: item.id,
+          image_url: item.image_url
+        });
+      });
+
+      // Enrich meal plan items with meal_item_id and image_url
+      Object.keys(plan).forEach(day => {
+        Object.keys(plan[day]).forEach(mealType => {
+          plan[day][mealType] = plan[day][mealType].map(item => {
+            const mealItemData = mealItemMap.get(item.text.toLowerCase());
+            if (mealItemData) {
+              return {
+                ...item,
+                meal_item_id: mealItemData.id,
+                image_url: mealItemData.image_url || undefined
+              };
+            }
+            return item;
+          });
+        });
+      });
+
       setMealPlans(prev => ({
         ...prev,
         [weekKey]: plan
