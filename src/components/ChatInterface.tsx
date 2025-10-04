@@ -1,9 +1,22 @@
 import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
-import { Loader2, Send } from 'lucide-react';
+import { Loader2, Send, Trash2 } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export interface ChatMessage {
   id: string;
@@ -16,12 +29,48 @@ interface ChatInterfaceProps {
   messages: ChatMessage[];
   isLoading: boolean;
   onSendMessage: (message: string) => void;
+  weekStartDate: string;
 }
 
-export const ChatInterface = ({ messages, isLoading, onSendMessage }: ChatInterfaceProps) => {
+export const ChatInterface = ({ messages, isLoading, onSendMessage, weekStartDate }: ChatInterfaceProps) => {
   const [input, setInput] = React.useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isClearing, setIsClearing] = React.useState(false);
+
+  const handleClearHistory = async () => {
+    if (!user) return;
+    
+    setIsClearing(true);
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('week_start_date', weekStartDate);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Chat history cleared',
+        description: 'All messages for this week have been deleted.',
+      });
+      
+      // Reload the page to refresh the chat
+      window.location.reload();
+    } catch (error) {
+      console.error('Error clearing chat history:', error);
+      toast({
+        title: 'Failed to clear history',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsClearing(false);
+    }
+  };
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -48,10 +97,38 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage }: ChatInterf
 
   return (
     <div className="grid grid-rows-[auto_minmax(0,1fr)_auto] h-full min-h-0">
-      <div className="px-4 pt-4 pb-2 shrink-0">
+      <div className="px-4 pt-4 pb-2 shrink-0 flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Ask me to add, remove, or suggest meals for your week
         </p>
+        {messages.length > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={isClearing}
+                className="h-8 px-2 text-muted-foreground hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear chat history?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete all chat messages for this week. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleClearHistory} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Clear History
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Messages */}

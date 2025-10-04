@@ -1455,6 +1455,7 @@ export const MealPlanBuilder = ({
                       messages={messages}
                       isLoading={isChatLoading}
                       onSendMessage={sendMessage}
+                      weekStartDate={currentWeekStart.toISOString().split('T')[0]}
                     />
                   </div>
                 </Card>
@@ -1780,6 +1781,7 @@ export const MealPlanBuilder = ({
                   messages={messages}
                   isLoading={isChatLoading}
                   onSendMessage={sendMessage}
+                  weekStartDate={currentWeekStart.toISOString().split('T')[0]}
                 />
               </SheetContent>
             </Sheet>
