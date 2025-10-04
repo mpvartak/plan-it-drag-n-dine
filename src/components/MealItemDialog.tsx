@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Copy, Trash2 } from 'lucide-react';
+import { Copy, Trash2, ExternalLink } from 'lucide-react';
 
 interface MealItemDialogProps {
   open: boolean;
@@ -15,6 +15,7 @@ interface MealItemDialogProps {
   onDelete: () => void;
   onCopy: () => void;
   imageUrl?: string;
+  mealItemId?: string;
 }
 
 export const MealItemDialog: React.FC<MealItemDialogProps> = ({
@@ -24,7 +25,16 @@ export const MealItemDialog: React.FC<MealItemDialogProps> = ({
   onDelete,
   onCopy,
   imageUrl,
+  mealItemId,
 }) => {
+  const handleViewDetails = () => {
+    if (mealItemId) {
+      window.dispatchEvent(new CustomEvent('openMealItemInventory', {
+        detail: { meal_item_id: mealItemId }
+      }));
+      onOpenChange(false);
+    }
+  };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -43,6 +53,17 @@ export const MealItemDialog: React.FC<MealItemDialogProps> = ({
           )}
           <p className="text-sm whitespace-pre-wrap break-words">{itemText}</p>
           <div className="flex gap-2 justify-end">
+            {mealItemId && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleViewDetails}
+                className="gap-2"
+              >
+                <ExternalLink className="h-4 w-4" />
+                View Details
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"

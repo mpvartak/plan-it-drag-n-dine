@@ -155,17 +155,6 @@ export const MealCell: React.FC<MealCellProps> = ({
   };
 
   const openDialog = (itemId: string) => {
-    const item = items.find(i => i.id === itemId);
-    
-    // If the item has a meal_item_id, navigate to inventory instead
-    if (item?.meal_item_id) {
-      // Dispatch event to open the meal item in inventory
-      window.dispatchEvent(new CustomEvent('openMealItemInventory', {
-        detail: { meal_item_id: item.meal_item_id }
-      }));
-      return;
-    }
-    
     setDialogItemId(itemId);
   };
 
@@ -354,6 +343,7 @@ export const MealCell: React.FC<MealCellProps> = ({
               onOpenChange={(open) => !open && setDialogItemId(null)}
               itemText={dialogItem.text}
               imageUrl={dialogItem.image_url}
+              mealItemId={dialogItem.meal_item_id}
               onDelete={() => removeItem(dialogItem.id)}
               onCopy={() => copyItemToClipboard(dialogItem.text)}
             />
