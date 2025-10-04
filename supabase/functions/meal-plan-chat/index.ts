@@ -404,6 +404,8 @@ Guidelines:
       
       const content = followUpCompletion.choices[0].message.content;
 
+      console.log('Returning response with mealPlanUpdated:', mealPlanUpdated);
+
       return new Response(
         JSON.stringify({ content, mealPlanUpdated }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -411,6 +413,8 @@ Guidelines:
     }
 
     // Return regular response if no tools were called
+    console.log('Returning response (no tools) with mealPlanUpdated:', mealPlanUpdated);
+    
     return new Response(
       JSON.stringify({ 
         content: assistantMessage.content,
