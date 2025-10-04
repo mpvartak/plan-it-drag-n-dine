@@ -1136,7 +1136,7 @@ export const MealPlanBuilder = ({
           
           {/* Desktop/Tablet: Resizable Panels when chat is open */}
           {!isMobile && showChat ? (
-            <ResizablePanelGroup direction="horizontal" className="min-h-[calc(100vh-200px)] gap-2">
+            <ResizablePanelGroup direction="horizontal" className="h-[calc(100vh-200px)] gap-2">
               <ResizablePanel defaultSize={65} minSize={40}>
                 <Card className="p-3 sm:p-6 h-full overflow-auto">
           {/* Week Navigation */}
