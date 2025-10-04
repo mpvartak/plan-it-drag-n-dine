@@ -1073,7 +1073,7 @@ export const MealPlanBuilder = ({
 
       {/* Meal Plan Table */}
       {!showRecipeInventory && (
-        <Card className="p-6 overflow-x-auto">
+        <Card className="p-6">
         <div className="min-w-[800px]">
           {/* Week Navigation */}
           <div className="flex items-center justify-between mb-6">
@@ -1305,7 +1305,8 @@ export const MealPlanBuilder = ({
           {/* Copy Week Modal */}
           <CopyWeekModal open={showCopyWeekModal} onOpenChange={setShowCopyWeekModal} onCopyWeek={copyWeekFrom} currentWeekStart={currentWeekStart} firstDayOfWeek={firstDayOfWeek} />
 
-          <div className="grid grid-cols-[160px_repeat(7,minmax(0,1fr))] gap-0 border border-border">
+           <div className="relative max-h-[70vh] overflow-auto">
+             <div className="grid grid-cols-[160px_repeat(7,minmax(0,1fr))] gap-0 border border-border">
             {/* Header row with dates and weather */}
             <div className="sticky top-0 left-0 z-50 bg-background border-r border-b border-border p-4 min-w-[160px] w-full relative after:content-[''] after:absolute after:top-0 after:right-[-1px] after:w-[1px] after:h-full after:bg-border">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Meal Type</span>
@@ -1323,7 +1324,7 @@ export const MealPlanBuilder = ({
 
             {/* Meal type rows */}
             {allMealTypes.map(mealType => <div key={mealType} className="contents">
-                <div className="sticky left-0 z-40 bg-background border-r border-b border-border p-4 flex items-center justify-between min-w-[160px] w-full relative after:content-[''] after:absolute after:top-0 after:right-[-1px] after:w-[1px] after:h-full after:bg-border">
+                <div className="sticky left-0 z-30 bg-background border-r border-b border-border p-4 flex items-center justify-between min-w-[160px] w-full relative after:content-[''] after:absolute after:top-0 after:right-[-1px] after:w-[1px] after:h-full after:bg-border">
                   <span className="text-sm text-muted-foreground">{mealType}</span>
                   {customMealTypes.includes(mealType) && <Button size="sm" variant="ghost" onClick={() => removeCustomMealType(mealType)} className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive">
                       <Trash2 className="h-3 w-3" />
@@ -1332,6 +1333,7 @@ export const MealPlanBuilder = ({
 
                 {orderedDays.map(day => <MealCell key={`${day}-${mealType}`} day={day} mealType={mealType} items={mealPlan[day][mealType] || []} onItemsChange={items => updateMealPlan(day, mealType, items)} onRemoveFromSource={removeItemFromSource} onAddToInventory={itemName => handleAddToInventory(itemName, mealType)} />)}
               </div>)}
+            </div>
           </div>
         </div>
         </Card>
