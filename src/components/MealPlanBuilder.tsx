@@ -1762,8 +1762,8 @@ export const MealPlanBuilder = ({
             </Card>
           )}
           
-          {/* Floating Chat Button (Desktop Only) */}
-          {!isMobile && !showChat && (
+          {/* Floating Chat Button */}
+          {!showChat && (
             <Button
               onClick={() => setShowChat(true)}
               size="lg"
