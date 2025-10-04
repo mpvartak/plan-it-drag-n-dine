@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MealItemDialog } from './MealItemDialog';
+import poheImage from '@/assets/pohe.png';
 
 interface MealCellProps {
   day: string;
@@ -319,9 +320,18 @@ export const MealCell: React.FC<MealCellProps> = ({
               isMobile ? "touch-manipulation active:scale-[0.98]" : "hover:bg-primary/90"
             )}
           >
-            <span className="block text-xs sm:text-sm font-medium truncate">
-              {item.text}
-            </span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="block text-xs sm:text-sm font-medium truncate">
+                {item.text}
+              </span>
+              {item.text.toLowerCase() === 'pohe' && (
+                <img 
+                  src={poheImage} 
+                  alt="Pohe" 
+                  className="w-8 h-8 object-cover rounded flex-shrink-0"
+                />
+              )}
+            </div>
           </div>
         ))}
         
