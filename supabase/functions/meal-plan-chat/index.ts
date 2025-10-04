@@ -229,6 +229,8 @@ Guidelines:
 
     // Handle tool calls if present
     if (assistantMessage.tool_calls) {
+      const toolResponses = [];
+      
       for (const toolCall of assistantMessage.tool_calls) {
         console.log('Executing tool:', toolCall.function.name, toolCall.function.arguments);
         
@@ -247,9 +249,16 @@ Guidelines:
         )) {
           mealPlanUpdated = true;
         }
+
+        // Add tool response message (required by OpenAI)
+        toolResponses.push({
+          role: 'tool',
+          tool_call_id: toolCall.id,
+          content: JSON.stringify(result)
+        });
       }
 
-      // If tool was called, get a follow-up response from AI
+      // Get a follow-up response from AI with proper tool responses
       const followUpResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -262,7 +271,7 @@ Guidelines:
             { role: 'system', content: systemPrompt },
             ...messages,
             assistantMessage,
-            { role: 'user', content: 'Confirm the action you just took in a friendly way.' }
+            ...toolResponses
           ],
           stream: false,
         }),
