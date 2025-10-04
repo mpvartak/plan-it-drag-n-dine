@@ -47,14 +47,6 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage }: ChatInterf
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold">Meal Planning Assistant</h2>
-        <p className="text-sm text-muted-foreground">
-          Ask me to add, remove, or suggest meals for your week
-        </p>
-      </div>
-
       {/* Messages */}
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
         <div className="space-y-4">
