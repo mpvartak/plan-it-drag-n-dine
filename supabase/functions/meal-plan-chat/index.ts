@@ -2,7 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -20,8 +20,8 @@ serve(async (req) => {
     const { messages, weekStartDate, userId } = await req.json();
     console.log('Chat request:', { userId, weekStartDate, messageCount: messages.length });
 
-    if (!openAIApiKey) {
-      throw new Error('OPENAI_API_KEY not configured');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured');
     }
 
     // Initialize Supabase client
@@ -150,15 +150,15 @@ Guidelines:
 - Suggest variety across the week
 - Be concise but friendly`;
 
-    // Call OpenAI API without streaming
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call Lovable AI Gateway without streaming
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages
@@ -169,17 +169,35 @@ Guidelines:
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: 'Rate limits exceeded, please try again later.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: 'Payment required, please add funds to your Lovable AI workspace.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       const errorText = await response.text();
-      console.error('OpenAI API error:', response.status, errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      console.error('AI gateway error:', response.status, errorText);
+      return new Response(
+        JSON.stringify({ error: 'AI gateway error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const completion = await response.json();
     
     // Validate response structure
     if (!completion.choices || completion.choices.length === 0) {
-      console.error('Invalid OpenAI response:', completion);
-      throw new Error('Invalid response from AI');
+      console.error('Invalid AI response:', completion);
+      return new Response(
+        JSON.stringify({ content: "I'm having trouble responding right now. Please try again.", mealPlanUpdated: false }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
     
     const assistantMessage = completion.choices[0].message;
@@ -204,14 +222,14 @@ Guidelines:
       }
 
       // If tool was called, get a follow-up response from AI
-      const followUpResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      const followUpResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'google/gemini-2.5-flash',
           messages: [
             { role: 'system', content: systemPrompt },
             ...messages,
@@ -221,6 +239,26 @@ Guidelines:
           stream: false,
         }),
       });
+      if (!followUpResponse.ok) {
+        if (followUpResponse.status === 429) {
+          return new Response(
+            JSON.stringify({ error: 'Rate limits exceeded, please try again later.' }),
+            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        if (followUpResponse.status === 402) {
+          return new Response(
+            JSON.stringify({ error: 'Payment required, please add funds to your Lovable AI workspace.' }),
+            { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        const t = await followUpResponse.text();
+        console.error('AI gateway follow-up error:', followUpResponse.status, t);
+        return new Response(
+          JSON.stringify({ content: "I'm having trouble confirming the action. The change was applied though.", mealPlanUpdated }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       const followUpCompletion = await followUpResponse.json();
       

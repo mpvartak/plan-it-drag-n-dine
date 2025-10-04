@@ -104,7 +104,16 @@ export const useMealPlanChat = (weekStartDate: Date, onMealPlanUpdate?: () => vo
         });
 
         if (response.error) {
-          throw new Error(response.error.message || 'Failed to get response');
+          console.error('Chat function error:', response.error);
+          toast({
+            title: 'AI error',
+            description: response.error.message || 'Failed to get response',
+            variant: 'destructive',
+          });
+          // Remove temp user message and stop
+          setMessages((prev) => prev.filter((m) => !m.id.startsWith('temp-')));
+          setIsLoading(false);
+          return;
         }
 
         // For now, handle non-streaming response
