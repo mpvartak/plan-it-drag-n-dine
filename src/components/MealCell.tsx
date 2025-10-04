@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, X, GripVertical } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { MealItem } from './MealPlanBuilder';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -360,10 +360,7 @@ export const MealCell: React.FC<MealCellProps> = ({
                   isMobile ? "touch-manipulation active:scale-[0.98]" : "cursor-move hover:bg-primary/90"
                 )}
               >
-                {isMobile && (
-                  <GripVertical className="h-4 w-4 opacity-50 flex-shrink-0" />
-                )}
-                <span 
+                <span
                   className={cn(
                     "flex-1 min-w-0 text-sm font-medium",
                     expandedItemId === item.id ? "whitespace-normal" : "truncate"
