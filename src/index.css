@@ -2,126 +2,126 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Mediterranean Bistro Theme - All colors, gradients, fonts, etc defined here. 
+/* Farmers Market Fresh Theme - All colors, gradients, fonts, etc defined here. 
 All colors MUST be HSL.
 */
 
 @layer base {
   :root {
-    /* Warm cream and soft ivory backgrounds */
-    --background: 38 55% 96%;
-    --foreground: 210 18% 25%;
+    /* Natural cream and earth tones */
+    --background: 45 40% 96%;
+    --foreground: 30 35% 20%;
 
-    /* Elegant card with subtle warmth */
-    --card: 40 60% 98%;
-    --card-foreground: 210 18% 25%;
+    /* Card with soft paper texture feel */
+    --card: 42 50% 98%;
+    --card-foreground: 30 35% 20%;
 
-    --popover: 40 60% 98%;
-    --popover-foreground: 210 18% 25%;
+    --popover: 42 50% 98%;
+    --popover-foreground: 30 35% 20%;
 
-    /* Deep Mediterranean blue - primary brand color */
-    --primary: 210 85% 42%;
-    --primary-foreground: 40 60% 98%;
-    --primary-glow: 210 75% 60%;
-    --primary-light: 210 65% 75%;
+    /* Deep garden green - primary brand color */
+    --primary: 140 60% 35%;
+    --primary-foreground: 42 50% 98%;
+    --primary-glow: 140 60% 55%;
+    --primary-light: 140 45% 75%;
 
     /* Warm terracotta accent */
-    --secondary: 18 75% 58%;
-    --secondary-foreground: 40 60% 98%;
+    --secondary: 20 70% 65%;
+    --secondary-foreground: 30 35% 20%;
 
-    /* Soft sand muted tones */
-    --muted: 38 30% 90%;
-    --muted-foreground: 210 12% 50%;
+    /* Soft sage muted tones */
+    --muted: 90 25% 88%;
+    --muted-foreground: 30 20% 45%;
 
-    /* Golden sunset accent */
-    --accent: 42 95% 65%;
-    --accent-foreground: 210 18% 25%;
+    /* Warm peach accent */
+    --accent: 35 85% 75%;
+    --accent-foreground: 30 35% 20%;
 
-    /* Deep wine red for destructive */
-    --destructive: 355 70% 50%;
-    --destructive-foreground: 40 60% 98%;
+    /* Tomato red for destructive */
+    --destructive: 5 75% 55%;
+    --destructive-foreground: 42 50% 98%;
 
-    /* Subtle borders and inputs */
-    --border: 38 25% 88%;
-    --input: 38 30% 92%;
-    --ring: 210 85% 42%;
+    /* Natural borders and inputs */
+    --border: 45 30% 85%;
+    --input: 45 30% 90%;
+    --ring: 140 60% 35%;
 
-    /* Mediterranean cuisine-inspired meal colors */
-    --breakfast: 45 92% 68%;       /* Golden olive oil */
-    --breakfast-foreground: 210 18% 25%;
-    --lunch: 170 50% 55%;          /* Fresh herbs & olives */
-    --lunch-foreground: 40 60% 98%;
-    --dinner: 18 75% 58%;          /* Roasted tomatoes */
-    --dinner-foreground: 40 60% 98%;
-    --snack: 275 55% 65%;          /* Figs & grapes */
-    --snack-foreground: 40 60% 98%;
+    /* Fresh vegetable-inspired meal colors */
+    --breakfast: 45 95% 70%;      /* Golden egg yolk */
+    --breakfast-foreground: 30 35% 20%;
+    --lunch: 120 55% 55%;         /* Fresh lettuce */
+    --lunch-foreground: 42 50% 98%;
+    --dinner: 25 75% 60%;         /* Roasted root vegetables */
+    --dinner-foreground: 42 50% 98%;
+    --snack: 280 45% 65%;         /* Blueberry */
+    --snack-foreground: 42 50% 98%;
 
-    /* Coastal bistro gradients */
+    /* Market stand gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-coast: linear-gradient(135deg, hsl(210 85% 42%), hsl(190 75% 55%));
-    --gradient-sunset: linear-gradient(135deg, hsl(18 75% 58%), hsl(42 95% 65%));
-    --gradient-elegant: linear-gradient(180deg, hsl(40 60% 98%), hsl(38 55% 94%));
+    --gradient-harvest: linear-gradient(135deg, hsl(140 60% 35%), hsl(45 95% 70%));
+    --gradient-terracotta: linear-gradient(135deg, hsl(20 70% 65%), hsl(35 85% 75%));
+    --gradient-earth: linear-gradient(180deg, hsl(45 40% 96%), hsl(42 50% 92%));
     
-    /* Refined shadows - elegant and sophisticated */
-    --shadow-soft: 0 2px 16px hsl(210 18% 25% / 0.06);
-    --shadow-card: 0 4px 24px hsl(210 18% 25% / 0.08);
-    --shadow-lifted: 0 8px 40px hsl(210 18% 25% / 0.12);
-    --shadow-glow: 0 0 32px hsl(var(--primary-glow) / 0.35);
-    --shadow-warm: 0 6px 24px hsl(18 75% 58% / 0.25);
+    /* Organic shadows - softer, more natural */
+    --shadow-soft: 0 2px 12px hsl(30 35% 20% / 0.06);
+    --shadow-card: 0 4px 20px hsl(30 35% 20% / 0.08);
+    --shadow-lifted: 0 8px 32px hsl(30 35% 20% / 0.12);
+    --shadow-glow: 0 0 24px hsl(var(--primary-glow) / 0.3);
+    --shadow-warm: 0 4px 16px hsl(35 85% 75% / 0.25);
 
-    /* Refined radius for bistro elegance */
-    --radius: 0.625rem;
+    /* Organic, slightly larger radius for natural feel */
+    --radius: 0.75rem;
 
-    --sidebar-background: 40 60% 98%;
-    --sidebar-foreground: 210 18% 25%;
-    --sidebar-primary: 210 85% 42%;
-    --sidebar-primary-foreground: 40 60% 98%;
-    --sidebar-accent: 38 30% 90%;
-    --sidebar-accent-foreground: 210 18% 25%;
-    --sidebar-border: 38 25% 88%;
-    --sidebar-ring: 210 85% 42%;
+    --sidebar-background: 42 50% 98%;
+    --sidebar-foreground: 30 35% 20%;
+    --sidebar-primary: 140 60% 35%;
+    --sidebar-primary-foreground: 42 50% 98%;
+    --sidebar-accent: 90 25% 88%;
+    --sidebar-accent-foreground: 30 35% 20%;
+    --sidebar-border: 45 30% 85%;
+    --sidebar-ring: 140 60% 35%;
   }
 
   .dark {
-    /* Dark mode: Evening bistro ambiance with deep blues and warm accents */
-    --background: 215 25% 10%;
-    --foreground: 38 55% 95%;
+    /* Dark mode: Deep earth tones, like a nighttime garden */
+    --background: 30 25% 8%;
+    --foreground: 45 40% 95%;
 
-    --card: 215 28% 14%;
-    --card-foreground: 38 55% 95%;
+    --card: 30 30% 12%;
+    --card-foreground: 45 40% 95%;
 
-    --popover: 215 28% 14%;
-    --popover-foreground: 38 55% 95%;
+    --popover: 30 30% 12%;
+    --popover-foreground: 45 40% 95%;
 
-    /* Lighter coastal blue for dark mode */
-    --primary: 210 75% 60%;
-    --primary-foreground: 215 25% 10%;
-    --primary-glow: 210 70% 70%;
+    /* Lighter green for dark mode visibility */
+    --primary: 140 50% 55%;
+    --primary-foreground: 30 25% 8%;
+    --primary-glow: 140 50% 65%;
 
-    --secondary: 18 70% 60%;
-    --secondary-foreground: 38 55% 95%;
+    --secondary: 20 60% 55%;
+    --secondary-foreground: 45 40% 95%;
 
-    --muted: 215 20% 20%;
-    --muted-foreground: 38 25% 65%;
+    --muted: 30 20% 18%;
+    --muted-foreground: 45 15% 60%;
 
-    --accent: 42 85% 65%;
-    --accent-foreground: 215 25% 10%;
+    --accent: 35 70% 60%;
+    --accent-foreground: 45 40% 95%;
 
-    --destructive: 355 65% 55%;
-    --destructive-foreground: 38 55% 95%;
+    --destructive: 5 70% 50%;
+    --destructive-foreground: 45 40% 95%;
 
-    --border: 215 20% 24%;
-    --input: 215 20% 20%;
-    --ring: 210 75% 60%;
+    --border: 30 20% 22%;
+    --input: 30 20% 18%;
+    --ring: 140 50% 55%;
 
-    --sidebar-background: 215 25% 10%;
-    --sidebar-foreground: 38 55% 95%;
-    --sidebar-primary: 210 75% 60%;
-    --sidebar-primary-foreground: 215 25% 10%;
-    --sidebar-accent: 215 20% 20%;
-    --sidebar-accent-foreground: 38 55% 95%;
-    --sidebar-border: 215 20% 24%;
-    --sidebar-ring: 210 75% 60%;
+    --sidebar-background: 30 25% 8%;
+    --sidebar-foreground: 45 40% 95%;
+    --sidebar-primary: 140 50% 55%;
+    --sidebar-primary-foreground: 30 25% 8%;
+    --sidebar-accent: 30 20% 18%;
+    --sidebar-accent-foreground: 45 40% 95%;
+    --sidebar-border: 30 20% 22%;
+    --sidebar-ring: 140 50% 55%;
   }
 }
 
@@ -132,95 +132,60 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Raleway', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
   }
 
-  /* Elegant serif headings for sophisticated bistro feel */
+  /* Handwritten headings for organic market feel */
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Lora', serif;
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    font-family: 'Caveat', cursive;
+    font-weight: 700;
+    letter-spacing: 0.02em;
   }
 
-  /* Subtle linen texture for cards */
-  .card-bistro {
+  /* Subtle texture overlay on cards for organic feel */
+  .card-organic {
     position: relative;
-    background: linear-gradient(
-      to bottom,
-      hsl(var(--card)),
-      hsl(38 55% 97%)
-    );
   }
 
-  .card-bistro::before {
+  .card-organic::before {
     content: '';
     position: absolute;
     inset: 0;
     background-image: 
       repeating-linear-gradient(
-        0deg,
+        45deg,
         transparent,
-        transparent 1px,
-        hsl(var(--muted)) 1px,
-        hsl(var(--muted)) 2px
-      ),
-      repeating-linear-gradient(
-        90deg,
-        transparent,
-        transparent 1px,
-        hsl(var(--muted)) 1px,
-        hsl(var(--muted)) 2px
+        transparent 2px,
+        hsl(var(--muted)) 2px,
+        hsl(var(--muted)) 3px
       );
-    opacity: 0.03;
+    opacity: 0.02;
     pointer-events: none;
     border-radius: inherit;
   }
 }
 
-/* Bistro animations - smooth and elegant */
+/* Market-fresh animations */
 @layer utilities {
-  .animate-float {
-    animation: float 3s ease-in-out infinite;
+  .animate-bounce-gentle {
+    animation: bounce-gentle 2s ease-in-out infinite;
   }
 
-  @keyframes float {
+  @keyframes bounce-gentle {
     0%, 100% {
       transform: translateY(0);
     }
     50% {
-      transform: translateY(-12px);
+      transform: translateY(-8px);
     }
   }
 
-  .hover-elegant {
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  .hover-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
 
-  .hover-elegant:hover {
-    transform: translateY(-6px) scale(1.02);
+  .hover-lift:hover {
+    transform: translateY(-4px);
     box-shadow: var(--shadow-lifted);
-  }
-
-  /* Mediterranean wave decoration */
-  .wave-border {
-    position: relative;
-  }
-
-  .wave-border::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      hsl(var(--primary)) 25%,
-      hsl(var(--primary-glow)) 50%,
-      hsl(var(--primary)) 75%,
-      transparent 100%
-    );
-    border-radius: 2px;
   }
 }
