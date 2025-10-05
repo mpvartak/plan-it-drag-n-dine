@@ -107,7 +107,7 @@ export const FeedbackWidget = ({ variant = 'floating' }: FeedbackWidgetProps) =>
   const trigger = variant === 'floating' ? (
     <Button
       size="icon"
-      className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg z-50 hidden lg:flex"
+      className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg z-50 flex hover:scale-110 active:scale-95 transition-transform"
       title="Send Feedback"
     >
       <MessageSquare className="h-5 w-5" />
