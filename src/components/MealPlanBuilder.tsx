@@ -1181,7 +1181,7 @@ export const MealPlanBuilder = ({
               <SheetTrigger asChild>
                 <Button variant="outline" size="sm" className="flex items-center gap-2">
                   <ShoppingCart className="h-4 w-4" />
-                  <span className="hidden sm:inline">Get Grocery List</span>
+                  <span className="hidden sm:inline">Grocery List</span>
                 </Button>
               </SheetTrigger>
                <SheetContent side="right" className="w-96 h-screen flex flex-col">
@@ -1516,10 +1516,10 @@ export const MealPlanBuilder = ({
                   
                   <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="flex items-center gap-2">
-                      <ShoppingCart className="h-4 w-4" />
-                      <span className="hidden sm:inline">Get Grocery List</span>
-                    </Button>
+                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                    <ShoppingCart className="h-4 w-4" />
+                    <span className="hidden sm:inline">Grocery List</span>
+                  </Button>
                   </SheetTrigger>
                   <SheetContent side="right" className="w-96 h-screen flex flex-col">
                     <SheetHeader className="mb-4">
