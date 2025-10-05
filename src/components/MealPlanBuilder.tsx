@@ -21,6 +21,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMealPlanChat } from '@/hooks/useMealPlanChat';
+import carrotDecoration from '@/assets/carrot-decoration.png';
+import appleDecoration from '@/assets/apple-decoration.png';
+import broccoliDecoration from '@/assets/broccoli-decoration.png';
+import orangeDecoration from '@/assets/orange-decoration.png';
 export interface MealItem {
   id: string;
   text: string;
@@ -1114,7 +1118,19 @@ export const MealPlanBuilder = ({
   }
   return <div className={`min-h-screen bg-background p-3 sm:p-6 space-y-4 sm:space-y-8 ${isDragging ? 'cursor-grabbing' : ''}`}>
       {/* Header */}
-      <div className="text-center space-y-3 sm:space-y-6">
+      <div className="text-center space-y-3 sm:space-y-6 relative">
+        {/* Left edge illustrations */}
+        <div className="absolute left-0 top-0 hidden lg:flex flex-col gap-4 opacity-80">
+          <img src={carrotDecoration} alt="" className="w-16 h-24 object-contain" />
+          <img src={appleDecoration} alt="" className="w-16 h-24 object-contain" />
+        </div>
+        
+        {/* Right edge illustrations */}
+        <div className="absolute right-0 top-0 hidden lg:flex flex-col gap-4 opacity-80">
+          <img src={broccoliDecoration} alt="" className="w-16 h-24 object-contain" />
+          <img src={orangeDecoration} alt="" className="w-16 h-24 object-contain" />
+        </div>
+        
         <div className="flex items-center justify-center gap-2 sm:gap-3">
           <UtensilsCrossed className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
           <h1 className="text-2xl sm:text-4xl font-bold text-foreground">Meal Plan Builder</h1>
