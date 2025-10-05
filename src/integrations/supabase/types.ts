@@ -53,7 +53,6 @@ export type Database = {
           page_url: string | null
           status: string
           user_agent: string | null
-          user_email: string | null
           user_id: string
         }
         Insert: {
@@ -64,7 +63,6 @@ export type Database = {
           page_url?: string | null
           status?: string
           user_agent?: string | null
-          user_email?: string | null
           user_id: string
         }
         Update: {
@@ -75,7 +73,6 @@ export type Database = {
           page_url?: string | null
           status?: string
           user_agent?: string | null
-          user_email?: string | null
           user_id?: string
         }
         Relationships: []

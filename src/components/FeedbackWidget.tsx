@@ -27,7 +27,6 @@ import { z } from 'zod';
 const feedbackSchema = z.object({
   feedback_type: z.enum(['bug', 'feature', 'general']),
   message: z.string().trim().min(10, 'Message must be at least 10 characters').max(1000, 'Message must be less than 1000 characters'),
-  user_email: z.string().email('Invalid email address').optional().or(z.literal('')),
 });
 
 interface FeedbackWidgetProps {
@@ -40,7 +39,6 @@ export const FeedbackWidget = ({ variant = 'floating' }: FeedbackWidgetProps) =>
   const [loading, setLoading] = useState(false);
   const [feedbackType, setFeedbackType] = useState<string>('general');
   const [message, setMessage] = useState('');
-  const [email, setEmail] = useState(user?.email || '');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +57,6 @@ export const FeedbackWidget = ({ variant = 'floating' }: FeedbackWidgetProps) =>
       feedbackSchema.parse({
         feedback_type: feedbackType,
         message,
-        user_email: email,
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -77,7 +74,6 @@ export const FeedbackWidget = ({ variant = 'floating' }: FeedbackWidgetProps) =>
     try {
       const { error } = await supabase.from('feedback').insert({
         user_id: user.id,
-        user_email: email || user.email,
         feedback_type: feedbackType,
         message: message.trim(),
         page_url: window.location.href,
@@ -136,18 +132,6 @@ export const FeedbackWidget = ({ variant = 'floating' }: FeedbackWidgetProps) =>
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email (optional)</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="your@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              maxLength={255}
-            />
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="feedback-type">Feedback Type</Label>
             <Select value={feedbackType} onValueChange={setFeedbackType}>
