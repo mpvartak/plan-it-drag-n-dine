@@ -1120,15 +1120,15 @@ export const MealPlanBuilder = ({
       {/* Header */}
       <div className="text-center space-y-3 sm:space-y-6 relative">
         {/* Left edge illustrations */}
-        <div className="absolute left-0 top-0 hidden lg:flex flex-col gap-4 opacity-80">
-          <img src={carrotDecoration} alt="" className="w-16 h-24 object-contain" />
-          <img src={appleDecoration} alt="" className="w-16 h-24 object-contain" />
+        <div className="absolute left-0 top-0 hidden md:flex flex-col gap-2 md:gap-4 opacity-80">
+          <img src={carrotDecoration} alt="" className="w-12 h-16 md:w-16 md:h-24 object-contain" />
+          <img src={appleDecoration} alt="" className="w-12 h-16 md:w-16 md:h-24 object-contain" />
         </div>
         
         {/* Right edge illustrations */}
-        <div className="absolute right-0 top-0 hidden lg:flex flex-col gap-4 opacity-80">
-          <img src={broccoliDecoration} alt="" className="w-16 h-24 object-contain" />
-          <img src={orangeDecoration} alt="" className="w-16 h-24 object-contain" />
+        <div className="absolute right-0 top-0 hidden md:flex flex-col gap-2 md:gap-4 opacity-80">
+          <img src={broccoliDecoration} alt="" className="w-12 h-16 md:w-16 md:h-24 object-contain" />
+          <img src={orangeDecoration} alt="" className="w-12 h-16 md:w-16 md:h-24 object-contain" />
         </div>
         
         <div className="flex items-center justify-center gap-2 sm:gap-3">
