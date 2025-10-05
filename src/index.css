@@ -2,126 +2,115 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Farmers Market Fresh Theme - All colors, gradients, fonts, etc defined here. 
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
 
 @layer base {
   :root {
-    /* Natural cream and earth tones */
-    --background: 45 40% 96%;
-    --foreground: 30 35% 20%;
+    --background: 40 25% 98%;
+    --foreground: 20 14% 25%;
 
-    /* Card with soft paper texture feel */
-    --card: 42 50% 98%;
-    --card-foreground: 30 35% 20%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 14% 25%;
 
-    --popover: 42 50% 98%;
-    --popover-foreground: 30 35% 20%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14% 25%;
 
-    /* Deep garden green - primary brand color */
-    --primary: 140 60% 35%;
-    --primary-foreground: 42 50% 98%;
-    --primary-glow: 140 60% 55%;
-    --primary-light: 140 45% 75%;
+    --primary: 140 50% 45%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 140 50% 65%;
 
-    /* Warm terracotta accent */
-    --secondary: 20 70% 65%;
-    --secondary-foreground: 30 35% 20%;
+    --secondary: 40 85% 92%;
+    --secondary-foreground: 20 14% 25%;
 
-    /* Soft sage muted tones */
-    --muted: 90 25% 88%;
-    --muted-foreground: 30 20% 45%;
+    --muted: 40 20% 95%;
+    --muted-foreground: 20 8% 55%;
 
-    /* Warm peach accent */
-    --accent: 35 85% 75%;
-    --accent-foreground: 30 35% 20%;
+    --accent: 25 90% 88%;
+    --accent-foreground: 20 14% 25%;
 
-    /* Tomato red for destructive */
-    --destructive: 5 75% 55%;
-    --destructive-foreground: 42 50% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    /* Natural borders and inputs */
-    --border: 45 30% 85%;
-    --input: 45 30% 90%;
-    --ring: 140 60% 35%;
+    --border: 40 20% 90%;
+    --input: 40 20% 94%;
+    --ring: 140 50% 45%;
 
-    /* Fresh vegetable-inspired meal colors */
-    --breakfast: 45 95% 70%;      /* Golden egg yolk */
-    --breakfast-foreground: 30 35% 20%;
-    --lunch: 120 55% 55%;         /* Fresh lettuce */
-    --lunch-foreground: 42 50% 98%;
-    --dinner: 25 75% 60%;         /* Roasted root vegetables */
-    --dinner-foreground: 42 50% 98%;
-    --snack: 280 45% 65%;         /* Blueberry */
-    --snack-foreground: 42 50% 98%;
+    /* Food-inspired meal colors */
+    --breakfast: 48 100% 75%;
+    --breakfast-foreground: 20 14% 25%;
+    --lunch: 120 45% 65%;
+    --lunch-foreground: 0 0% 100%;
+    --dinner: 25 85% 68%;
+    --dinner-foreground: 0 0% 100%;
+    --snack: 270 55% 75%;
+    --snack-foreground: 0 0% 100%;
 
-    /* Market stand gradients */
+    /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-harvest: linear-gradient(135deg, hsl(140 60% 35%), hsl(45 95% 70%));
-    --gradient-terracotta: linear-gradient(135deg, hsl(20 70% 65%), hsl(35 85% 75%));
-    --gradient-earth: linear-gradient(180deg, hsl(45 40% 96%), hsl(42 50% 92%));
+    --gradient-warm: linear-gradient(135deg, hsl(var(--breakfast)), hsl(var(--lunch)));
     
-    /* Organic shadows - softer, more natural */
-    --shadow-soft: 0 2px 12px hsl(30 35% 20% / 0.06);
-    --shadow-card: 0 4px 20px hsl(30 35% 20% / 0.08);
-    --shadow-lifted: 0 8px 32px hsl(30 35% 20% / 0.12);
-    --shadow-glow: 0 0 24px hsl(var(--primary-glow) / 0.3);
-    --shadow-warm: 0 4px 16px hsl(35 85% 75% / 0.25);
+    /* Enhanced shadows */
+    --shadow-soft: 0 2px 8px hsl(20 14% 25% / 0.08);
+    --shadow-card: 0 4px 12px hsl(20 14% 25% / 0.12);
+    --shadow-glow: 0 0 20px hsl(var(--primary-glow) / 0.25);
 
-    /* Organic, slightly larger radius for natural feel */
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    --sidebar-background: 42 50% 98%;
-    --sidebar-foreground: 30 35% 20%;
-    --sidebar-primary: 140 60% 35%;
-    --sidebar-primary-foreground: 42 50% 98%;
-    --sidebar-accent: 90 25% 88%;
-    --sidebar-accent-foreground: 30 35% 20%;
-    --sidebar-border: 45 30% 85%;
-    --sidebar-ring: 140 60% 35%;
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    /* Dark mode: Deep earth tones, like a nighttime garden */
-    --background: 30 25% 8%;
-    --foreground: 45 40% 95%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
 
-    --card: 30 30% 12%;
-    --card-foreground: 45 40% 95%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 30 30% 12%;
-    --popover-foreground: 45 40% 95%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
 
-    /* Lighter green for dark mode visibility */
-    --primary: 140 50% 55%;
-    --primary-foreground: 30 25% 8%;
-    --primary-glow: 140 50% 65%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 20 60% 55%;
-    --secondary-foreground: 45 40% 95%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 30 20% 18%;
-    --muted-foreground: 45 15% 60%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 35 70% 60%;
-    --accent-foreground: 45 40% 95%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 5 70% 50%;
-    --destructive-foreground: 45 40% 95%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 30 20% 22%;
-    --input: 30 20% 18%;
-    --ring: 140 50% 55%;
-
-    --sidebar-background: 30 25% 8%;
-    --sidebar-foreground: 45 40% 95%;
-    --sidebar-primary: 140 50% 55%;
-    --sidebar-primary-foreground: 30 25% 8%;
-    --sidebar-accent: 30 20% 18%;
-    --sidebar-accent-foreground: 45 40% 95%;
-    --sidebar-border: 30 20% 22%;
-    --sidebar-ring: 140 50% 55%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -132,60 +121,5 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, sans-serif;
-  }
-
-  /* Handwritten headings for organic market feel */
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Caveat', cursive;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-  }
-
-  /* Subtle texture overlay on cards for organic feel */
-  .card-organic {
-    position: relative;
-  }
-
-  .card-organic::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: 
-      repeating-linear-gradient(
-        45deg,
-        transparent,
-        transparent 2px,
-        hsl(var(--muted)) 2px,
-        hsl(var(--muted)) 3px
-      );
-    opacity: 0.02;
-    pointer-events: none;
-    border-radius: inherit;
-  }
-}
-
-/* Market-fresh animations */
-@layer utilities {
-  .animate-bounce-gentle {
-    animation: bounce-gentle 2s ease-in-out infinite;
-  }
-
-  @keyframes bounce-gentle {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-8px);
-    }
-  }
-
-  .hover-lift {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-
-  .hover-lift:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lifted);
   }
 }
