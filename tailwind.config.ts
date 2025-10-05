@@ -20,6 +20,7 @@ export default {
 		extend: {
 			fontFamily: {
 				sans: ['Inter', 'system-ui', 'sans-serif'],
+				market: ['Caveat', 'cursive'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
@@ -30,7 +31,8 @@ export default {
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))',
-					glow: 'hsl(var(--primary-glow))'
+					glow: 'hsl(var(--primary-glow))',
+					light: 'hsl(var(--primary-light))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -86,7 +88,14 @@ export default {
 			boxShadow: {
 				'soft': 'var(--shadow-soft)',
 				'card': 'var(--shadow-card)',
+				'lifted': 'var(--shadow-lifted)',
 				'glow': 'var(--shadow-glow)',
+				'warm': 'var(--shadow-warm)',
+			},
+			backgroundImage: {
+				'gradient-harvest': 'var(--gradient-harvest)',
+				'gradient-terracotta': 'var(--gradient-terracotta)',
+				'gradient-earth': 'var(--gradient-earth)',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -109,11 +118,20 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'bounce-gentle': {
+					'0%, 100%': {
+						transform: 'translateY(0)'
+					},
+					'50%': {
+						transform: 'translateY(-8px)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'bounce-gentle': 'bounce-gentle 2s ease-in-out infinite'
 			}
 		}
 	},
