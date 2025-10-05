@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut, Menu, UtensilsCrossed, Settings as SettingsIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
+import { FeedbackWidget } from '@/components/FeedbackWidget';
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
@@ -86,6 +87,10 @@ const Index = () => {
                   Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <FeedbackWidget variant="menu" />
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   onClick={signOut}
                   className="text-destructive focus:text-destructive"
@@ -106,6 +111,7 @@ const Index = () => {
           setShowChat={setShowChat}
         />
       </main>
+      <FeedbackWidget variant="floating" />
     </div>
   );
 };
