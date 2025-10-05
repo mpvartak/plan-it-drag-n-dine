@@ -9,7 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud, X, ChevronLeft, ChevronRight, Copy, Printer, Calendar, ChefHat } from 'lucide-react';
+import { Plus, Trash2, UtensilsCrossed, Settings, ChevronDown, ChevronUp, Cloud, X, ChevronLeft, ChevronRight, Copy, Printer, Calendar, ChefHat, ShoppingCart } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { MealCell } from './MealCell';
@@ -1166,10 +1166,22 @@ export const MealPlanBuilder = ({
               </Button>
             </div>
             
-            <Sheet>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowChat(true)}
+                className="flex items-center gap-2"
+              >
+                <ChefHat className="h-4 w-4" />
+                <span className="hidden sm:inline">AI Sous Chef</span>
+              </Button>
+              
+               <Sheet>
               <SheetTrigger asChild>
-                <Button variant="default" className="w-full sm:w-auto">
-                  Get grocery list
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <ShoppingCart className="h-4 w-4" />
+                  <span className="hidden sm:inline">Get Grocery List</span>
                 </Button>
               </SheetTrigger>
                <SheetContent side="right" className="w-96 h-screen flex flex-col">
@@ -1370,6 +1382,7 @@ export const MealPlanBuilder = ({
                 </div>
                </SheetContent>
             </Sheet>
+            </div>
           </div>
 
           {/* Mobile: Scrollable grid with fixed left column */}
@@ -1490,10 +1503,22 @@ export const MealPlanBuilder = ({
                   </Button>
                 </div>
                 
-                <Sheet>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowChat(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <ChefHat className="h-4 w-4" />
+                    <span className="hidden sm:inline">AI Sous Chef</span>
+                  </Button>
+                  
+                  <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="default" className="w-full sm:w-auto">
-                      Get grocery list
+                    <Button variant="outline" size="sm" className="flex items-center gap-2">
+                      <ShoppingCart className="h-4 w-4" />
+                      <span className="hidden sm:inline">Get Grocery List</span>
                     </Button>
                   </SheetTrigger>
                   <SheetContent side="right" className="w-96 h-screen flex flex-col">
@@ -1697,6 +1722,7 @@ export const MealPlanBuilder = ({
                     </div>
                   </SheetContent>
                 </Sheet>
+                </div>
               </div>
 
               {/* Mobile: Scrollable grid */}
@@ -1762,16 +1788,6 @@ export const MealPlanBuilder = ({
             </Card>
           )}
           
-          {/* Floating Chat Button */}
-          {!showChat && (
-            <Button
-              onClick={() => setShowChat(true)}
-              size="lg"
-              className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
-            >
-              <ChefHat className="h-6 w-6" />
-            </Button>
-          )}
           
           {/* Mobile: Bottom Sheet for Chat */}
           {isMobile && showChat && (
