@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { LogOut, Menu, UtensilsCrossed, Settings as SettingsIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
+import carrotIllustration from '@/assets/carrot-illustration.png';
+import tomatoIllustration from '@/assets/tomato-illustration.png';
+import broccoliIllustration from '@/assets/broccoli-illustration.png';
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
@@ -58,7 +61,12 @@ const Index = () => {
     <div className="min-h-screen">
       <header className="border-b bg-card sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
-          <h1 className="text-lg sm:text-2xl font-bold truncate">Meal Planner</h1>
+          <div className="flex items-center gap-2">
+            <img src={carrotIllustration} alt="" className="w-8 h-8 hidden sm:block" />
+            <h1 className="text-lg sm:text-2xl font-bold truncate">Meal Planner</h1>
+            <img src={tomatoIllustration} alt="" className="w-8 h-8 hidden sm:block" />
+            <img src={broccoliIllustration} alt="" className="w-8 h-8 hidden md:block" />
+          </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <span className="text-xs sm:text-sm text-muted-foreground hidden md:inline truncate max-w-[150px]">
               {user.email}
