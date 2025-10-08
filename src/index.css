@@ -37,14 +37,14 @@ All colors MUST be HSL.
     --input: 35 30% 94%;
     --ring: 140 35% 55%;
 
-    /* Watercolor-inspired meal colors */
-    --breakfast: 38 85% 70%;
-    --breakfast-foreground: 25 20% 30%;
-    --lunch: 140 35% 60%;
+    /* Watercolor-inspired meal colors - drawn from background fruits & veggies */
+    --breakfast: 25 85% 65%;
+    --breakfast-foreground: 0 0% 100%;
+    --lunch: 145 40% 55%;
     --lunch-foreground: 0 0% 100%;
-    --dinner: 15 75% 68%;
+    --dinner: 8 75% 62%;
     --dinner-foreground: 0 0% 100%;
-    --snack: 0 70% 70%;
+    --snack: 35 80% 60%;
     --snack-foreground: 0 0% 100%;
 
     /* Watercolor gradients */
