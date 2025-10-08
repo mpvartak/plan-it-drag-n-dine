@@ -58,11 +58,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b bg-card sticky top-0 z-50">
+      <header className="border-b bg-lunch sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
-          <h1 className="text-lg sm:text-2xl font-bold truncate">Meal Planner</h1>
+          <h1 className="text-lg sm:text-2xl font-bold text-lunch-foreground truncate">Meal Planner</h1>
           <div className="flex items-center gap-2 sm:gap-4">
-            <span className="text-xs sm:text-sm text-muted-foreground hidden md:inline truncate max-w-[150px]">
+            <span className="text-xs sm:text-sm text-lunch-foreground/80 hidden md:inline truncate max-w-[150px]">
               {user.email}
             </span>
             <DropdownMenu>
