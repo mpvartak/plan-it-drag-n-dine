@@ -6,6 +6,7 @@ import { LogOut, Menu, UtensilsCrossed, Settings as SettingsIcon } from 'lucide-
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { FeedbackWidget } from '@/components/FeedbackWidget';
+import backgroundImage from '@/assets/fruits-veggies-background.jpg';
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
@@ -103,7 +104,10 @@ const Index = () => {
           </div>
         </div>
       </header>
-      <main className="pb-6">
+      <main 
+        className="pb-6 bg-cover bg-center bg-no-repeat" 
+        style={{ backgroundImage: `url(${backgroundImage})` }}
+      >
         <MealPlanBuilder 
           showRecipeInventory={showRecipeInventory}
           setShowRecipeInventory={setShowRecipeInventory}
