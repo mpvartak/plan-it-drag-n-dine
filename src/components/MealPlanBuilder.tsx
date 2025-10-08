@@ -1088,7 +1088,7 @@ export const MealPlanBuilder = ({
 
   // Show authentication message if not logged in
   if (!user) {
-    return <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+    return <div className="min-h-screen p-6 flex items-center justify-center">
         <Card className="p-8 max-w-md text-center space-y-4">
           <UtensilsCrossed className="h-12 w-12 text-primary mx-auto" />
           <h2 className="text-2xl font-bold">Authentication Required</h2>
@@ -1102,7 +1102,7 @@ export const MealPlanBuilder = ({
       </div>;
   }
   if (isLoading) {
-    return <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+    return <div className="min-h-screen p-6 flex items-center justify-center">
         <Card className="p-8 max-w-md text-center space-y-4">
           <UtensilsCrossed className="h-12 w-12 text-primary mx-auto animate-pulse" />
           <h2 className="text-2xl font-bold">Loading Meal Plans</h2>
@@ -1112,7 +1112,7 @@ export const MealPlanBuilder = ({
         </Card>
       </div>;
   }
-  return <div className={`min-h-screen bg-background p-3 sm:p-6 space-y-4 sm:space-y-8 ${isDragging ? 'cursor-grabbing' : ''}`}>
+  return <div className={`min-h-screen p-3 sm:p-6 space-y-4 sm:space-y-8 ${isDragging ? 'cursor-grabbing' : ''}`}>
       {/* Header */}
       <div className="text-center space-y-3 sm:space-y-6">
         <div className="flex items-center justify-center gap-2 sm:gap-3">
