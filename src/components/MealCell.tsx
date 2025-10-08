@@ -19,12 +19,49 @@ interface MealCellProps {
   onItemsChange: (items: MealItem[]) => void;
   onRemoveFromSource?: (sourceCell: string, itemId: string) => void;
   onAddToInventory?: (itemName: string) => void;
+  mealTypeColor?: string;
 }
 
 // Simple global clipboard - clean slate
 let clipboard: MealItem[] = [];
 let currentCell: string | null = null;
 
+  const getMealTypeColorClasses = (mealType: string) => {
+    const normalizedType = mealType.toLowerCase();
+    if (normalizedType.includes('breakfast')) {
+      return {
+        bg: 'bg-breakfast',
+        text: 'text-breakfast-foreground',
+        hover: 'hover:bg-breakfast/90'
+      };
+    }
+    if (normalizedType.includes('lunch')) {
+      return {
+        bg: 'bg-lunch',
+        text: 'text-lunch-foreground',
+        hover: 'hover:bg-lunch/90'
+      };
+    }
+    if (normalizedType.includes('dinner')) {
+      return {
+        bg: 'bg-dinner',
+        text: 'text-dinner-foreground',
+        hover: 'hover:bg-dinner/90'
+      };
+    }
+    if (normalizedType.includes('snack')) {
+      return {
+        bg: 'bg-snack',
+        text: 'text-snack-foreground',
+        hover: 'hover:bg-snack/90'
+      };
+    }
+    return {
+      bg: 'bg-primary',
+      text: 'text-primary-foreground',
+      hover: 'hover:bg-primary/90'
+    };
+  };
 export const MealCell: React.FC<MealCellProps> = ({
   day,
   mealType,
@@ -32,6 +69,7 @@ export const MealCell: React.FC<MealCellProps> = ({
   onItemsChange,
   onRemoveFromSource,
   onAddToInventory,
+  mealTypeColor = 'primary',
 }) => {
   const [newItemText, setNewItemText] = useState('');
   const [isAdding, setIsAdding] = useState(false);
@@ -49,6 +87,7 @@ export const MealCell: React.FC<MealCellProps> = ({
   const isMobile = useIsMobile();
 
   const cellId = `${day}-${mealType}`;
+  const colorClasses = getMealTypeColorClasses(mealType);
 
   // Load inventory items from database
   useEffect(() => {
@@ -400,8 +439,10 @@ export const MealCell: React.FC<MealCellProps> = ({
               openDialog(item.id);
             }}
             className={cn(
-              "p-2 sm:p-2.5 rounded-lg bg-primary text-primary-foreground transition-colors shadow-sm cursor-pointer",
-              isMobile ? "touch-manipulation active:scale-[0.98]" : "hover:bg-primary/90"
+              "p-2 sm:p-2.5 rounded-lg transition-colors shadow-sm cursor-pointer",
+              colorClasses.bg,
+              colorClasses.text,
+              isMobile ? "touch-manipulation active:scale-[0.98]" : colorClasses.hover
             )}
           >
             <div className="flex items-center justify-between gap-2">

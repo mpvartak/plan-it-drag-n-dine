@@ -1436,7 +1436,8 @@ export const MealPlanBuilder = ({
                           items={mealPlan[day][mealType] || []} 
                           onItemsChange={items => updateMealPlan(day, mealType, items)} 
                           onRemoveFromSource={removeItemFromSource} 
-                          onAddToInventory={itemName => handleAddToInventory(itemName, mealType)} 
+                          onAddToInventory={itemName => handleAddToInventory(itemName, mealType)}
+                          mealTypeColor={getMealTypeColor(mealType)}
                         />
                       ))}
                     </div>
@@ -1776,7 +1777,8 @@ export const MealPlanBuilder = ({
                               items={mealPlan[day][mealType] || []} 
                               onItemsChange={items => updateMealPlan(day, mealType, items)} 
                               onRemoveFromSource={removeItemFromSource} 
-                              onAddToInventory={itemName => handleAddToInventory(itemName, mealType)} 
+                              onAddToInventory={itemName => handleAddToInventory(itemName, mealType)}
+                              mealTypeColor={getMealTypeColor(mealType)}
                             />
                           ))}
                         </div>
