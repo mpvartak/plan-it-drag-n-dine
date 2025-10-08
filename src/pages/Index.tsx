@@ -105,8 +105,11 @@ const Index = () => {
         </div>
       </header>
       <main 
-        className="pb-6 bg-cover bg-center bg-no-repeat" 
-        style={{ backgroundImage: `url(${backgroundImage})` }}
+        className="pb-6 min-h-screen bg-cover bg-center bg-no-repeat bg-fixed" 
+        style={{ 
+          backgroundImage: `url(${backgroundImage})`,
+          backgroundAttachment: 'scroll'
+        }}
       >
         <MealPlanBuilder 
           showRecipeInventory={showRecipeInventory}
