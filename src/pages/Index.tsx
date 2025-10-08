@@ -60,7 +60,7 @@ const Index = () => {
     <div className="min-h-screen">
       <header className="border-b bg-breakfast sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
-          <h1 className="text-lg sm:text-2xl font-bold text-breakfast-foreground truncate">Meal Planner</h1>
+          <h1 className="text-lg sm:text-2xl font-bold text-breakfast-foreground truncate">Greens</h1>
           <div className="flex items-center gap-2 sm:gap-4">
             <span className="text-xs sm:text-sm text-breakfast-foreground/80 hidden md:inline truncate max-w-[150px]">
               {user.email}
