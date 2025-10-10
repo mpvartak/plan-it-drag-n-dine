@@ -1119,7 +1119,7 @@ export const MealPlanBuilder = ({
           <UtensilsCrossed className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
           <h1 className="text-2xl sm:text-4xl font-bold text-foreground">Meal Plan Builder</h1>
         </div>
-        <p className="text-sm sm:text-lg text-muted-foreground px-4">Plan your week, check your pantry, get groceries, cook!</p>
+        <p className="text-sm sm:text-lg text-muted-foreground px-4">"Plans are worthless, planning is everything" -- D. Eisenhower</p>
         {isDragging && <div className="text-xs sm:text-sm text-orange-600 font-medium">
             🎯 Dragging in progress - Drop on any meal cell
           </div>}
