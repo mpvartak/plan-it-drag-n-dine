@@ -9,6 +9,7 @@ import { Plus, X, Menu, LogOut, UtensilsCrossed } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { FeedbackWidget } from '@/components/FeedbackWidget';
 
 const ALL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -108,6 +109,10 @@ const Settings = () => {
                 <DropdownMenuItem onClick={() => navigate('/?inventory=true')}>
                   <UtensilsCrossed className="h-4 w-4 mr-2" />
                   Recipe Inventory
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <FeedbackWidget variant="menu" />
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
