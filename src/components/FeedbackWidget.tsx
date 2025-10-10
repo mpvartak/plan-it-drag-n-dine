@@ -113,10 +113,10 @@ export const FeedbackWidget = ({ variant = 'floating' }: FeedbackWidgetProps) =>
       <MessageSquare className="h-5 w-5" />
     </Button>
   ) : (
-    <button className="flex items-center w-full">
+    <div className="flex items-center w-full cursor-default">
       <MessageSquare className="h-4 w-4 mr-2" />
       Send Feedback
-    </button>
+    </div>
   );
 
   return (
