@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 Ask a Question
+    url: https://github.com/mpvartak/plan-it-drag-n-dine/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: 🔒 Security Issue
+    url: https://github.com/mpvartak/plan-it-drag-n-dine/security/advisories/new
+    about: Report a security vulnerability (private disclosure)
