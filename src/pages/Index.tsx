@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { MealPlanBuilder } from '@/components/MealPlanBuilder';
 import { Button } from '@/components/ui/button';
-import { LogOut, Menu, UtensilsCrossed, Settings as SettingsIcon } from 'lucide-react';
+import { LogOut, Menu, UtensilsCrossed, Settings as SettingsIcon, ChefHat } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { FeedbackWidget } from '@/components/FeedbackWidget';
@@ -118,7 +118,14 @@ const Index = () => {
           setShowChat={setShowChat}
         />
       </main>
-      <FeedbackWidget variant="floating" />
+      <Button
+        size="icon"
+        onClick={() => setShowChat(true)}
+        className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg z-50 flex hover:scale-110 active:scale-95 transition-transform"
+        title="AI Sous Chef"
+      >
+        <ChefHat className="h-5 w-5" />
+      </Button>
     </div>
   );
 };

@@ -1167,17 +1167,7 @@ export const MealPlanBuilder = ({
             </div>
             
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowChat(true)}
-                className="flex items-center gap-2"
-              >
-                <ChefHat className="h-4 w-4" />
-                <span className="hidden sm:inline">AI Sous Chef</span>
-              </Button>
-              
-               <Sheet>
+              <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" size="sm" className="flex items-center gap-2">
                   <ShoppingCart className="h-4 w-4" />
@@ -1381,11 +1371,11 @@ export const MealPlanBuilder = ({
                   </Tabs>
                 </div>
                </SheetContent>
-            </Sheet>
-            </div>
-          </div>
+                  </Sheet>
+                </div>
+           </div>
 
-          {/* Mobile: Scrollable grid with fixed left column */}
+           {/* Mobile: Scrollable grid with fixed left column */}
           <div className="relative -mx-3 sm:mx-0">
             <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-280px)] sm:max-h-[70vh]">
               <div className="inline-block min-w-full">
@@ -1505,16 +1495,6 @@ export const MealPlanBuilder = ({
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setShowChat(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <ChefHat className="h-4 w-4" />
-                    <span className="hidden sm:inline">AI Sous Chef</span>
-                  </Button>
-                  
                   <Sheet>
                   <SheetTrigger asChild>
                   <Button variant="outline" size="sm" className="flex items-center gap-2">
@@ -1722,11 +1702,11 @@ export const MealPlanBuilder = ({
                       </Tabs>
                     </div>
                   </SheetContent>
-                </Sheet>
+                    </Sheet>
+                  </div>
                 </div>
-              </div>
 
-              {/* Mobile: Scrollable grid */}
+                {/* Mobile: Scrollable grid */}
               <div className="relative -mx-3 sm:mx-0">
                 <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-280px)] sm:max-h-[70vh]">
                   <div className="inline-block min-w-full">
