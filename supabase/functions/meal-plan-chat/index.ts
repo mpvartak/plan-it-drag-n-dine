@@ -60,21 +60,36 @@ serve(async (req) => {
     const endDate = new Date(new Date(weekStartDate).getTime() + 6 * 24 * 60 * 60 * 1000)
       .toISOString().split('T')[0];
 
-    const { data: mealPlans, error: mealPlanError } = await supabase
-      .from('meal_plans')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('date', startDate)
-      .lte('date', endDate);
+    // Fetch meal plans and user preferences in parallel
+    const [mealPlansResult, profileResult] = await Promise.all([
+      supabase
+        .from('meal_plans')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('date', startDate)
+        .lte('date', endDate),
+      supabase
+        .from('profiles')
+        .select('meal_preferences')
+        .eq('user_id', userId)
+        .maybeSingle()
+    ]);
 
-    if (mealPlanError) {
-      console.error('Error fetching meal plan:', mealPlanError);
-      throw mealPlanError;
+    if (mealPlansResult.error) {
+      console.error('Error fetching meal plan:', mealPlansResult.error);
+      throw mealPlansResult.error;
+    }
+
+    const mealPlans = mealPlansResult.data || [];
+    const userMealPreferences = profileResult.data?.meal_preferences || '';
+    
+    if (userMealPreferences) {
+      console.log('User has meal preferences configured');
     }
 
     // Format meal plan for context with explicit dates
     const orderedDays = getOrderedDays(firstDayOfWeek);
-    const mealPlanContext = formatMealPlanContext(mealPlans || [], weekStartDate, orderedDays);
+    const mealPlanContext = formatMealPlanContext(mealPlans, weekStartDate, orderedDays);
 
     // Define tools for meal plan operations
     const tools = [
@@ -375,11 +390,15 @@ serve(async (req) => {
     // Use client-local "today" when provided; fall back to UTC date otherwise.
     const today = isYyyyMmDd(clientToday) ? clientToday : new Date().toISOString().split('T')[0];
 
-    // Build system prompt with meal plan context
+    // Build system prompt with meal plan context and user preferences
+    const preferencesSection = userMealPreferences 
+      ? `\n\nUSER'S MEAL PLANNING PREFERENCES (IMPORTANT - follow these guidelines when suggesting or planning meals):\n${userMealPreferences}\n`
+      : '';
+
     const systemPrompt = `You are a helpful kitchen and meal planning assistant. You help users plan their weekly meals, manage their kitchen inventory (fridge, freezer, pantry), and organize recipes.
 
 TODAY'S DATE (client local): ${today}
-
+${preferencesSection}
 Current Week's Meal Plan (with dates):
 ${mealPlanContext}
 
@@ -418,6 +437,7 @@ CRITICAL - Expiration Date Handling:
 - NEVER pass relative phrases like "in 2 days" to the tool - always convert to YYYY-MM-DD first
 
 Guidelines:
+- ALWAYS respect the user's meal planning preferences listed above when suggesting meals
 - Be proactive in suggesting meals when asked
 - Confirm changes after making them (mention the location you chose if user didn't specify)
 - If a meal already exists, ask if they want to replace or add to it
