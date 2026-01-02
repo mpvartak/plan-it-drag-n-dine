@@ -16,7 +16,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Trash2, Edit2, CalendarIcon, ArrowLeft, Menu, LogOut, Settings as SettingsIcon, AlertTriangle, Search, Refrigerator, Snowflake, Package, ChefHat, X } from 'lucide-react';
+import { Plus, Trash2, Edit2, CalendarIcon, ArrowLeft, Menu, LogOut, Settings as SettingsIcon, AlertTriangle, Search, Refrigerator, Snowflake, Package, ChefHat, X, ArrowUpDown } from 'lucide-react';
 import { format, differenceInDays, isPast, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import backgroundImage from '@/assets/fruits-veggies-background.jpg';
@@ -73,6 +73,7 @@ const Inventory = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | InventoryLocation>('all');
   const [showChat, setShowChat] = useState(false);
+  const [sortByExpiration, setSortByExpiration] = useState<'none' | 'asc' | 'desc'>('none');
   
   // Form state
   const [formName, setFormName] = useState('');
@@ -219,6 +220,15 @@ const Inventory = () => {
     }
   };
 
+  // Count items by location
+  const locationCounts = useMemo(() => {
+    const counts = { all: inventoryItems.length, fridge: 0, freezer: 0, pantry: 0 };
+    inventoryItems.forEach(item => {
+      counts[item.location]++;
+    });
+    return counts;
+  }, [inventoryItems]);
+
   // Filter and group items
   const filteredItems = useMemo(() => {
     let items = inventoryItems;
@@ -233,9 +243,31 @@ const Inventory = () => {
     if (activeTab !== 'all') {
       items = items.filter(item => item.location === activeTab);
     }
+
+    // Sort by expiration date if enabled
+    if (sortByExpiration !== 'none') {
+      items = [...items].sort((a, b) => {
+        // Items without expiration date go to the end
+        if (!a.expiration_date && !b.expiration_date) return 0;
+        if (!a.expiration_date) return 1;
+        if (!b.expiration_date) return -1;
+        
+        const dateA = parseDateOnly(a.expiration_date).getTime();
+        const dateB = parseDateOnly(b.expiration_date).getTime();
+        return sortByExpiration === 'asc' ? dateA - dateB : dateB - dateA;
+      });
+    }
     
     return items;
-  }, [inventoryItems, searchQuery, activeTab]);
+  }, [inventoryItems, searchQuery, activeTab, sortByExpiration]);
+
+  const toggleExpirationSort = () => {
+    setSortByExpiration(prev => {
+      if (prev === 'none') return 'asc';
+      if (prev === 'asc') return 'desc';
+      return 'none';
+    });
+  };
 
   // Get expiration status
   const getExpirationStatus = (expirationDate: string | null) => {
@@ -536,24 +568,58 @@ const Inventory = () => {
             </Dialog>
           </div>
 
-          {/* Location tabs */}
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="mb-6">
-            <TabsList className="grid grid-cols-4 w-full max-w-md bg-background/95">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="fridge" className="gap-1">
-                <Refrigerator className="h-3 w-3 hidden sm:inline" />
-                Fridge
-              </TabsTrigger>
-              <TabsTrigger value="freezer" className="gap-1">
-                <Snowflake className="h-3 w-3 hidden sm:inline" />
-                Freezer
-              </TabsTrigger>
-              <TabsTrigger value="pantry" className="gap-1">
-                <Package className="h-3 w-3 hidden sm:inline" />
-                Pantry
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {/* Item counts summary */}
+          <Card className="mb-4 bg-background/95">
+            <CardContent className="py-3 px-4">
+              <div className="flex flex-wrap items-center gap-4 text-sm">
+                <div className="font-medium">
+                  Total: <span className="text-primary">{locationCounts.all} items</span>
+                </div>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Refrigerator className="h-4 w-4" />
+                  <span>{locationCounts.fridge}</span>
+                </div>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Snowflake className="h-4 w-4" />
+                  <span>{locationCounts.freezer}</span>
+                </div>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Package className="h-4 w-4" />
+                  <span>{locationCounts.pantry}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Location tabs and sort */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="flex-1">
+              <TabsList className="grid grid-cols-4 w-full max-w-md bg-background/95">
+                <TabsTrigger value="all">All ({locationCounts.all})</TabsTrigger>
+                <TabsTrigger value="fridge" className="gap-1">
+                  <Refrigerator className="h-3 w-3 hidden sm:inline" />
+                  Fridge ({locationCounts.fridge})
+                </TabsTrigger>
+                <TabsTrigger value="freezer" className="gap-1">
+                  <Snowflake className="h-3 w-3 hidden sm:inline" />
+                  Freezer ({locationCounts.freezer})
+                </TabsTrigger>
+                <TabsTrigger value="pantry" className="gap-1">
+                  <Package className="h-3 w-3 hidden sm:inline" />
+                  Pantry ({locationCounts.pantry})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Button
+              variant={sortByExpiration !== 'none' ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={toggleExpirationSort}
+              className="gap-2 shrink-0 bg-background/95"
+            >
+              <ArrowUpDown className="h-4 w-4" />
+              Expiry {sortByExpiration === 'asc' ? '↑' : sortByExpiration === 'desc' ? '↓' : ''}
+            </Button>
+          </div>
 
           {/* Inventory list */}
           {isLoadingItems ? (
