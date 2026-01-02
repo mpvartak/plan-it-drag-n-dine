@@ -7,6 +7,7 @@ import { ChatMessage } from '@/components/ChatInterface';
 interface UseMealPlanChatOptions {
   onMealPlanUpdate?: () => void;
   onInventoryUpdate?: () => void;
+  firstDayOfWeek?: string;
 }
 
 const formatLocalDate = (d: Date) => {
@@ -108,13 +109,14 @@ export const useMealPlanChat = (weekStartDate: Date, options?: UseMealPlanChatOp
         recentMessages.push({ role: 'user', content });
 
         // Call edge function (userId extracted from JWT on backend)
-        console.info('[meal-plan-chat] invoking', { clientToday, clientTzOffsetMinutes });
+        console.info('[meal-plan-chat] invoking', { clientToday, clientTzOffsetMinutes, firstDayOfWeek: options?.firstDayOfWeek });
         const response = await supabase.functions.invoke('meal-plan-chat', {
           body: {
             messages: recentMessages,
             weekStartDate: weekStart,
             clientToday,
             clientTzOffsetMinutes,
+            firstDayOfWeek: options?.firstDayOfWeek || 'Monday',
           },
         });
 

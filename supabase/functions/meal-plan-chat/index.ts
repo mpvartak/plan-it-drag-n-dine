@@ -48,8 +48,8 @@ serve(async (req) => {
     }
 
     const userId = user.id;
-    const { messages, weekStartDate, clientToday, clientTzOffsetMinutes } = await req.json();
-    console.log('Chat request:', { userId, weekStartDate, messageCount: messages.length, clientToday, clientTzOffsetMinutes });
+    const { messages, weekStartDate, clientToday, clientTzOffsetMinutes, firstDayOfWeek = 'Monday' } = await req.json();
+    console.log('Chat request:', { userId, weekStartDate, messageCount: messages.length, clientToday, clientTzOffsetMinutes, firstDayOfWeek });
 
     if (!OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY not configured');
@@ -72,8 +72,9 @@ serve(async (req) => {
       throw mealPlanError;
     }
 
-    // Format meal plan for context
-    const mealPlanContext = formatMealPlanContext(mealPlans || [], weekStartDate);
+    // Format meal plan for context with explicit dates
+    const orderedDays = getOrderedDays(firstDayOfWeek);
+    const mealPlanContext = formatMealPlanContext(mealPlans || [], weekStartDate, orderedDays);
 
     // Define tools for meal plan operations
     const tools = [
@@ -85,10 +86,13 @@ serve(async (req) => {
           parameters: {
             type: "object",
             properties: {
+              date: {
+                type: "string",
+                description: "The date in YYYY-MM-DD format. REQUIRED. Use the exact date from the meal plan context."
+              },
               day: {
                 type: "string",
-                enum: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-                description: "The day of the week"
+                description: "The day of the week (for confirmation). Optional."
               },
               mealType: {
                 type: "string",
@@ -99,7 +103,7 @@ serve(async (req) => {
                 description: "The name of the meal item to add"
               }
             },
-            required: ["day", "mealType", "itemName"]
+            required: ["date", "mealType", "itemName"]
           }
         }
       },
@@ -111,9 +115,13 @@ serve(async (req) => {
           parameters: {
             type: "object",
             properties: {
+              date: {
+                type: "string",
+                description: "The date in YYYY-MM-DD format. REQUIRED. Use the exact date from the meal plan context."
+              },
               day: {
                 type: "string",
-                enum: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+                description: "The day of the week (for confirmation). Optional."
               },
               mealType: {
                 type: "string",
@@ -124,7 +132,7 @@ serve(async (req) => {
                 description: "The name of the meal item to remove"
               }
             },
-            required: ["day", "mealType", "itemName"]
+            required: ["date", "mealType", "itemName"]
           }
         }
       },
@@ -372,10 +380,14 @@ serve(async (req) => {
 
 TODAY'S DATE (client local): ${today}
 
-Current Week's Meal Plan:
+Current Week's Meal Plan (with dates):
 ${mealPlanContext}
 
-When the user asks you to add or modify meals, use the appropriate tool to make the changes. Be conversational and helpful. Confirm actions after making changes.
+CRITICAL - Meal Plan Date Handling:
+- When adding or removing meals, ALWAYS use the 'date' parameter with the exact YYYY-MM-DD date from the meal plan context above.
+- If user says "tomorrow", compute the date: ${addDays(today, 1)}
+- If user says "Saturday", find which date is Saturday from the meal plan context.
+- NEVER guess dates - always use the exact dates shown in the meal plan context.
 
 Available meal types: Breakfast, Lunch, Dinner, School Snacks, Prep (and any custom types the user has added).
 
@@ -586,39 +598,46 @@ Guidelines:
   }
 });
 
-function formatMealPlanContext(mealPlans: any[], weekStartDate: string): string {
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  const planByDay: { [key: string]: { [mealType: string]: string[] } } = {};
+// Helper to get ordered days based on first day of week
+const ALL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-  // Initialize structure
-  days.forEach(day => {
-    planByDay[day] = {};
+function getOrderedDays(firstDayOfWeek: string): string[] {
+  const startIndex = ALL_DAYS.indexOf(firstDayOfWeek);
+  if (startIndex === -1) return ALL_DAYS;
+  return [...ALL_DAYS.slice(startIndex), ...ALL_DAYS.slice(0, startIndex)];
+}
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().split('T')[0];
+}
+
+function formatMealPlanContext(mealPlans: any[], weekStartDate: string, orderedDays: string[]): string {
+  const planByDate: { [date: string]: { day: string; meals: { [mealType: string]: string[] } } } = {};
+
+  // Initialize structure with actual dates
+  orderedDays.forEach((day, index) => {
+    const date = addDays(weekStartDate, index);
+    planByDate[date] = { day, meals: {} };
   });
 
-  // Calculate week dates
-  const weekStart = new Date(weekStartDate);
-  
   // Fill in meal plans
   mealPlans.forEach(plan => {
-    const planDate = new Date(plan.date);
-    const daysDiff = Math.floor((planDate.getTime() - weekStart.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (daysDiff >= 0 && daysDiff < 7) {
-      const day = days[daysDiff];
+    const date = plan.date;
+    if (planByDate[date]) {
       const mealItems = (plan.meal_items as any[] || []).map((item: any) => item.text);
-      
-      if (!planByDay[day][plan.meal_type]) {
-        planByDay[day][plan.meal_type] = [];
+      if (!planByDate[date].meals[plan.meal_type]) {
+        planByDate[date].meals[plan.meal_type] = [];
       }
-      planByDay[day][plan.meal_type].push(...mealItems);
+      planByDate[date].meals[plan.meal_type].push(...mealItems);
     }
   });
 
-  // Format as text
+  // Format as text with explicit dates
   let context = '';
-  days.forEach(day => {
-    context += `\n${day}:\n`;
-    const meals = planByDay[day];
+  Object.entries(planByDate).forEach(([date, { day, meals }]) => {
+    context += `\n${day} (${date}):\n`;
     if (Object.keys(meals).length === 0) {
       context += '  (no meals planned)\n';
     } else {
@@ -985,16 +1004,13 @@ async function executeToolCall(
     };
   }
 
-  // For add_meal_item and remove_meal_item, validate day
-  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  const dayIndex = days.indexOf(args.day);
-  if (dayIndex === -1) {
-    return { success: false, error: 'Invalid day' };
+  // For add_meal_item and remove_meal_item, use the date parameter directly
+  const dateString = args.date;
+  if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    console.error('Invalid or missing date:', dateString, 'args:', args);
+    return { success: false, error: 'Invalid or missing date. Expected YYYY-MM-DD format.' };
   }
-
-  const date = new Date(weekStartDate);
-  date.setDate(date.getDate() + dayIndex);
-  const dateString = date.toISOString().split('T')[0];
+  console.log('Using date for meal item:', dateString, 'mealType:', args.mealType);
 
   switch (toolName) {
     case 'add_meal_item': {
