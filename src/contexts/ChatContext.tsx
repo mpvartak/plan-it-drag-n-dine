@@ -64,16 +64,21 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const clientToday = formatLocalDate(new Date());
   const clientTzOffsetMinutes = new Date().getTimezoneOffset();
 
-  // Load all chat history for user (not filtered by week)
+  // Load chat history for user (last 10 days only)
   useEffect(() => {
     if (!user) return;
 
     const loadChatHistory = async () => {
       try {
+        const tenDaysAgo = new Date();
+        tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+        const cutoffDate = tenDaysAgo.toISOString();
+
         const { data, error } = await supabase
           .from('chat_messages')
           .select('*')
           .eq('user_id', user.id)
+          .gte('created_at', cutoffDate)
           .order('created_at', { ascending: true })
           .limit(50);
 
