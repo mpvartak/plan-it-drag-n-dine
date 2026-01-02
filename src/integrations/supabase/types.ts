@@ -104,6 +104,45 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_items: {
+        Row: {
+          created_at: string
+          expiration_date: string | null
+          id: string
+          location: Database["public"]["Enums"]["inventory_location"]
+          name: string
+          notes: string | null
+          quantity: number
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expiration_date?: string | null
+          id?: string
+          location?: Database["public"]["Enums"]["inventory_location"]
+          name: string
+          notes?: string | null
+          quantity?: number
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expiration_date?: string | null
+          id?: string
+          location?: Database["public"]["Enums"]["inventory_location"]
+          name?: string
+          notes?: string | null
+          quantity?: number
+          unit?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meal_items: {
         Row: {
           category: string | null
@@ -246,7 +285,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      inventory_location: "fridge" | "freezer" | "pantry"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -373,6 +412,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      inventory_location: ["fridge", "freezer", "pantry"],
+    },
   },
 } as const

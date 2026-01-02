@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { MealPlanBuilder } from '@/components/MealPlanBuilder';
 import { Button } from '@/components/ui/button';
-import { LogOut, Menu, UtensilsCrossed, Settings as SettingsIcon, ChefHat } from 'lucide-react';
+import { LogOut, Menu, UtensilsCrossed, Settings as SettingsIcon, ChefHat, Refrigerator } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { FeedbackWidget } from '@/components/FeedbackWidget';
@@ -83,6 +83,10 @@ const Index = () => {
                     Meal Plan
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem onClick={() => navigate('/inventory')}>
+                  <Refrigerator className="h-4 w-4 mr-2" />
+                  Kitchen Inventory
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/settings')}>
                   <SettingsIcon className="h-4 w-4 mr-2" />
                   Settings
