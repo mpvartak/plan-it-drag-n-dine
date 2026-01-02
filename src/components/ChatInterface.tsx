@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Send, Trash2 } from 'lucide-react';
@@ -6,6 +6,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +26,17 @@ export interface ChatMessage {
   created_at: string;
 }
 
+const formatDateLabel = (dateStr: string): string => {
+  const date = parseISO(dateStr);
+  if (isToday(date)) return 'Today';
+  if (isYesterday(date)) return 'Yesterday';
+  return format(date, 'EEEE, MMMM d');
+};
+
+const getDateKey = (dateStr: string): string => {
+  return dateStr.split('T')[0];
+};
+
 interface ChatInterfaceProps {
   messages: ChatMessage[];
   isLoading: boolean;
@@ -39,6 +51,28 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage, weekStartDat
   const { user } = useAuth();
   const { toast } = useToast();
   const [isClearing, setIsClearing] = React.useState(false);
+
+  // Group messages by date
+  const groupedMessages = useMemo(() => {
+    const groups: { date: string; label: string; messages: ChatMessage[] }[] = [];
+    let currentDateKey = '';
+
+    messages.forEach((message) => {
+      const dateKey = getDateKey(message.created_at);
+      if (dateKey !== currentDateKey) {
+        currentDateKey = dateKey;
+        groups.push({
+          date: dateKey,
+          label: formatDateLabel(message.created_at),
+          messages: [message],
+        });
+      } else {
+        groups[groups.length - 1].messages.push(message);
+      }
+    });
+
+    return groups;
+  }, [messages]);
 
   const handleClearHistory = async () => {
     if (!user) return;
@@ -149,32 +183,48 @@ export const ChatInterface = ({ messages, isLoading, onSendMessage, weekStartDat
             </div>
           )}
 
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex gap-3 ${
-                message.role === 'user' ? 'justify-end' : 'justify-start'
-              }`}
-            >
-              {message.role === 'assistant' && (
-                <Avatar className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center">
-                  <span className="text-xs">AI</span>
-                </Avatar>
-              )}
-              <div
-                className={`rounded-lg px-4 py-2 max-w-[80%] ${
-                  message.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
-                }`}
-              >
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+          {groupedMessages.map((group) => (
+            <div key={group.date}>
+              {/* Date separator */}
+              <div className="flex items-center gap-3 my-4">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-muted-foreground font-medium px-2">
+                  {group.label}
+                </span>
+                <div className="flex-1 h-px bg-border" />
               </div>
-              {message.role === 'user' && (
-                <Avatar className="h-8 w-8 bg-secondary text-secondary-foreground flex items-center justify-center">
-                  <span className="text-xs">You</span>
-                </Avatar>
-              )}
+
+              {/* Messages for this date */}
+              <div className="space-y-4">
+                {group.messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex gap-3 ${
+                      message.role === 'user' ? 'justify-end' : 'justify-start'
+                    }`}
+                  >
+                    {message.role === 'assistant' && (
+                      <Avatar className="h-8 w-8 bg-primary text-primary-foreground flex items-center justify-center">
+                        <span className="text-xs">AI</span>
+                      </Avatar>
+                    )}
+                    <div
+                      className={`rounded-lg px-4 py-2 max-w-[80%] ${
+                        message.role === 'user'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    </div>
+                    {message.role === 'user' && (
+                      <Avatar className="h-8 w-8 bg-secondary text-secondary-foreground flex items-center justify-center">
+                        <span className="text-xs">You</span>
+                      </Avatar>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
 
