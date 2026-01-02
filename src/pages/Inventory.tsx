@@ -176,6 +176,26 @@ const Inventory = () => {
     },
   });
 
+  // Clear all items mutation
+  const clearAllMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('inventory_items')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Deletes all items for user (RLS enforced)
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
+      toast({ title: 'Inventory cleared', description: 'All items have been removed.' });
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: 'Failed to clear inventory.', variant: 'destructive' });
+      console.error(error);
+    },
+  });
+
   const resetForm = () => {
     setFormName('');
     setFormQuantity('1');
@@ -409,6 +429,21 @@ const Inventory = () => {
                   Add Item
                 </Button>
               </DialogTrigger>
+              {inventoryItems.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  className="gap-2"
+                  onClick={() => {
+                    if (confirm('Are you sure you want to delete ALL inventory items? This cannot be undone.')) {
+                      clearAllMutation.mutate();
+                    }
+                  }}
+                  disabled={clearAllMutation.isPending}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {clearAllMutation.isPending ? 'Clearing...' : 'Clear All'}
+                </Button>
+              )}
               <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>{editingItem ? 'Edit Item' : 'Add Inventory Item'}</DialogTitle>
