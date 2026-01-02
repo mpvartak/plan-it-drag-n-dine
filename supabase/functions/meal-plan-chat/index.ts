@@ -466,16 +466,18 @@ Guidelines:
     // Handle tool calls if present
     if (assistantMessage.tool_calls) {
       const toolResponses = [];
-      
+      const lastUserText = [...messages].reverse().find((m: any) => m?.role === 'user')?.content ?? '';
+
       for (const toolCall of assistantMessage.tool_calls) {
         console.log('Executing tool:', toolCall.function.name, toolCall.function.arguments);
-        
+
         const result = await executeToolCall(
           toolCall.function.name,
           JSON.parse(toolCall.function.arguments),
           userId,
           weekStartDate,
-          supabase
+          supabase,
+          { today, lastUserText }
         );
 
         // Only trigger reload for tools that actually modify the meal plan
@@ -627,12 +629,82 @@ function formatMealPlanContext(mealPlans: any[], weekStartDate: string): string 
   return context;
 }
 
+const isYyyyMmDdDate = (v: unknown): v is string =>
+  typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+
+const addDaysDateOnly = (yyyyMmDd: string, days: number) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(yyyyMmDd);
+  if (!m) return null;
+  const dt = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+};
+
+const computeExpirationOverrideFromUserText = (userText: string, today: string) => {
+  if (!userText || !isYyyyMmDdDate(today)) return null;
+  const lower = userText.toLowerCase();
+
+  if (/\btomorrow\b/.test(lower)) return addDaysDateOnly(today, 1);
+  if (/\b(next week|in a week)\b/.test(lower)) return addDaysDateOnly(today, 7);
+
+  const m =
+    /expir\w*[\s\S]*?(\d+)\s+day(s)?\b/i.exec(userText) ||
+    /\bin\s+(\d+)\s+day(s)?\b/i.exec(userText);
+
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n) || n < 0) return null;
+
+  // If user phrased it as "expiring in N days", interpret as N days remaining (inclusive of today).
+  const isExpiryContext = /expir/i.test(userText);
+  const daysToAdd = isExpiryContext ? Math.max(n - 1, 0) : n;
+
+  return addDaysDateOnly(today, daysToAdd);
+};
+
+const normalizeExpirationDateInput = (input: string) => {
+  const trimmed = String(input).trim();
+  if (!trimmed) return null;
+
+  let year: number, month: number, day: number;
+  const currentYear = new Date().getFullYear();
+  const now = new Date();
+
+  const isoMatch = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (isoMatch) {
+    year = parseInt(isoMatch[1]);
+    month = parseInt(isoMatch[2]);
+    day = parseInt(isoMatch[3]);
+  } else {
+    const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?$/);
+    if (slashMatch) {
+      month = parseInt(slashMatch[1]);
+      day = parseInt(slashMatch[2]);
+      year = slashMatch[3] ? parseInt(slashMatch[3]) : currentYear;
+    } else {
+      const parsed = new Date(trimmed + 'T00:00:00Z');
+      year = parsed.getUTCFullYear();
+      month = parsed.getUTCMonth() + 1;
+      day = parsed.getUTCDate();
+    }
+  }
+
+  if (year < currentYear) {
+    year = currentYear;
+    const testDate = new Date(year, month - 1, day);
+    if (testDate < now) year = currentYear + 1;
+  }
+
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+};
+
 async function executeToolCall(
   toolName: string,
   args: any,
   userId: string,
   weekStartDate: string,
-  supabase: any
+  supabase: any,
+  context?: { today: string; lastUserText: string }
 ): Promise<any> {
   console.log('Executing tool:', toolName, args);
 
@@ -850,50 +922,26 @@ async function executeToolCall(
       }
     }
 
-    // Normalize expiration date to use current year if only month/day provided
-    let expirationDate = args.expiration_date || null;
-    if (expirationDate) {
-      // Parse the date parts to avoid timezone issues
-      // The AI might send formats like "2024-01-10", "1/10", "1/10/2024", etc.
-      let year: number, month: number, day: number;
-      const currentYear = new Date().getFullYear();
-      const today = new Date();
-      
-      // Try to parse YYYY-MM-DD format first
-      const isoMatch = expirationDate.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-      if (isoMatch) {
-        year = parseInt(isoMatch[1]);
-        month = parseInt(isoMatch[2]);
-        day = parseInt(isoMatch[3]);
-      } else {
-        // Try M/D or M/D/YYYY format
-        const slashMatch = expirationDate.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?$/);
-        if (slashMatch) {
-          month = parseInt(slashMatch[1]);
-          day = parseInt(slashMatch[2]);
-          year = slashMatch[3] ? parseInt(slashMatch[3]) : currentYear;
-        } else {
-          // Fallback: try parsing with Date but use UTC to avoid timezone shift
-          const parsed = new Date(expirationDate + 'T00:00:00Z');
-          year = parsed.getUTCFullYear();
-          month = parsed.getUTCMonth() + 1;
-          day = parsed.getUTCDate();
-        }
-      }
-      
-      // If year is in the past, assume current year
-      if (year < currentYear) {
-        year = currentYear;
-        // If that date is already past, use next year
-        const testDate = new Date(year, month - 1, day);
-        if (testDate < today) {
-          year = currentYear + 1;
-        }
-      }
-      
-      // Format as YYYY-MM-DD (no timezone issues since we're building the string directly)
-      expirationDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    // Expiration date:
+    // - If the user used a relative phrase (e.g. "expiring in 2 days"), compute it deterministically from TODAY (client local).
+    // - Then normalize to YYYY-MM-DD.
+    const todayForCalc = context?.today;
+    const lastUserText = context?.lastUserText || '';
+    const overrideExpiration = todayForCalc ? computeExpirationOverrideFromUserText(lastUserText, todayForCalc) : null;
+
+    if (overrideExpiration) {
+      console.log('Overriding expiration_date from user text:', {
+        overrideExpiration,
+        original: args.expiration_date,
+        today: todayForCalc,
+      });
     }
+
+    const expirationDate = (() => {
+      const raw = (overrideExpiration ?? args.expiration_date) as string | undefined;
+      if (!raw) return null;
+      return normalizeExpirationDateInput(raw);
+    })();
 
     const { data: newItem, error } = await supabase
       .from('inventory_items')
@@ -938,7 +986,23 @@ async function executeToolCall(
     if (args.quantity !== undefined) updates.quantity = args.quantity;
     if (args.unit !== undefined) updates.unit = args.unit;
     if (args.location !== undefined) updates.location = args.location;
-    if (args.expiration_date !== undefined) updates.expiration_date = args.expiration_date;
+
+    if (args.expiration_date !== undefined) {
+      const todayForCalc = context?.today;
+      const lastUserText = context?.lastUserText || '';
+      const overrideExpiration = todayForCalc ? computeExpirationOverrideFromUserText(lastUserText, todayForCalc) : null;
+      const raw = (overrideExpiration ?? args.expiration_date) as string | undefined;
+      updates.expiration_date = raw ? normalizeExpirationDateInput(raw) : null;
+
+      if (overrideExpiration) {
+        console.log('Overriding expiration_date from user text (update):', {
+          overrideExpiration,
+          original: args.expiration_date,
+          today: todayForCalc,
+        });
+      }
+    }
+
     if (args.notes !== undefined) updates.notes = args.notes;
 
     const { error } = await supabase

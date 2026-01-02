@@ -108,6 +108,7 @@ export const useMealPlanChat = (weekStartDate: Date, options?: UseMealPlanChatOp
         recentMessages.push({ role: 'user', content });
 
         // Call edge function (userId extracted from JWT on backend)
+        console.info('[meal-plan-chat] invoking', { clientToday, clientTzOffsetMinutes });
         const response = await supabase.functions.invoke('meal-plan-chat', {
           body: {
             messages: recentMessages,
@@ -115,7 +116,6 @@ export const useMealPlanChat = (weekStartDate: Date, options?: UseMealPlanChatOp
             clientToday,
             clientTzOffsetMinutes,
           },
-          method: 'POST',
         });
 
         if (response.error) {
