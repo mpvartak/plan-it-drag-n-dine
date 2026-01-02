@@ -64,7 +64,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const clientToday = formatLocalDate(new Date());
   const clientTzOffsetMinutes = new Date().getTimezoneOffset();
 
-  // Load chat history for current week
+  // Load all chat history for user (not filtered by week)
   useEffect(() => {
     if (!user) return;
 
@@ -74,7 +74,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           .from('chat_messages')
           .select('*')
           .eq('user_id', user.id)
-          .eq('week_start_date', weekStart)
           .order('created_at', { ascending: true })
           .limit(50);
 
@@ -89,7 +88,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     };
 
     loadChatHistory();
-  }, [user, weekStart]);
+  }, [user]);
 
   // Listen for localStorage changes to firstDayOfWeek
   useEffect(() => {
