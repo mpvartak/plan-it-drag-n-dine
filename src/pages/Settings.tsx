@@ -4,14 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, X, Menu, LogOut, UtensilsCrossed, Save, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Plus, X, Menu, LogOut, UtensilsCrossed, Save, Loader2, AlertTriangle, Trash2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { FeedbackWidget } from '@/components/FeedbackWidget';
 import { supabase } from '@/integrations/supabase/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const ALL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -19,6 +22,43 @@ const Settings = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Clear inventory dialog state
+  const [showClearDialog, setShowClearDialog] = useState(false);
+  const [clearConfirmChecked, setClearConfirmChecked] = useState(false);
+  const [clearConfirmText, setClearConfirmText] = useState('');
+  
+  const CONFIRM_PHRASE = 'I confirm';
+
+  // Clear all inventory mutation
+  const clearAllMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('inventory_items')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000');
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
+      toast({ title: 'Inventory cleared', description: 'All items have been permanently removed.' });
+      setShowClearDialog(false);
+      resetClearDialog();
+    },
+    onError: (error) => {
+      toast({ title: 'Error', description: 'Failed to clear inventory.', variant: 'destructive' });
+      console.error(error);
+    },
+  });
+
+  const resetClearDialog = () => {
+    setClearConfirmChecked(false);
+    setClearConfirmText('');
+  };
+
+  const canClearInventory = clearConfirmChecked && clearConfirmText === CONFIRM_PHRASE;
 
   // Settings state
   const [firstDayOfWeek, setFirstDayOfWeek] = useState<string>(() => {
@@ -345,8 +385,111 @@ const Settings = () => {
               </p>
             </div>
           </Card>
+
+          {/* Danger Zone */}
+          <Card className="p-6 border-destructive/50">
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <h2 className="text-xl font-semibold text-destructive">Danger Zone</h2>
+            </div>
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border border-destructive/30 rounded-lg">
+                <div>
+                  <h3 className="font-medium">Clear Kitchen Inventory</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Permanently delete all items from your kitchen inventory. This action cannot be undone.
+                  </p>
+                </div>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => setShowClearDialog(true)}
+                  className="shrink-0"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear All Items
+                </Button>
+              </div>
+            </div>
+          </Card>
         </div>
       </main>
+
+      {/* Clear Inventory Confirmation Dialog */}
+      <Dialog open={showClearDialog} onOpenChange={(open) => {
+        setShowClearDialog(open);
+        if (!open) resetClearDialog();
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Clear Kitchen Inventory
+            </DialogTitle>
+            <DialogDescription className="text-left pt-2">
+              This will permanently delete <strong>all items</strong> from your kitchen inventory. 
+              This action is irreversible and cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="confirm-delete"
+                checked={clearConfirmChecked}
+                onCheckedChange={(checked) => setClearConfirmChecked(checked === true)}
+              />
+              <label
+                htmlFor="confirm-delete"
+                className="text-sm leading-tight cursor-pointer"
+              >
+                Yes, I understand that all my kitchen inventory items will be permanently deleted and this cannot be undone.
+              </label>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="confirm-text" className="text-sm font-medium">
+                Type <span className="font-mono bg-muted px-1 rounded">{CONFIRM_PHRASE}</span> to confirm:
+              </label>
+              <Input
+                id="confirm-text"
+                value={clearConfirmText}
+                onChange={(e) => setClearConfirmText(e.target.value)}
+                placeholder={CONFIRM_PHRASE}
+                className={clearConfirmText === CONFIRM_PHRASE ? 'border-green-500' : ''}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowClearDialog(false);
+                resetClearDialog();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => clearAllMutation.mutate()}
+              disabled={!canClearInventory || clearAllMutation.isPending}
+            >
+              {clearAllMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Clearing...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Permanently Delete All
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
