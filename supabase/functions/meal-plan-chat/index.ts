@@ -837,18 +837,46 @@ async function executeToolCall(
     // Normalize expiration date to use current year if only month/day provided
     let expirationDate = args.expiration_date || null;
     if (expirationDate) {
-      // If the date appears to be in the past (e.g., 2024 when we're in 2025+), assume current year
-      const parsedDate = new Date(expirationDate);
+      // Parse the date parts to avoid timezone issues
+      // The AI might send formats like "2024-01-10", "1/10", "1/10/2024", etc.
+      let year: number, month: number, day: number;
       const currentYear = new Date().getFullYear();
-      if (parsedDate.getFullYear() < currentYear) {
-        // Update to current year
-        parsedDate.setFullYear(currentYear);
-        // If that date is already past, use next year
-        if (parsedDate < new Date()) {
-          parsedDate.setFullYear(currentYear + 1);
+      const today = new Date();
+      
+      // Try to parse YYYY-MM-DD format first
+      const isoMatch = expirationDate.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (isoMatch) {
+        year = parseInt(isoMatch[1]);
+        month = parseInt(isoMatch[2]);
+        day = parseInt(isoMatch[3]);
+      } else {
+        // Try M/D or M/D/YYYY format
+        const slashMatch = expirationDate.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?$/);
+        if (slashMatch) {
+          month = parseInt(slashMatch[1]);
+          day = parseInt(slashMatch[2]);
+          year = slashMatch[3] ? parseInt(slashMatch[3]) : currentYear;
+        } else {
+          // Fallback: try parsing with Date but use UTC to avoid timezone shift
+          const parsed = new Date(expirationDate + 'T00:00:00Z');
+          year = parsed.getUTCFullYear();
+          month = parsed.getUTCMonth() + 1;
+          day = parsed.getUTCDate();
         }
-        expirationDate = parsedDate.toISOString().split('T')[0];
       }
+      
+      // If year is in the past, assume current year
+      if (year < currentYear) {
+        year = currentYear;
+        // If that date is already past, use next year
+        const testDate = new Date(year, month - 1, day);
+        if (testDate < today) {
+          year = currentYear + 1;
+        }
+      }
+      
+      // Format as YYYY-MM-DD (no timezone issues since we're building the string directly)
+      expirationDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     }
 
     const { data: newItem, error } = await supabase
