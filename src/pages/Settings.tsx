@@ -3,13 +3,15 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plus, X, Menu, LogOut, UtensilsCrossed } from 'lucide-react';
+import { Plus, X, Menu, LogOut, UtensilsCrossed, Save, Loader2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { FeedbackWidget } from '@/components/FeedbackWidget';
+import { supabase } from '@/integrations/supabase/client';
 
 const ALL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -33,6 +35,65 @@ const Settings = () => {
   const [zipCode, setZipCode] = useState(() => {
     return localStorage.getItem('mealPlan_zipCode') || '';
   });
+
+  const [mealPreferences, setMealPreferences] = useState('');
+  const [isSavingPreferences, setIsSavingPreferences] = useState(false);
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(true);
+
+  // Load meal preferences from database
+  useEffect(() => {
+    const loadPreferences = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('meal_preferences')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (error) {
+          console.error('Error loading preferences:', error);
+        } else if (data?.meal_preferences) {
+          setMealPreferences(data.meal_preferences);
+        }
+      } catch (err) {
+        console.error('Error loading preferences:', err);
+      } finally {
+        setIsLoadingPreferences(false);
+      }
+    };
+
+    loadPreferences();
+  }, [user]);
+
+  const saveMealPreferences = async () => {
+    if (!user) return;
+    
+    setIsSavingPreferences(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ meal_preferences: mealPreferences })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Preferences saved",
+        description: "Your meal planning preferences have been updated."
+      });
+    } catch (err) {
+      console.error('Error saving preferences:', err);
+      toast({
+        title: "Error",
+        description: "Failed to save preferences. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSavingPreferences(false);
+    }
+  };
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -145,6 +206,56 @@ const Settings = () => {
               <p className="text-xs text-muted-foreground mt-1">
                 Enter your zip code to see weather information for each day
               </p>
+            </div>
+          </Card>
+
+          {/* Meal Planning Preferences */}
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Meal Planning Preferences</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  General Principles
+                </label>
+                {isLoadingPreferences ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading preferences...
+                  </div>
+                ) : (
+                  <Textarea
+                    value={mealPreferences}
+                    onChange={e => setMealPreferences(e.target.value)}
+                    placeholder="Enter your meal planning guidelines. For example:
+- Weekday school snacks should be cucumbers or carrots
+- No red meat on Mondays
+- Light dinners on workout days (Tue/Thu)
+- Kids lunch should always include a fruit"
+                    rows={6}
+                    className="resize-none"
+                  />
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  These preferences will be used by the AI assistant when suggesting meals
+                </p>
+              </div>
+              <Button 
+                onClick={saveMealPreferences} 
+                disabled={isSavingPreferences || isLoadingPreferences}
+                className="w-full sm:w-auto"
+              >
+                {isSavingPreferences ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Preferences
+                  </>
+                )}
+              </Button>
             </div>
           </Card>
 
