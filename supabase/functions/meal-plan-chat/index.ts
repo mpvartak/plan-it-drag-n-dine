@@ -267,7 +267,7 @@ serve(async (req) => {
         type: "function",
         function: {
           name: "add_kitchen_inventory_item",
-          description: "Add a new item to the kitchen inventory (fridge, freezer, or pantry)",
+          description: "Add a new item to the kitchen inventory (fridge, freezer, or pantry). If location is not specified, use common sense defaults based on the item type.",
           parameters: {
             type: "object",
             properties: {
@@ -286,7 +286,7 @@ serve(async (req) => {
               location: {
                 type: "string",
                 enum: ["fridge", "freezer", "pantry"],
-                description: "Where the item is stored"
+                description: "Where the item is stored. Use common sense if not specified: perishables like milk, eggs, meat, cheese go in fridge; frozen items go in freezer; dry goods like rice, pasta, canned goods, spices go in pantry."
               },
               expiration_date: {
                 type: "string",
@@ -297,7 +297,7 @@ serve(async (req) => {
                 description: "Optional notes about the item"
               }
             },
-            required: ["name", "location"]
+            required: ["name"]
           }
         }
       },
@@ -376,14 +376,18 @@ Capabilities:
 - Kitchen Inventory: Track items in fridge, freezer, and pantry with quantities, units, and expiration dates
 
 Kitchen Inventory Guidelines:
-- When adding items, ask for quantity, unit, location, and expiration date if not provided
+- When adding items without a specified location, use common sense defaults:
+  * FRIDGE: milk, eggs, cheese, yogurt, butter, fresh meat, deli meats, fresh vegetables, fresh fruits, juice, condiments, leftovers
+  * FREEZER: frozen meals, ice cream, frozen vegetables, frozen fruits, raw meat for long storage, bread (if freezing)
+  * PANTRY: rice, pasta, canned goods, cereals, flour, sugar, oil, spices, crackers, chips, nuts, dried beans, coffee, tea
+- Users can move items to different locations later using the update tool
 - Alert users about items that are expired or expiring soon
 - Suggest using items that are about to expire
 - Help users find what they have in stock
 
 Guidelines:
 - Be proactive in suggesting meals when asked
-- Confirm changes after making them
+- Confirm changes after making them (mention the location you chose if user didn't specify)
 - If a meal already exists, ask if they want to replace or add to it
 - Suggest variety across the week
 - Help organize their meal inventory
@@ -807,6 +811,29 @@ async function executeToolCall(
   }
 
   if (toolName === 'add_kitchen_inventory_item') {
+    // Infer location if not provided using common sense defaults
+    let location = args.location;
+    if (!location) {
+      const nameLower = args.name.toLowerCase();
+      
+      // Freezer items
+      const freezerItems = ['ice cream', 'frozen', 'ice'];
+      if (freezerItems.some(item => nameLower.includes(item))) {
+        location = 'freezer';
+      }
+      // Pantry items (dry goods, canned, etc.)
+      else if (['rice', 'pasta', 'flour', 'sugar', 'salt', 'pepper', 'spice', 'cereal', 'oat', 'can', 'canned', 
+                'oil', 'vinegar', 'honey', 'syrup', 'peanut butter', 'jam', 'jelly', 'bread', 'cracker', 
+                'chip', 'cookie', 'nut', 'dried', 'bean', 'lentil', 'coffee', 'tea', 'cocoa', 'baking',
+                'sauce', 'broth', 'stock'].some(item => nameLower.includes(item))) {
+        location = 'pantry';
+      }
+      // Default to fridge for perishables (most common case)
+      else {
+        location = 'fridge';
+      }
+    }
+
     const { data: newItem, error } = await supabase
       .from('inventory_items')
       .insert({
@@ -814,7 +841,7 @@ async function executeToolCall(
         name: args.name,
         quantity: args.quantity || 1,
         unit: args.unit || null,
-        location: args.location,
+        location: location,
         expiration_date: args.expiration_date || null,
         notes: args.notes || null
       })
@@ -829,7 +856,7 @@ async function executeToolCall(
       success: true,
       item: newItem,
       inventoryUpdated: true,
-      message: `Added "${args.name}" to ${args.location}`
+      message: `Added "${args.name}" to ${location}${!args.location ? ' (auto-assigned)' : ''}`
     };
   }
 
