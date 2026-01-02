@@ -479,13 +479,13 @@ const Inventory = () => {
                           {formExpirationDate ? format(formExpirationDate, "PPP") : "Pick a date"}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 z-[100]" align="start">
                         <Calendar
                           mode="single"
                           selected={formExpirationDate}
                           onSelect={setFormExpirationDate}
                           initialFocus
-                          className="pointer-events-auto"
+                          className={cn("p-3 pointer-events-auto")}
                         />
                       </PopoverContent>
                     </Popover>
