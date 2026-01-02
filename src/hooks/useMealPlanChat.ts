@@ -4,7 +4,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { ChatMessage } from '@/components/ChatInterface';
 
-export const useMealPlanChat = (weekStartDate: Date, onMealPlanUpdate?: () => void) => {
+interface UseMealPlanChatOptions {
+  onMealPlanUpdate?: () => void;
+  onInventoryUpdate?: () => void;
+}
+
+export const useMealPlanChat = (weekStartDate: Date, options?: UseMealPlanChatOptions) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -134,8 +139,13 @@ export const useMealPlanChat = (weekStartDate: Date, onMealPlanUpdate?: () => vo
         }
         
         // Trigger meal plan reload if chat updated it
-        if (onMealPlanUpdate && response.data?.mealPlanUpdated) {
-          onMealPlanUpdate();
+        if (options?.onMealPlanUpdate && response.data?.mealPlanUpdated) {
+          options.onMealPlanUpdate();
+        }
+
+        // Trigger inventory reload if chat updated it
+        if (options?.onInventoryUpdate && response.data?.inventoryUpdated) {
+          options.onInventoryUpdate();
         }
 
       } catch (error) {
@@ -154,7 +164,7 @@ export const useMealPlanChat = (weekStartDate: Date, onMealPlanUpdate?: () => vo
         setIsLoading(false);
       }
     },
-    [user, isLoading, messages, weekStart, saveMessage, toast, onMealPlanUpdate]
+    [user, isLoading, messages, weekStart, saveMessage, toast, options]
   );
 
   return {

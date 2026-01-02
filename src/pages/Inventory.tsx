@@ -12,13 +12,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Trash2, Edit2, CalendarIcon, ArrowLeft, Menu, LogOut, Settings as SettingsIcon, AlertTriangle, Search, Refrigerator, Snowflake, Package } from 'lucide-react';
-import { format, differenceInDays, isPast, addDays } from 'date-fns';
+import { Plus, Trash2, Edit2, CalendarIcon, ArrowLeft, Menu, LogOut, Settings as SettingsIcon, AlertTriangle, Search, Refrigerator, Snowflake, Package, ChefHat, X } from 'lucide-react';
+import { format, differenceInDays, isPast, addDays, startOfWeek } from 'date-fns';
 import { cn } from '@/lib/utils';
 import backgroundImage from '@/assets/fruits-veggies-background.jpg';
+import { ChatInterface } from '@/components/ChatInterface';
+import { useMealPlanChat } from '@/hooks/useMealPlanChat';
 
 type InventoryLocation = 'fridge' | 'freezer' | 'pantry';
 
@@ -62,6 +65,7 @@ const Inventory = () => {
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | InventoryLocation>('all');
+  const [showChat, setShowChat] = useState(false);
   
   // Form state
   const [formName, setFormName] = useState('');
@@ -70,6 +74,13 @@ const Inventory = () => {
   const [formLocation, setFormLocation] = useState<InventoryLocation>('fridge');
   const [formExpirationDate, setFormExpirationDate] = useState<Date | undefined>();
   const [formNotes, setFormNotes] = useState('');
+
+  // Chat hook for AI sous chef
+  const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const { messages, isLoading: isChatLoading, sendMessage } = useMealPlanChat(
+    currentWeekStart,
+    { onInventoryUpdate: () => queryClient.invalidateQueries({ queryKey: ['inventory-items'] }) }
+  );
 
   // Fetch inventory items
   const { data: inventoryItems = [], isLoading: isLoadingItems } = useQuery({
@@ -602,6 +613,44 @@ const Inventory = () => {
           )}
         </div>
       </main>
+
+      {/* AI Sous Chef Floating Button */}
+      <Button
+        size="icon"
+        onClick={() => setShowChat(true)}
+        className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg z-50 flex hover:scale-110 active:scale-95 transition-transform"
+        title="AI Sous Chef"
+      >
+        <ChefHat className="h-5 w-5" />
+      </Button>
+
+      {/* AI Sous Chef Chat Sheet */}
+      <Sheet open={showChat} onOpenChange={setShowChat}>
+        <SheetContent 
+          side="right" 
+          className="w-full sm:max-w-md p-0 flex flex-col h-full"
+        >
+          <SheetHeader className="p-4 border-b shrink-0">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="flex items-center gap-2">
+                <ChefHat className="h-5 w-5" />
+                AI Sous Chef
+              </SheetTitle>
+              <Button variant="ghost" size="icon" onClick={() => setShowChat(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </SheetHeader>
+          <div className="flex-1 min-h-0">
+            <ChatInterface
+              messages={messages}
+              isLoading={isChatLoading}
+              onSendMessage={sendMessage}
+              weekStartDate={currentWeekStart.toISOString().split('T')[0]}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

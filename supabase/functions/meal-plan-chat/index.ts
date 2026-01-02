@@ -244,11 +244,122 @@ serve(async (req) => {
             required: ["mealItemId", "content", "recipeType"]
           }
         }
+      },
+      // Kitchen Inventory Tools
+      {
+        type: "function",
+        function: {
+          name: "get_kitchen_inventory",
+          description: "Get all items in the kitchen inventory (fridge, freezer, pantry)",
+          parameters: {
+            type: "object",
+            properties: {
+              location: {
+                type: "string",
+                enum: ["fridge", "freezer", "pantry"],
+                description: "Filter by location (optional)"
+              }
+            }
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "add_kitchen_inventory_item",
+          description: "Add a new item to the kitchen inventory (fridge, freezer, or pantry)",
+          parameters: {
+            type: "object",
+            properties: {
+              name: {
+                type: "string",
+                description: "Name of the item (e.g., milk, chicken breast, rice)"
+              },
+              quantity: {
+                type: "number",
+                description: "Quantity of the item (default: 1)"
+              },
+              unit: {
+                type: "string",
+                description: "Unit of measurement (e.g., lbs, oz, items, gallons)"
+              },
+              location: {
+                type: "string",
+                enum: ["fridge", "freezer", "pantry"],
+                description: "Where the item is stored"
+              },
+              expiration_date: {
+                type: "string",
+                description: "Expiration date in YYYY-MM-DD format (optional)"
+              },
+              notes: {
+                type: "string",
+                description: "Optional notes about the item"
+              }
+            },
+            required: ["name", "location"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "update_kitchen_inventory_item",
+          description: "Update an existing kitchen inventory item (change quantity, location, expiration, etc.)",
+          parameters: {
+            type: "object",
+            properties: {
+              itemName: {
+                type: "string",
+                description: "Name of the item to update"
+              },
+              quantity: {
+                type: "number",
+                description: "New quantity"
+              },
+              unit: {
+                type: "string",
+                description: "New unit"
+              },
+              location: {
+                type: "string",
+                enum: ["fridge", "freezer", "pantry"],
+                description: "New location"
+              },
+              expiration_date: {
+                type: "string",
+                description: "New expiration date in YYYY-MM-DD format"
+              },
+              notes: {
+                type: "string",
+                description: "New notes"
+              }
+            },
+            required: ["itemName"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "delete_kitchen_inventory_item",
+          description: "Remove an item from the kitchen inventory",
+          parameters: {
+            type: "object",
+            properties: {
+              itemName: {
+                type: "string",
+                description: "Name of the item to delete"
+              }
+            },
+            required: ["itemName"]
+          }
+        }
       }
     ];
 
     // Build system prompt with meal plan context
-    const systemPrompt = `You are a helpful meal planning assistant. You help users plan their weekly meals by adding, removing, and suggesting meal items. You can also help manage their meal inventory and recipes.
+    const systemPrompt = `You are a helpful kitchen and meal planning assistant. You help users plan their weekly meals, manage their kitchen inventory (fridge, freezer, pantry), and organize recipes.
 
 Current Week's Meal Plan:
 ${mealPlanContext}
@@ -260,8 +371,15 @@ Available meal types: Breakfast, Lunch, Dinner, School Snacks, Prep (and any cus
 Capabilities:
 - Add/remove meals from the weekly plan
 - View and suggest meals
-- Manage meal inventory (view items, add new items)
+- Manage meal inventory (view items, add new items with recipes)
 - Access and create recipes for meal items
+- Kitchen Inventory: Track items in fridge, freezer, and pantry with quantities, units, and expiration dates
+
+Kitchen Inventory Guidelines:
+- When adding items, ask for quantity, unit, location, and expiration date if not provided
+- Alert users about items that are expired or expiring soon
+- Suggest using items that are about to expire
+- Help users find what they have in stock
 
 Guidelines:
 - Be proactive in suggesting meals when asked
@@ -323,6 +441,7 @@ Guidelines:
     
     const assistantMessage = completion.choices[0].message;
     let mealPlanUpdated = false;
+    let inventoryUpdated = false;
 
     // Handle tool calls if present
     if (assistantMessage.tool_calls) {
@@ -345,6 +464,11 @@ Guidelines:
           toolCall.function.name === 'remove_meal_item'
         )) {
           mealPlanUpdated = true;
+        }
+
+        // Check if inventory was updated
+        if (result.success && result.inventoryUpdated) {
+          inventoryUpdated = true;
         }
 
         // Add tool response message (required by OpenAI)
@@ -389,7 +513,7 @@ Guidelines:
         const t = await followUpResponse.text();
         console.error('AI gateway follow-up error:', followUpResponse.status, t);
         return new Response(
-          JSON.stringify({ content: "I'm having trouble confirming the action. The change was applied though.", mealPlanUpdated }),
+          JSON.stringify({ content: "I'm having trouble confirming the action. The change was applied though.", mealPlanUpdated, inventoryUpdated }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -404,10 +528,10 @@ Guidelines:
       
       const content = followUpCompletion.choices[0].message.content;
 
-      console.log('Returning response with mealPlanUpdated:', mealPlanUpdated);
+      console.log('Returning response with mealPlanUpdated:', mealPlanUpdated, 'inventoryUpdated:', inventoryUpdated);
 
       return new Response(
-        JSON.stringify({ content, mealPlanUpdated }),
+        JSON.stringify({ content, mealPlanUpdated, inventoryUpdated }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -418,7 +542,8 @@ Guidelines:
     return new Response(
       JSON.stringify({ 
         content: assistantMessage.content,
-        mealPlanUpdated 
+        mealPlanUpdated,
+        inventoryUpdated
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -643,6 +768,133 @@ async function executeToolCall(
       success: true,
       recipe: data,
       message: `Created recipe "${args.title || 'Untitled'}"`
+    };
+  }
+
+  // Handle kitchen inventory tools
+  if (toolName === 'get_kitchen_inventory') {
+    let query = supabase
+      .from('inventory_items')
+      .select('*')
+      .eq('user_id', userId)
+      .order('name');
+
+    if (args.location) {
+      query = query.eq('location', args.location);
+    }
+
+    const { data: items, error } = await query;
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    // Format items for AI context
+    const formattedItems = (items || []).map((item: any) => ({
+      name: item.name,
+      quantity: item.quantity,
+      unit: item.unit,
+      location: item.location,
+      expiration_date: item.expiration_date,
+      notes: item.notes
+    }));
+
+    return {
+      success: true,
+      items: formattedItems,
+      message: `Found ${items?.length || 0} items in kitchen inventory`
+    };
+  }
+
+  if (toolName === 'add_kitchen_inventory_item') {
+    const { data: newItem, error } = await supabase
+      .from('inventory_items')
+      .insert({
+        user_id: userId,
+        name: args.name,
+        quantity: args.quantity || 1,
+        unit: args.unit || null,
+        location: args.location,
+        expiration_date: args.expiration_date || null,
+        notes: args.notes || null
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      item: newItem,
+      inventoryUpdated: true,
+      message: `Added "${args.name}" to ${args.location}`
+    };
+  }
+
+  if (toolName === 'update_kitchen_inventory_item') {
+    // First find the item by name
+    const { data: existingItem } = await supabase
+      .from('inventory_items')
+      .select('*')
+      .eq('user_id', userId)
+      .ilike('name', args.itemName)
+      .maybeSingle();
+
+    if (!existingItem) {
+      return { success: false, error: `Item "${args.itemName}" not found in inventory` };
+    }
+
+    const updates: any = {};
+    if (args.quantity !== undefined) updates.quantity = args.quantity;
+    if (args.unit !== undefined) updates.unit = args.unit;
+    if (args.location !== undefined) updates.location = args.location;
+    if (args.expiration_date !== undefined) updates.expiration_date = args.expiration_date;
+    if (args.notes !== undefined) updates.notes = args.notes;
+
+    const { error } = await supabase
+      .from('inventory_items')
+      .update(updates)
+      .eq('id', existingItem.id);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      inventoryUpdated: true,
+      message: `Updated "${args.itemName}" in inventory`
+    };
+  }
+
+  if (toolName === 'delete_kitchen_inventory_item') {
+    // First find the item by name
+    const { data: existingItem } = await supabase
+      .from('inventory_items')
+      .select('id')
+      .eq('user_id', userId)
+      .ilike('name', args.itemName)
+      .maybeSingle();
+
+    if (!existingItem) {
+      return { success: false, error: `Item "${args.itemName}" not found in inventory` };
+    }
+
+    const { error } = await supabase
+      .from('inventory_items')
+      .delete()
+      .eq('id', existingItem.id);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return {
+      success: true,
+      inventoryUpdated: true,
+      message: `Removed "${args.itemName}" from inventory`
     };
   }
 

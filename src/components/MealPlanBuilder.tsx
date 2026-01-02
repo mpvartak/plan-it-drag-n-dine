@@ -675,7 +675,7 @@ export const MealPlanBuilder = ({
   // Chat hook - initialized after loadMealPlansFromDatabase is defined
   const { messages, isLoading: isChatLoading, sendMessage } = useMealPlanChat(
     currentWeekStart,
-    () => setShouldReloadMealPlans(prev => prev + 1)
+    { onMealPlanUpdate: () => setShouldReloadMealPlans(prev => prev + 1) }
   );
   
   // Reload meal plans when chat updates them
