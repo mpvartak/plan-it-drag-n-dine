@@ -1,0 +1,1 @@
+DELETE FROM meal_plans WHERE date >= '2025-12-29' AND meal_type ILIKE '%snack%';
