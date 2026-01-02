@@ -9,6 +9,13 @@ interface UseMealPlanChatOptions {
   onInventoryUpdate?: () => void;
 }
 
+const formatLocalDate = (d: Date) => {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 export const useMealPlanChat = (weekStartDate: Date, options?: UseMealPlanChatOptions) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -16,6 +23,8 @@ export const useMealPlanChat = (weekStartDate: Date, options?: UseMealPlanChatOp
   const [isLoading, setIsLoading] = useState(false);
 
   const weekStart = weekStartDate.toISOString().split('T')[0];
+  const clientToday = formatLocalDate(new Date());
+  const clientTzOffsetMinutes = new Date().getTimezoneOffset();
 
   // Load chat history for current week
   useEffect(() => {
@@ -103,6 +112,8 @@ export const useMealPlanChat = (weekStartDate: Date, options?: UseMealPlanChatOp
           body: {
             messages: recentMessages,
             weekStartDate: weekStart,
+            clientToday,
+            clientTzOffsetMinutes,
           },
           method: 'POST',
         });
@@ -123,7 +134,7 @@ export const useMealPlanChat = (weekStartDate: Date, options?: UseMealPlanChatOp
         // For now, handle non-streaming response
         // The edge function should return the complete message
         const assistantContent = response.data?.content || '';
-        
+
         if (assistantContent) {
           setMessages((prev) => [
             ...prev,
@@ -134,10 +145,10 @@ export const useMealPlanChat = (weekStartDate: Date, options?: UseMealPlanChatOp
               created_at: new Date().toISOString(),
             },
           ]);
-          
+
           await saveMessage('assistant', assistantContent);
         }
-        
+
         // Trigger meal plan reload if chat updated it
         if (options?.onMealPlanUpdate && response.data?.mealPlanUpdated) {
           options.onMealPlanUpdate();
@@ -147,7 +158,6 @@ export const useMealPlanChat = (weekStartDate: Date, options?: UseMealPlanChatOp
         if (options?.onInventoryUpdate && response.data?.inventoryUpdated) {
           options.onInventoryUpdate();
         }
-
       } catch (error) {
         console.error('Error sending message:', error);
         toast({
@@ -157,14 +167,12 @@ export const useMealPlanChat = (weekStartDate: Date, options?: UseMealPlanChatOp
         });
 
         // Remove failed messages
-        setMessages((prev) =>
-          prev.filter((m) => !m.id.startsWith('temp-'))
-        );
+        setMessages((prev) => prev.filter((m) => !m.id.startsWith('temp-')));
       } finally {
         setIsLoading(false);
       }
     },
-    [user, isLoading, messages, weekStart, saveMessage, toast, options]
+    [user, isLoading, messages, weekStart, saveMessage, toast, options, clientToday, clientTzOffsetMinutes]
   );
 
   return {
