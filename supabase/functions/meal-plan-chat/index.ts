@@ -834,6 +834,23 @@ async function executeToolCall(
       }
     }
 
+    // Normalize expiration date to use current year if only month/day provided
+    let expirationDate = args.expiration_date || null;
+    if (expirationDate) {
+      // If the date appears to be in the past (e.g., 2024 when we're in 2025+), assume current year
+      const parsedDate = new Date(expirationDate);
+      const currentYear = new Date().getFullYear();
+      if (parsedDate.getFullYear() < currentYear) {
+        // Update to current year
+        parsedDate.setFullYear(currentYear);
+        // If that date is already past, use next year
+        if (parsedDate < new Date()) {
+          parsedDate.setFullYear(currentYear + 1);
+        }
+        expirationDate = parsedDate.toISOString().split('T')[0];
+      }
+    }
+
     const { data: newItem, error } = await supabase
       .from('inventory_items')
       .insert({
@@ -842,7 +859,7 @@ async function executeToolCall(
         quantity: args.quantity || 1,
         unit: args.unit || null,
         location: location,
-        expiration_date: args.expiration_date || null,
+        expiration_date: expirationDate,
         notes: args.notes || null
       })
       .select()
