@@ -56,6 +56,13 @@ const locationColors = {
   pantry: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
 };
 
+// Parse DATE-only strings (YYYY-MM-DD) as local dates to avoid timezone shifting (off-by-one).
+const parseDateOnly = (dateStr: string): Date => {
+  const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return new Date(dateStr);
+};
+
 const Inventory = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
@@ -181,7 +188,7 @@ const Inventory = () => {
     setFormQuantity(String(item.quantity));
     setFormUnit(item.unit || '');
     setFormLocation(item.location);
-    setFormExpirationDate(item.expiration_date ? new Date(item.expiration_date) : undefined);
+    setFormExpirationDate(item.expiration_date ? parseDateOnly(item.expiration_date) : undefined);
     setFormNotes(item.notes || '');
   };
 
@@ -229,15 +236,17 @@ const Inventory = () => {
   // Get expiration status
   const getExpirationStatus = (expirationDate: string | null) => {
     if (!expirationDate) return null;
-    
-    const expDate = new Date(expirationDate);
+
+    const expDate = parseDateOnly(expirationDate);
+    expDate.setHours(0, 0, 0, 0);
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     if (isPast(expDate) && differenceInDays(today, expDate) > 0) {
       return 'expired';
     }
-    
+
     const daysUntilExpiry = differenceInDays(expDate, today);
     if (daysUntilExpiry <= 3) {
       return 'expiring-soon';
@@ -245,14 +254,14 @@ const Inventory = () => {
     if (daysUntilExpiry <= 7) {
       return 'expiring-week';
     }
-    
+
     return 'ok';
   };
 
   const expirationBadge = (status: string | null, date: string) => {
     if (!status) return null;
-    
-    const formattedDate = format(new Date(date), 'MMM d');
+
+    const formattedDate = format(parseDateOnly(date), 'MMM d');
     
     switch (status) {
       case 'expired':
