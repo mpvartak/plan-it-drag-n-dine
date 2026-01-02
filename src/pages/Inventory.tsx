@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -17,11 +17,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { Plus, Trash2, Edit2, CalendarIcon, ArrowLeft, Menu, LogOut, Settings as SettingsIcon, AlertTriangle, Search, Refrigerator, Snowflake, Package, ChefHat, X } from 'lucide-react';
-import { format, differenceInDays, isPast, addDays, startOfWeek } from 'date-fns';
+import { format, differenceInDays, isPast, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import backgroundImage from '@/assets/fruits-veggies-background.jpg';
 import { ChatInterface } from '@/components/ChatInterface';
-import { useMealPlanChat } from '@/hooks/useMealPlanChat';
+import { useChat } from '@/contexts/ChatContext';
 
 type InventoryLocation = 'fridge' | 'freezer' | 'pantry';
 
@@ -82,12 +82,15 @@ const Inventory = () => {
   const [formExpirationDate, setFormExpirationDate] = useState<Date | undefined>();
   const [formNotes, setFormNotes] = useState('');
 
-  // Chat hook for AI sous chef
-  const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-  const { messages, isLoading: isChatLoading, sendMessage } = useMealPlanChat(
-    currentWeekStart,
-    { onInventoryUpdate: () => queryClient.invalidateQueries({ queryKey: ['inventory-items'] }) }
-  );
+  // Chat hook for AI sous chef - use global chat context
+  const { messages, isLoading: isChatLoading, sendMessage, setCallbacks, weekStartDate: currentWeekStart } = useChat();
+  
+  // Register inventory update callback
+  useEffect(() => {
+    setCallbacks({
+      onInventoryUpdate: () => queryClient.invalidateQueries({ queryKey: ['inventory-items'] }),
+    });
+  }, [setCallbacks, queryClient]);
 
   // Fetch inventory items
   const { data: inventoryItems = [], isLoading: isLoadingItems } = useQuery({

@@ -20,7 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useMealPlanChat } from '@/hooks/useMealPlanChat';
+import { useChat } from '@/contexts/ChatContext';
 export interface MealItem {
   id: string;
   text: string;
@@ -672,14 +672,24 @@ export const MealPlanBuilder = ({
     }
   };
   
-  // Chat hook - initialized after loadMealPlansFromDatabase is defined
-  const { messages, isLoading: isChatLoading, sendMessage } = useMealPlanChat(
-    currentWeekStart,
-    { 
+  // Chat hook - use global chat context
+  const { messages, isLoading: isChatLoading, sendMessage, setCallbacks, setWeekStartDate, setFirstDayOfWeek: setChatFirstDayOfWeek } = useChat();
+  
+  // Update chat context when week or first day changes
+  useEffect(() => {
+    setWeekStartDate(currentWeekStart);
+  }, [currentWeekStart, setWeekStartDate]);
+  
+  useEffect(() => {
+    setChatFirstDayOfWeek(firstDayOfWeek);
+  }, [firstDayOfWeek, setChatFirstDayOfWeek]);
+  
+  // Register callbacks for when chat updates data
+  useEffect(() => {
+    setCallbacks({
       onMealPlanUpdate: () => setShouldReloadMealPlans(prev => prev + 1),
-      firstDayOfWeek 
-    }
-  );
+    });
+  }, [setCallbacks]);
   
   // Reload meal plans when chat updates them
   useEffect(() => {
