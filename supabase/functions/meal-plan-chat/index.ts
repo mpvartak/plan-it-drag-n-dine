@@ -44,8 +44,8 @@ serve(async (req) => {
     }
 
     const userId = user.id;
-    const { messages, weekStartDate } = await req.json();
-    console.log('Chat request:', { userId, weekStartDate, messageCount: messages.length });
+    const { messages, weekStartDate, clientToday, clientTzOffsetMinutes } = await req.json();
+    console.log('Chat request:', { userId, weekStartDate, messageCount: messages.length, clientToday, clientTzOffsetMinutes });
 
     if (!OPENAI_API_KEY) {
       throw new Error('OPENAI_API_KEY not configured');
@@ -267,7 +267,7 @@ serve(async (req) => {
         type: "function",
         function: {
           name: "add_kitchen_inventory_item",
-          description: "Add a new item to the kitchen inventory (fridge, freezer, or pantry). If location is not specified, use common sense defaults based on the item type. For expiration dates, ALWAYS compute the actual YYYY-MM-DD date based on today's date before calling this function.",
+          description: "Add a new item to the kitchen inventory (fridge, freezer, or pantry). If location is not specified, use common sense defaults based on the item type. For expiration dates, ALWAYS compute an actual YYYY-MM-DD date based on TODAY'S DATE from the system prompt (client local date).",
           parameters: {
             type: "object",
             properties: {
@@ -290,7 +290,7 @@ serve(async (req) => {
               },
               expiration_date: {
                 type: "string",
-                description: "Expiration date in YYYY-MM-DD format. IMPORTANT: You must compute this from today's date. Examples: 'in 2 days' from 2026-01-02 = 2026-01-04; 'next week' = add 7 days; '1/10' without year = 2026-01-10 (current year, or next year if date already passed)."
+                description: "Expiration date in YYYY-MM-DD format (optional). IMPORTANT: Convert relative phrases using TODAY'S DATE in the system prompt (client local date). Examples: 'in 2 days' = TODAY + 2 days; 'tomorrow' = TODAY + 1 day; 'next week' = TODAY + 7 days; '1/10' without year = current year (or next year if already passed)."
               },
               notes: {
                 type: "string",
@@ -358,13 +358,15 @@ serve(async (req) => {
       }
     ];
 
-    // Get today's date for context
-    const today = new Date().toISOString().split('T')[0];
+    const isYyyyMmDd = (v: unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+
+    // Use client-local "today" when provided; fall back to UTC date otherwise.
+    const today = isYyyyMmDd(clientToday) ? clientToday : new Date().toISOString().split('T')[0];
 
     // Build system prompt with meal plan context
     const systemPrompt = `You are a helpful kitchen and meal planning assistant. You help users plan their weekly meals, manage their kitchen inventory (fridge, freezer, pantry), and organize recipes.
 
-TODAY'S DATE: ${today}
+TODAY'S DATE (client local): ${today}
 
 Current Week's Meal Plan:
 ${mealPlanContext}
@@ -393,9 +395,9 @@ Kitchen Inventory Guidelines:
 CRITICAL - Expiration Date Handling:
 - ALWAYS compute expiration dates as YYYY-MM-DD format before calling tools
 - Use TODAY'S DATE (${today}) for all relative calculations
-- "in 2 days" → add 2 days to today → compute actual date
-- "in a week" → add 7 days to today
-- "tomorrow" → add 1 day to today
+- "in 2 days" → add 2 days to TODAY'S DATE → compute actual date
+- "in a week" → add 7 days to TODAY'S DATE
+- "tomorrow" → add 1 day to TODAY'S DATE
 - "1/10" or "January 10" without year → use current year (or next year if that date already passed)
 - NEVER pass relative phrases like "in 2 days" to the tool - always convert to YYYY-MM-DD first
 
