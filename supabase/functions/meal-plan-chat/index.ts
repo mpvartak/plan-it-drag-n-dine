@@ -1,6 +1,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  computeExpirationOverrideFromUserText,
+  normalizeExpirationDateInput,
+} from "./expirationDate.ts";
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -628,75 +632,6 @@ function formatMealPlanContext(mealPlans: any[], weekStartDate: string): string 
 
   return context;
 }
-
-const isYyyyMmDdDate = (v: unknown): v is string =>
-  typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
-
-const addDaysDateOnly = (yyyyMmDd: string, days: number) => {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(yyyyMmDd);
-  if (!m) return null;
-  const dt = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
-  dt.setUTCDate(dt.getUTCDate() + days);
-  return dt.toISOString().slice(0, 10);
-};
-
-const computeExpirationOverrideFromUserText = (userText: string, today: string) => {
-  if (!userText || !isYyyyMmDdDate(today)) return null;
-  const lower = userText.toLowerCase();
-
-  if (/\btomorrow\b/.test(lower)) return addDaysDateOnly(today, 1);
-  if (/\b(next week|in a week)\b/.test(lower)) return addDaysDateOnly(today, 7);
-
-  const m =
-    /expir\w*[\s\S]*?(\d+)\s+day(s)?\b/i.exec(userText) ||
-    /\bin\s+(\d+)\s+day(s)?\b/i.exec(userText);
-
-  if (!m) return null;
-  const n = Number(m[1]);
-  if (!Number.isFinite(n) || n < 0) return null;
-
-  // If user phrased it as "expiring in N days", interpret as N days remaining (inclusive of today).
-  const isExpiryContext = /expir/i.test(userText);
-  const daysToAdd = isExpiryContext ? Math.max(n - 1, 0) : n;
-
-  return addDaysDateOnly(today, daysToAdd);
-};
-
-const normalizeExpirationDateInput = (input: string) => {
-  const trimmed = String(input).trim();
-  if (!trimmed) return null;
-
-  let year: number, month: number, day: number;
-  const currentYear = new Date().getFullYear();
-  const now = new Date();
-
-  const isoMatch = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (isoMatch) {
-    year = parseInt(isoMatch[1]);
-    month = parseInt(isoMatch[2]);
-    day = parseInt(isoMatch[3]);
-  } else {
-    const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?$/);
-    if (slashMatch) {
-      month = parseInt(slashMatch[1]);
-      day = parseInt(slashMatch[2]);
-      year = slashMatch[3] ? parseInt(slashMatch[3]) : currentYear;
-    } else {
-      const parsed = new Date(trimmed + 'T00:00:00Z');
-      year = parsed.getUTCFullYear();
-      month = parsed.getUTCMonth() + 1;
-      day = parsed.getUTCDate();
-    }
-  }
-
-  if (year < currentYear) {
-    year = currentYear;
-    const testDate = new Date(year, month - 1, day);
-    if (testDate < now) year = currentYear + 1;
-  }
-
-  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-};
 
 async function executeToolCall(
   toolName: string,
