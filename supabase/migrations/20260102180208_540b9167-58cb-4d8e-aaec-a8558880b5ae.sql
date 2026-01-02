@@ -1,0 +1,1 @@
+DELETE FROM meal_plans WHERE date >= '2024-12-29';
