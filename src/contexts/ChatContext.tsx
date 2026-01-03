@@ -64,7 +64,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const clientToday = formatLocalDate(new Date());
   const clientTzOffsetMinutes = new Date().getTimezoneOffset();
 
-  // Load chat history for user (last 10 days only)
+  // Load chat history for user (last 10 days, up to 100 messages)
   useEffect(() => {
     if (!user) return;
 
@@ -80,7 +80,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           .eq('user_id', user.id)
           .gte('created_at', cutoffDate)
           .order('created_at', { ascending: true })
-          .limit(50);
+          .limit(100);
 
         if (error) throw error;
 
