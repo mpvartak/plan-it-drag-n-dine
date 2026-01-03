@@ -113,6 +113,7 @@ export type Database = {
           name: string
           notes: string | null
           quantity: number
+          ready_to_eat: boolean
           unit: string | null
           updated_at: string
           user_id: string
@@ -125,6 +126,7 @@ export type Database = {
           name: string
           notes?: string | null
           quantity?: number
+          ready_to_eat?: boolean
           unit?: string | null
           updated_at?: string
           user_id: string
@@ -137,6 +139,7 @@ export type Database = {
           name?: string
           notes?: string | null
           quantity?: number
+          ready_to_eat?: boolean
           unit?: string | null
           updated_at?: string
           user_id?: string
