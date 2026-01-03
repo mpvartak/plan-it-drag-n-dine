@@ -16,7 +16,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Trash2, Edit2, CalendarIcon, ArrowLeft, Menu, LogOut, Settings as SettingsIcon, AlertTriangle, Search, Refrigerator, Snowflake, Package, ChefHat, X, ArrowUpDown } from 'lucide-react';
+import { Plus, Trash2, Edit2, CalendarIcon, ArrowLeft, Menu, LogOut, Settings as SettingsIcon, AlertTriangle, Search, Refrigerator, Snowflake, Package, ChefHat, X, ArrowUpDown, UtensilsCrossed, Check } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { format, differenceInDays, isPast, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import backgroundImage from '@/assets/fruits-veggies-background.jpg';
@@ -34,6 +35,7 @@ interface InventoryItem {
   location: InventoryLocation;
   expiration_date: string | null;
   notes: string | null;
+  ready_to_eat: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -82,6 +84,7 @@ const Inventory = () => {
   const [formLocation, setFormLocation] = useState<InventoryLocation>('fridge');
   const [formExpirationDate, setFormExpirationDate] = useState<Date | undefined>();
   const [formNotes, setFormNotes] = useState('');
+  const [formReadyToEat, setFormReadyToEat] = useState(true);
 
   // Chat hook for AI sous chef - use global chat context
   const { messages, isLoading: isChatLoading, sendMessage, setCallbacks, weekStartDate: currentWeekStart } = useChat();
@@ -185,6 +188,7 @@ const Inventory = () => {
     setFormLocation('fridge');
     setFormExpirationDate(undefined);
     setFormNotes('');
+    setFormReadyToEat(true);
   };
 
   const openEditDialog = (item: InventoryItem) => {
@@ -195,6 +199,7 @@ const Inventory = () => {
     setFormLocation(item.location);
     setFormExpirationDate(item.expiration_date ? parseDateOnly(item.expiration_date) : undefined);
     setFormNotes(item.notes || '');
+    setFormReadyToEat(item.ready_to_eat);
   };
 
   const handleSubmit = () => {
@@ -211,6 +216,7 @@ const Inventory = () => {
       location: formLocation,
       expiration_date: formExpirationDate ? format(formExpirationDate, 'yyyy-MM-dd') : null,
       notes: formNotes.trim() || null,
+      ready_to_eat: formReadyToEat,
     };
 
     if (editingItem) {
@@ -546,6 +552,20 @@ const Inventory = () => {
                     )}
                   </div>
                   
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="ready-to-eat">Ready to Eat</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Can be eaten without cooking
+                      </p>
+                    </div>
+                    <Switch
+                      id="ready-to-eat"
+                      checked={formReadyToEat}
+                      onCheckedChange={setFormReadyToEat}
+                    />
+                  </div>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="notes">Notes</Label>
                     <Input
@@ -649,12 +669,23 @@ const Inventory = () => {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium truncate">{item.name}</h3>
-                          <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground flex-wrap">
                             <span>{item.quantity}{item.unit ? ` ${item.unit}` : ''}</span>
                             <Badge variant="outline" className={cn("text-xs", locationColors[item.location])}>
                               <LocationIcon className="h-3 w-3 mr-1" />
                               {locationLabels[item.location]}
                             </Badge>
+                            {item.ready_to_eat ? (
+                              <Badge variant="outline" className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                <Check className="h-3 w-3 mr-1" />
+                                Ready
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                <UtensilsCrossed className="h-3 w-3 mr-1" />
+                                Needs Cooking
+                              </Badge>
+                            )}
                           </div>
                           {item.expiration_date && (
                             <div className="mt-2">
