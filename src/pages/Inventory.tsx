@@ -433,6 +433,24 @@ const Inventory = () => {
                 className="pl-9 bg-background/95"
               />
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 bg-background/95"
+              onClick={async () => {
+                try {
+                  const { data, error } = await supabase.functions.invoke('update-ready-to-eat');
+                  if (error) throw error;
+                  queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
+                  toast({ title: 'Updated', description: `Labeled ${data.updated} items with ready-to-eat status.` });
+                } catch (e) {
+                  toast({ title: 'Error', description: 'Failed to update items.', variant: 'destructive' });
+                }
+              }}
+            >
+              <UtensilsCrossed className="h-4 w-4" />
+              Auto-label
+            </Button>
             <Dialog open={isAddDialogOpen || !!editingItem} onOpenChange={(open) => {
               if (!open) {
                 setIsAddDialogOpen(false);
