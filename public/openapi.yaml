@@ -1,0 +1,351 @@
+openapi: 3.1.0
+info:
+  title: Meal Plan Pro API
+  description: |
+    API for managing meal plans, kitchen inventory, and recipes.
+    
+    Use this API to help users:
+    - Check what food they have in their kitchen (fridge, freezer, pantry)
+    - View and manage their weekly meal plans
+    - Access their recipe collection
+    - Find meals they can cook with available ingredients
+  version: 1.0.0
+  contact:
+    name: Meal Plan Pro Support
+
+servers:
+  - url: https://eucwtwejktcjxowiybjy.supabase.co/functions/v1/unified-api
+    description: Production API
+
+security:
+  - apiKey: []
+
+paths:
+  /inventory:
+    get:
+      operationId: getKitchenInventory
+      summary: Get kitchen inventory items
+      description: |
+        Retrieves all items currently in the user's kitchen inventory.
+        
+        Use this when the user asks:
+        - "What's in my fridge/freezer/pantry?"
+        - "What food do I have at home?"
+        - "What ingredients do I have?"
+        - "What's expiring soon?"
+        - "Do I have any [ingredient]?"
+        - "What can I cook with what I have?"
+        
+        Items include expiration dates, quantities, and storage location.
+        Results are sorted by expiration date (soonest first) to help identify items that need to be used soon.
+      parameters:
+        - name: location
+          in: query
+          required: false
+          description: |
+            Filter by storage location. Use this when the user specifically asks about one location.
+            - "fridge" - refrigerated items
+            - "freezer" - frozen items  
+            - "pantry" - shelf-stable items
+          schema:
+            type: string
+            enum: [fridge, freezer, pantry]
+      responses:
+        '200':
+          description: List of inventory items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InventoryItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /meal-plan:
+    get:
+      operationId: getMealPlan
+      summary: Get weekly meal plan
+      description: |
+        Retrieves the meal plan for a specific week.
+        
+        Use this when the user asks:
+        - "What's for dinner tonight/tomorrow?"
+        - "What am I eating this week?"
+        - "What's on my meal plan?"
+        - "What did I plan for [day]?"
+        - "Show me my meals for the week"
+        
+        Returns all meals organized by date and meal type (breakfast, lunch, dinner, snacks).
+      parameters:
+        - name: week_start
+          in: query
+          required: true
+          description: |
+            The start date of the week in YYYY-MM-DD format.
+            Calculate this based on the user's first day of week preference (usually Monday or Sunday).
+            For "this week", use the most recent start day.
+            For "next week", add 7 days to the current week's start.
+          schema:
+            type: string
+            format: date
+            example: "2024-01-15"
+      responses:
+        '200':
+          description: Meal plan for the week
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MealPlanEntry'
+        '400':
+          description: Missing or invalid week_start parameter
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /recipes:
+    get:
+      operationId: getRecipes
+      summary: Get recipes
+      description: |
+        Retrieves recipes from the user's recipe collection.
+        
+        Use this when the user asks:
+        - "How do I make [dish]?"
+        - "What's the recipe for [meal]?"
+        - "Show me my recipes"
+        - "What recipes do I have for [ingredient/meal]?"
+        - "How do I cook [item from meal plan]?"
+        
+        Can filter by meal item name to find recipes for specific dishes.
+      parameters:
+        - name: meal_item
+          in: query
+          required: false
+          description: |
+            Filter recipes by meal item name (partial match, case-insensitive).
+            Use this when the user asks for a specific dish's recipe.
+          schema:
+            type: string
+            example: "chicken"
+      responses:
+        '200':
+          description: List of recipes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Recipe'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /meal-items:
+    get:
+      operationId: getMealItems
+      summary: Get meal items (dish catalog)
+      description: |
+        Retrieves all meal items (dishes) the user has saved.
+        
+        Use this when the user asks:
+        - "What meals/dishes do I have saved?"
+        - "What can I add to my meal plan?"
+        - "Show me my meal options"
+        - "What dishes have I made before?"
+        
+        Meal items are reusable dishes that can be added to meal plans.
+        They may have associated recipes and images.
+      responses:
+        '200':
+          description: List of meal items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MealItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: API key obtained from Settings > API Keys in Meal Plan Pro
+
+  responses:
+    Unauthorized:
+      description: Authentication failed - invalid or missing API key
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid API key"
+
+  schemas:
+    InventoryItem:
+      type: object
+      description: An item in the user's kitchen inventory
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Name of the food item
+          example: "Chicken breast"
+        quantity:
+          type: number
+          description: Amount of the item
+          example: 2
+        unit:
+          type: string
+          nullable: true
+          description: Unit of measurement (lbs, oz, pieces, etc.)
+          example: "lbs"
+        location:
+          type: string
+          enum: [fridge, freezer, pantry]
+          description: Where the item is stored
+          example: "fridge"
+        expiration_date:
+          type: string
+          format: date
+          nullable: true
+          description: When the item expires (null if unknown)
+          example: "2024-01-20"
+        ready_to_eat:
+          type: boolean
+          description: Whether the item is ready to eat without cooking
+          example: false
+        notes:
+          type: string
+          nullable: true
+          description: Additional notes about the item
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    MealPlanEntry:
+      type: object
+      description: A meal plan entry for a specific date and meal type
+      properties:
+        id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+          description: The date of this meal
+          example: "2024-01-15"
+        meal_type:
+          type: string
+          description: Type of meal (breakfast, lunch, dinner, snack, or custom)
+          example: "dinner"
+        meal_items:
+          type: array
+          description: List of dishes/meals planned
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Reference to a meal item
+              name:
+                type: string
+                description: Name of the dish
+                example: "Grilled Chicken Salad"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Recipe:
+      type: object
+      description: A recipe for a meal item
+      properties:
+        id:
+          type: string
+          format: uuid
+        meal_item_id:
+          type: string
+          format: uuid
+          description: The meal item this recipe is for
+        title:
+          type: string
+          nullable: true
+          description: Recipe title
+          example: "Classic Grilled Chicken"
+        recipe_type:
+          type: string
+          description: Type of recipe content (e.g., "full", "quick", "notes")
+        content:
+          type: string
+          description: The full recipe text including ingredients and instructions
+        meal_items:
+          type: object
+          description: The associated meal item
+          properties:
+            name:
+              type: string
+              example: "Grilled Chicken"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    MealItem:
+      type: object
+      description: A saved meal/dish that can be added to meal plans
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Name of the dish
+          example: "Spaghetti Bolognese"
+        category:
+          type: string
+          nullable: true
+          description: Category of the meal (e.g., "Italian", "Quick meals")
+          example: "Italian"
+        notes:
+          type: string
+          nullable: true
+          description: Notes about the dish
+        image_url:
+          type: string
+          nullable: true
+          description: URL to an image of the dish
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
