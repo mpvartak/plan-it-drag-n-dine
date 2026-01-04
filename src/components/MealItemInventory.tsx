@@ -517,7 +517,7 @@ export const MealItemInventory: React.FC = () => {
       <div className="space-y-4">
         <div className="flex items-center gap-3">
           <ChefHat className="h-6 w-6 text-primary" />
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Meal Item Inventory</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">Recipe Index</h2>
           {draggedItem && (
             <Badge variant="outline" className="animate-pulse">
               Dragging: {draggedItem.name}
