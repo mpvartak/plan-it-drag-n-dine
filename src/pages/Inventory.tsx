@@ -378,8 +378,12 @@ const Inventory = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onClick={() => navigate('/')}>
-                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  <UtensilsCrossed className="h-4 w-4 mr-2" />
                   Meal Plan
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/?inventory=true')}>
+                  <UtensilsCrossed className="h-4 w-4 mr-2" />
+                  Recipe Index
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/settings')}>
                   <SettingsIcon className="h-4 w-4 mr-2" />

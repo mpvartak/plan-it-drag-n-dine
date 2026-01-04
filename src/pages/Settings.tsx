@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Plus, X, Menu, LogOut, UtensilsCrossed, Save, Loader2, AlertTriangle, Trash2 } from 'lucide-react';
+import { Plus, X, Menu, LogOut, UtensilsCrossed, Save, Loader2, AlertTriangle, Trash2, Refrigerator } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -209,7 +209,11 @@ const Settings = () => {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/?inventory=true')}>
                   <UtensilsCrossed className="h-4 w-4 mr-2" />
-                  Recipe Inventory
+                  Recipe Index
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/inventory')}>
+                  <Refrigerator className="h-4 w-4 mr-2" />
+                  Kitchen Inventory
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
