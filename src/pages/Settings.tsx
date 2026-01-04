@@ -8,15 +8,25 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Plus, X, Menu, LogOut, UtensilsCrossed, Save, Loader2, AlertTriangle, Trash2, Refrigerator } from 'lucide-react';
+import { Plus, X, Menu, LogOut, UtensilsCrossed, Save, Loader2, AlertTriangle, Trash2, Refrigerator, Key, Copy, Eye, EyeOff } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { FeedbackWidget } from '@/components/FeedbackWidget';
 import { supabase } from '@/integrations/supabase/client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 const ALL_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+interface ApiKey {
+  id: string;
+  name: string;
+  key_prefix: string;
+  created_at: string;
+  last_used_at: string | null;
+  expires_at: string | null;
+  is_active: boolean;
+}
 
 const Settings = () => {
   const { user, loading, signOut } = useAuth();
@@ -30,6 +40,108 @@ const Settings = () => {
   const [clearConfirmText, setClearConfirmText] = useState('');
   
   const CONFIRM_PHRASE = 'I confirm';
+
+  // API Keys state
+  const [showCreateKeyDialog, setShowCreateKeyDialog] = useState(false);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [newKeyExpiry, setNewKeyExpiry] = useState('never');
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+  const [showGeneratedKey, setShowGeneratedKey] = useState(false);
+
+  // Fetch API keys
+  const { data: apiKeys = [], isLoading: isLoadingKeys, refetch: refetchKeys } = useQuery({
+    queryKey: ['api-keys', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('user_api_keys')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as ApiKey[];
+    },
+    enabled: !!user,
+  });
+
+  // Create API key mutation
+  const createKeyMutation = useMutation({
+    mutationFn: async ({ name, expires_in_days }: { name: string; expires_in_days?: number }) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      
+      const response = await fetch('https://eucwtwejktcjxowiybjy.supabase.co/functions/v1/generate-api-key', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name, expires_in_days }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create API key');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setGeneratedKey(data.api_key);
+      setShowGeneratedKey(true);
+      setNewKeyName('');
+      setNewKeyExpiry('never');
+      refetchKeys();
+      toast({
+        title: 'API key created',
+        description: 'Make sure to copy your key - it won\'t be shown again!',
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Delete API key mutation
+  const deleteKeyMutation = useMutation({
+    mutationFn: async (keyId: string) => {
+      const { error } = await supabase
+        .from('user_api_keys')
+        .delete()
+        .eq('id', keyId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refetchKeys();
+      toast({
+        title: 'API key deleted',
+        description: 'The API key has been revoked.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete API key.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleCreateKey = () => {
+    const expires_in_days = newKeyExpiry === 'never' ? undefined : parseInt(newKeyExpiry);
+    createKeyMutation.mutate({ name: newKeyName, expires_in_days });
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: 'Copied to clipboard' });
+  };
 
   // Clear all inventory mutation
   const clearAllMutation = useMutation({
@@ -390,6 +502,66 @@ const Settings = () => {
             </div>
           </Card>
 
+          {/* API Keys */}
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Key className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold">API Keys</h2>
+              </div>
+              <Button onClick={() => setShowCreateKeyDialog(true)} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Key
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              API keys allow external apps (like ChatGPT) to access your meal planning data.
+            </p>
+            
+            {isLoadingKeys ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading keys...
+              </div>
+            ) : apiKeys.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">No API keys created yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {apiKeys.map((key) => (
+                  <div key={key.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{key.name}</span>
+                        {!key.is_active && (
+                          <Badge variant="secondary" className="text-xs">Inactive</Badge>
+                        )}
+                        {key.expires_at && new Date(key.expires_at) < new Date() && (
+                          <Badge variant="destructive" className="text-xs">Expired</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <code className="bg-muted px-1 rounded">{key.key_prefix}</code>
+                        <span>Created {new Date(key.created_at).toLocaleDateString()}</span>
+                        {key.last_used_at && (
+                          <span>Last used {new Date(key.last_used_at).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => deleteKeyMutation.mutate(key.id)}
+                      disabled={deleteKeyMutation.isPending}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
           {/* Danger Zone */}
           <Card className="p-6 border-destructive/50">
             <div className="flex items-center gap-2 mb-4">
@@ -491,6 +663,126 @@ const Settings = () => {
                 </>
               )}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create API Key Dialog */}
+      <Dialog open={showCreateKeyDialog} onOpenChange={(open) => {
+        setShowCreateKeyDialog(open);
+        if (!open) {
+          setNewKeyName('');
+          setNewKeyExpiry('never');
+          setGeneratedKey(null);
+          setShowGeneratedKey(false);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5" />
+              {generatedKey ? 'Your New API Key' : 'Create API Key'}
+            </DialogTitle>
+            <DialogDescription>
+              {generatedKey 
+                ? 'Copy your API key now. You won\'t be able to see it again!'
+                : 'Create a new API key for external apps to access your data.'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {generatedKey ? (
+            <div className="space-y-4 py-4">
+              <div className="relative">
+                <Input
+                  value={showGeneratedKey ? generatedKey : '•'.repeat(40)}
+                  readOnly
+                  className="font-mono pr-20"
+                />
+                <div className="absolute right-1 top-1 flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowGeneratedKey(!showGeneratedKey)}
+                    className="h-7 w-7 p-0"
+                  >
+                    {showGeneratedKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyToClipboard(generatedKey)}
+                    className="h-7 w-7 p-0"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                This key won't be shown again. Save it securely!
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label htmlFor="key-name" className="text-sm font-medium">
+                  Key Name
+                </label>
+                <Input
+                  id="key-name"
+                  value={newKeyName}
+                  onChange={(e) => setNewKeyName(e.target.value)}
+                  placeholder="e.g., ChatGPT Actions"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="key-expiry" className="text-sm font-medium">
+                  Expiration
+                </label>
+                <Select value={newKeyExpiry} onValueChange={setNewKeyExpiry}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="never">Never expires</SelectItem>
+                    <SelectItem value="30">30 days</SelectItem>
+                    <SelectItem value="90">90 days</SelectItem>
+                    <SelectItem value="365">1 year</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            {generatedKey ? (
+              <Button onClick={() => {
+                setShowCreateKeyDialog(false);
+                setGeneratedKey(null);
+                setShowGeneratedKey(false);
+              }}>
+                Done
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setShowCreateKeyDialog(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCreateKey}
+                  disabled={!newKeyName.trim() || createKeyMutation.isPending}
+                >
+                  {createKeyMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Key'
+                  )}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
