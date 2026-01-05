@@ -129,6 +129,63 @@ async function getInventory(userId: string, filters?: { location?: string }) {
   return await query;
 }
 
+async function createInventoryItem(userId: string, item: {
+  name: string;
+  quantity?: number;
+  unit?: string;
+  location?: 'fridge' | 'freezer' | 'pantry';
+  expiration_date?: string;
+  ready_to_eat?: boolean;
+  notes?: string;
+}) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  return await supabase
+    .from('inventory_items')
+    .insert({
+      user_id: userId,
+      name: item.name,
+      quantity: item.quantity ?? 1,
+      unit: item.unit,
+      location: item.location ?? 'pantry',
+      expiration_date: item.expiration_date,
+      ready_to_eat: item.ready_to_eat ?? true,
+      notes: item.notes,
+    })
+    .select()
+    .single();
+}
+
+async function updateInventoryItem(userId: string, itemId: string, updates: {
+  name?: string;
+  quantity?: number;
+  unit?: string;
+  location?: 'fridge' | 'freezer' | 'pantry';
+  expiration_date?: string;
+  ready_to_eat?: boolean;
+  notes?: string;
+}) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  return await supabase
+    .from('inventory_items')
+    .update(updates)
+    .eq('id', itemId)
+    .eq('user_id', userId)
+    .select()
+    .single();
+}
+
+async function deleteInventoryItem(userId: string, itemId: string) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  return await supabase
+    .from('inventory_items')
+    .delete()
+    .eq('id', itemId)
+    .eq('user_id', userId);
+}
+
 async function getMealPlan(userId: string, weekStartDate: string) {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
@@ -146,6 +203,51 @@ async function getMealPlan(userId: string, weekStartDate: string) {
     .order('date');
 }
 
+async function createMealPlanEntry(userId: string, entry: {
+  date: string;
+  meal_type: string;
+  meal_items?: { id: string; name: string }[];
+}) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  return await supabase
+    .from('meal_plans')
+    .insert({
+      user_id: userId,
+      date: entry.date,
+      meal_type: entry.meal_type,
+      meal_items: entry.meal_items ?? [],
+    })
+    .select()
+    .single();
+}
+
+async function updateMealPlanEntry(userId: string, entryId: string, updates: {
+  date?: string;
+  meal_type?: string;
+  meal_items?: { id: string; name: string }[];
+}) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  return await supabase
+    .from('meal_plans')
+    .update(updates)
+    .eq('id', entryId)
+    .eq('user_id', userId)
+    .select()
+    .single();
+}
+
+async function deleteMealPlanEntry(userId: string, entryId: string) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  return await supabase
+    .from('meal_plans')
+    .delete()
+    .eq('id', entryId)
+    .eq('user_id', userId);
+}
+
 async function getRecipes(userId: string, mealItemName?: string) {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
@@ -161,6 +263,53 @@ async function getRecipes(userId: string, mealItemName?: string) {
   return await query;
 }
 
+async function createRecipe(userId: string, recipe: {
+  meal_item_id: string;
+  title?: string;
+  recipe_type: string;
+  content: string;
+}) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  return await supabase
+    .from('recipes')
+    .insert({
+      user_id: userId,
+      meal_item_id: recipe.meal_item_id,
+      title: recipe.title,
+      recipe_type: recipe.recipe_type,
+      content: recipe.content,
+    })
+    .select()
+    .single();
+}
+
+async function updateRecipe(userId: string, recipeId: string, updates: {
+  title?: string;
+  recipe_type?: string;
+  content?: string;
+}) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  return await supabase
+    .from('recipes')
+    .update(updates)
+    .eq('id', recipeId)
+    .eq('user_id', userId)
+    .select()
+    .single();
+}
+
+async function deleteRecipe(userId: string, recipeId: string) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  return await supabase
+    .from('recipes')
+    .delete()
+    .eq('id', recipeId)
+    .eq('user_id', userId);
+}
+
 async function getMealItems(userId: string) {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
   
@@ -171,6 +320,51 @@ async function getMealItems(userId: string) {
     .order('name');
 }
 
+async function createMealItem(userId: string, item: {
+  name: string;
+  category?: string;
+  notes?: string;
+}) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  return await supabase
+    .from('meal_items')
+    .insert({
+      user_id: userId,
+      name: item.name,
+      category: item.category,
+      notes: item.notes,
+    })
+    .select()
+    .single();
+}
+
+async function updateMealItem(userId: string, itemId: string, updates: {
+  name?: string;
+  category?: string;
+  notes?: string;
+}) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  return await supabase
+    .from('meal_items')
+    .update(updates)
+    .eq('id', itemId)
+    .eq('user_id', userId)
+    .select()
+    .single();
+}
+
+async function deleteMealItem(userId: string, itemId: string) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  return await supabase
+    .from('meal_items')
+    .delete()
+    .eq('id', itemId)
+    .eq('user_id', userId);
+}
+
 // ============================================
 // REST API HANDLER
 // ============================================
@@ -178,8 +372,10 @@ async function getMealItems(userId: string) {
 async function handleRestRequest(req: Request, url: URL, userId: string): Promise<Response> {
   const path = url.pathname.replace('/unified-api', '');
   const method = req.method;
+  const pathParts = path.split('/').filter(Boolean);
 
   try {
+    // ========== INVENTORY ==========
     // GET /inventory
     if (path === '/inventory' && method === 'GET') {
       const location = url.searchParams.get('location') || undefined;
@@ -191,6 +387,43 @@ async function handleRestRequest(req: Request, url: URL, userId: string): Promis
       });
     }
 
+    // POST /inventory
+    if (path === '/inventory' && method === 'POST') {
+      const body = await req.json();
+      if (!body.name) {
+        return new Response(JSON.stringify({ error: 'name is required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      const { data, error } = await createInventoryItem(userId, body);
+      if (error) throw error;
+      return new Response(JSON.stringify({ data }), {
+        status: 201,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // PUT /inventory/:id
+    if (pathParts[0] === 'inventory' && pathParts[1] && method === 'PUT') {
+      const body = await req.json();
+      const { data, error } = await updateInventoryItem(userId, pathParts[1], body);
+      if (error) throw error;
+      return new Response(JSON.stringify({ data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // DELETE /inventory/:id
+    if (pathParts[0] === 'inventory' && pathParts[1] && method === 'DELETE') {
+      const { error } = await deleteInventoryItem(userId, pathParts[1]);
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // ========== MEAL PLAN ==========
     // GET /meal-plan
     if (path === '/meal-plan' && method === 'GET') {
       const weekStart = url.searchParams.get('week_start');
@@ -208,6 +441,43 @@ async function handleRestRequest(req: Request, url: URL, userId: string): Promis
       });
     }
 
+    // POST /meal-plan
+    if (path === '/meal-plan' && method === 'POST') {
+      const body = await req.json();
+      if (!body.date || !body.meal_type) {
+        return new Response(JSON.stringify({ error: 'date and meal_type are required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      const { data, error } = await createMealPlanEntry(userId, body);
+      if (error) throw error;
+      return new Response(JSON.stringify({ data }), {
+        status: 201,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // PUT /meal-plan/:id
+    if (pathParts[0] === 'meal-plan' && pathParts[1] && method === 'PUT') {
+      const body = await req.json();
+      const { data, error } = await updateMealPlanEntry(userId, pathParts[1], body);
+      if (error) throw error;
+      return new Response(JSON.stringify({ data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // DELETE /meal-plan/:id
+    if (pathParts[0] === 'meal-plan' && pathParts[1] && method === 'DELETE') {
+      const { error } = await deleteMealPlanEntry(userId, pathParts[1]);
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // ========== RECIPES ==========
     // GET /recipes
     if (path === '/recipes' && method === 'GET') {
       const mealItemName = url.searchParams.get('meal_item') || undefined;
@@ -218,11 +488,84 @@ async function handleRestRequest(req: Request, url: URL, userId: string): Promis
       });
     }
 
+    // POST /recipes
+    if (path === '/recipes' && method === 'POST') {
+      const body = await req.json();
+      if (!body.meal_item_id || !body.recipe_type || !body.content) {
+        return new Response(JSON.stringify({ error: 'meal_item_id, recipe_type, and content are required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      const { data, error } = await createRecipe(userId, body);
+      if (error) throw error;
+      return new Response(JSON.stringify({ data }), {
+        status: 201,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // PUT /recipes/:id
+    if (pathParts[0] === 'recipes' && pathParts[1] && method === 'PUT') {
+      const body = await req.json();
+      const { data, error } = await updateRecipe(userId, pathParts[1], body);
+      if (error) throw error;
+      return new Response(JSON.stringify({ data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // DELETE /recipes/:id
+    if (pathParts[0] === 'recipes' && pathParts[1] && method === 'DELETE') {
+      const { error } = await deleteRecipe(userId, pathParts[1]);
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // ========== MEAL ITEMS ==========
     // GET /meal-items
     if (path === '/meal-items' && method === 'GET') {
       const { data, error } = await getMealItems(userId);
       if (error) throw error;
       return new Response(JSON.stringify({ data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // POST /meal-items
+    if (path === '/meal-items' && method === 'POST') {
+      const body = await req.json();
+      if (!body.name) {
+        return new Response(JSON.stringify({ error: 'name is required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      const { data, error } = await createMealItem(userId, body);
+      if (error) throw error;
+      return new Response(JSON.stringify({ data }), {
+        status: 201,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // PUT /meal-items/:id
+    if (pathParts[0] === 'meal-items' && pathParts[1] && method === 'PUT') {
+      const body = await req.json();
+      const { data, error } = await updateMealItem(userId, pathParts[1], body);
+      if (error) throw error;
+      return new Response(JSON.stringify({ data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // DELETE /meal-items/:id
+    if (pathParts[0] === 'meal-items' && pathParts[1] && method === 'DELETE') {
+      const { error } = await deleteMealItem(userId, pathParts[1]);
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }

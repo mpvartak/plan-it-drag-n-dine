@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Meal Plan Pro API
-  description: API for managing meal plans, kitchen inventory, and recipes. Check food in fridge/freezer/pantry, view weekly meal plans, and access recipes.
+  description: API for meal plans, kitchen inventory, recipes. Add/remove items, plan meals, manage recipes.
   version: 1.0.0
   contact:
     name: Meal Plan Pro Support
@@ -18,12 +18,12 @@ paths:
     get:
       operationId: getKitchenInventory
       summary: Get kitchen inventory items
-      description: Get items in fridge, freezer, or pantry. Use for "What's in my fridge?", "What food do I have?", "What's expiring soon?" Returns items sorted by expiration date.
+      description: Get items in fridge, freezer, or pantry. Use for "What's in my fridge?" Returns items sorted by expiration.
       parameters:
         - name: location
           in: query
           required: false
-          description: Filter by location - fridge, freezer, or pantry. Optional.
+          description: Filter by fridge, freezer, or pantry
           schema:
             type: string
             enum: [fridge, freezer, pantry]
@@ -41,17 +41,95 @@ paths:
                       $ref: '#/components/schemas/InventoryItem'
         '401':
           $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: addInventoryItem
+      summary: Add item to inventory
+      description: Add food to fridge/freezer/pantry. Use for "Add milk to fridge", "I bought eggs".
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItemCreate'
+      responses:
+        '201':
+          description: Created item
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/InventoryItem'
+        '400':
+          description: Missing required fields
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /inventory/{id}:
+    put:
+      operationId: updateInventoryItem
+      summary: Update inventory item
+      description: Update quantity, location, expiration. Use for "Move chicken to freezer", "Update quantity".
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryItemUpdate'
+      responses:
+        '200':
+          description: Updated item
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/InventoryItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      operationId: deleteInventoryItem
+      summary: Remove item from inventory
+      description: Delete item from inventory. Use for "Remove the milk", "I used the eggs".
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Item deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /meal-plan:
     get:
       operationId: getMealPlan
       summary: Get weekly meal plan
-      description: Get meal plan for a week. Use for "What's for dinner?", "What am I eating this week?" Returns meals by date and type (breakfast, lunch, dinner, snacks).
+      description: Get meal plan for a week. Use for "What's for dinner?", "What am I eating this week?"
       parameters:
         - name: week_start
           in: query
           required: true
-          description: Week start date in YYYY-MM-DD format. Use Monday or Sunday based on user preference.
+          description: Week start date YYYY-MM-DD
           schema:
             type: string
             format: date
@@ -69,7 +147,85 @@ paths:
                     items:
                       $ref: '#/components/schemas/MealPlanEntry'
         '400':
-          description: Missing or invalid week_start parameter
+          description: Missing week_start
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createMealPlanEntry
+      summary: Add meal to plan
+      description: Schedule a meal. Use for "Plan pasta for Tuesday dinner", "Add breakfast for Monday".
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MealPlanCreate'
+      responses:
+        '201':
+          description: Created meal plan entry
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MealPlanEntry'
+        '400':
+          description: Missing date or meal_type
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /meal-plan/{id}:
+    put:
+      operationId: updateMealPlanEntry
+      summary: Update meal plan entry
+      description: Change scheduled meal. Use for "Move dinner to Wednesday", "Change lunch to salad".
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MealPlanUpdate'
+      responses:
+        '200':
+          description: Updated entry
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MealPlanEntry'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      operationId: deleteMealPlanEntry
+      summary: Remove from meal plan
+      description: Delete scheduled meal. Use for "Cancel Tuesday dinner", "Remove breakfast".
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Entry deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -77,12 +233,12 @@ paths:
     get:
       operationId: getRecipes
       summary: Get recipes
-      description: Get user's recipes. Use for "How do I make X?", "What's the recipe for Y?" Can filter by meal item name for specific dishes.
+      description: Get user's recipes. Use for "How do I make X?", "Recipe for chicken".
       parameters:
         - name: meal_item
           in: query
           required: false
-          description: Filter by meal item name (partial match, case-insensitive).
+          description: Filter by meal item name
           schema:
             type: string
             example: "chicken"
@@ -100,12 +256,90 @@ paths:
                       $ref: '#/components/schemas/Recipe'
         '401':
           $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createRecipe
+      summary: Add a recipe
+      description: Save a new recipe. Use for "Save this recipe", "Add recipe for pasta".
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeCreate'
+      responses:
+        '201':
+          description: Created recipe
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Recipe'
+        '400':
+          description: Missing required fields
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /recipes/{id}:
+    put:
+      operationId: updateRecipe
+      summary: Update recipe
+      description: Edit recipe content. Use for "Update the pasta recipe", "Change ingredients".
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeUpdate'
+      responses:
+        '200':
+          description: Updated recipe
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Recipe'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      operationId: deleteRecipe
+      summary: Delete recipe
+      description: Remove a recipe. Use for "Delete the pasta recipe".
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Recipe deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /meal-items:
     get:
       operationId: getMealItems
-      summary: Get meal items (dish catalog)
-      description: Get saved dishes/meals. Use for "What meals do I have saved?", "What can I add to my meal plan?" These are reusable dishes for meal planning.
+      summary: Get meal items (dishes)
+      description: Get saved dishes. Use for "What meals do I have?", "What can I plan?"
       responses:
         '200':
           description: List of meal items
@@ -120,6 +354,84 @@ paths:
                       $ref: '#/components/schemas/MealItem'
         '401':
           $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: createMealItem
+      summary: Create meal item
+      description: Save a new dish. Use for "Add spaghetti to my meals", "Create new dish".
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MealItemCreate'
+      responses:
+        '201':
+          description: Created meal item
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MealItem'
+        '400':
+          description: Missing name
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /meal-items/{id}:
+    put:
+      operationId: updateMealItem
+      summary: Update meal item
+      description: Edit dish details. Use for "Rename pasta dish", "Change category".
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MealItemUpdate'
+      responses:
+        '200':
+          description: Updated meal item
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/MealItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      operationId: deleteMealItem
+      summary: Delete meal item
+      description: Remove a dish. Use for "Delete spaghetti from my meals".
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Meal item deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
 components:
   securitySchemes:
@@ -131,7 +443,7 @@ components:
 
   responses:
     Unauthorized:
-      description: Authentication failed - invalid or missing API key
+      description: Invalid or missing API key
       content:
         application/json:
           schema:
@@ -144,43 +456,36 @@ components:
   schemas:
     InventoryItem:
       type: object
-      description: Kitchen inventory item with location, quantity, and expiration
+      description: Kitchen inventory item
       properties:
         id:
           type: string
           format: uuid
         name:
           type: string
-          description: Name of the food item
           example: "Chicken breast"
         quantity:
           type: number
-          description: Amount of the item
           example: 2
         unit:
           type: string
           nullable: true
-          description: Unit of measurement
           example: "lbs"
         location:
           type: string
           enum: [fridge, freezer, pantry]
-          description: Storage location
           example: "fridge"
         expiration_date:
           type: string
           format: date
           nullable: true
-          description: Expiration date
           example: "2024-01-20"
         ready_to_eat:
           type: boolean
-          description: Ready to eat without cooking
           example: false
         notes:
           type: string
           nullable: true
-          description: Additional notes
         created_at:
           type: string
           format: date-time
@@ -188,9 +493,60 @@ components:
           type: string
           format: date-time
 
+    InventoryItemCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: Item name (required)
+          example: "Milk"
+        quantity:
+          type: number
+          description: Amount (default 1)
+          example: 1
+        unit:
+          type: string
+          example: "gallon"
+        location:
+          type: string
+          enum: [fridge, freezer, pantry]
+          description: Storage location (default pantry)
+          example: "fridge"
+        expiration_date:
+          type: string
+          format: date
+          example: "2024-01-25"
+        ready_to_eat:
+          type: boolean
+          description: Ready to eat (default true)
+          example: true
+        notes:
+          type: string
+
+    InventoryItemUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        quantity:
+          type: number
+        unit:
+          type: string
+        location:
+          type: string
+          enum: [fridge, freezer, pantry]
+        expiration_date:
+          type: string
+          format: date
+        ready_to_eat:
+          type: boolean
+        notes:
+          type: string
+
     MealPlanEntry:
       type: object
-      description: Meal plan entry for a date and meal type
+      description: Scheduled meal
       properties:
         id:
           type: string
@@ -198,11 +554,10 @@ components:
         date:
           type: string
           format: date
-          description: Date of this meal
           example: "2024-01-15"
         meal_type:
           type: string
-          description: Meal type (breakfast, lunch, dinner, snack)
+          description: breakfast, lunch, dinner, snack
           example: "dinner"
         meal_items:
           type: array
@@ -212,11 +567,9 @@ components:
             properties:
               id:
                 type: string
-                description: Meal item reference
               name:
                 type: string
-                description: Dish name
-                example: "Grilled Chicken Salad"
+                example: "Grilled Chicken"
         created_at:
           type: string
           format: date-time
@@ -224,9 +577,51 @@ components:
           type: string
           format: date-time
 
+    MealPlanCreate:
+      type: object
+      required: [date, meal_type]
+      properties:
+        date:
+          type: string
+          format: date
+          description: Date YYYY-MM-DD (required)
+          example: "2024-01-15"
+        meal_type:
+          type: string
+          description: breakfast, lunch, dinner, snack (required)
+          example: "dinner"
+        meal_items:
+          type: array
+          description: Dishes to plan
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+
+    MealPlanUpdate:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        meal_type:
+          type: string
+        meal_items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+
     Recipe:
       type: object
-      description: Recipe with ingredients and instructions
+      description: Recipe for a dish
       properties:
         id:
           type: string
@@ -234,25 +629,21 @@ components:
         meal_item_id:
           type: string
           format: uuid
-          description: Associated meal item ID
         title:
           type: string
           nullable: true
-          description: Recipe title
           example: "Classic Grilled Chicken"
         recipe_type:
           type: string
-          description: Recipe type (full, quick, notes)
+          description: full, quick, notes
         content:
           type: string
-          description: Full recipe text
+          description: Recipe text
         meal_items:
           type: object
-          description: Associated meal item
           properties:
             name:
               type: string
-              example: "Grilled Chicken"
         created_at:
           type: string
           format: date-time
@@ -260,33 +651,82 @@ components:
           type: string
           format: date-time
 
+    RecipeCreate:
+      type: object
+      required: [meal_item_id, recipe_type, content]
+      properties:
+        meal_item_id:
+          type: string
+          format: uuid
+          description: Linked meal item ID (required)
+        title:
+          type: string
+          example: "Mom's Pasta"
+        recipe_type:
+          type: string
+          description: full, quick, notes (required)
+          example: "full"
+        content:
+          type: string
+          description: Recipe text (required)
+
+    RecipeUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        recipe_type:
+          type: string
+        content:
+          type: string
+
     MealItem:
       type: object
-      description: Saved dish for meal planning
+      description: Saved dish
       properties:
         id:
           type: string
           format: uuid
         name:
           type: string
-          description: Dish name
           example: "Spaghetti Bolognese"
         category:
           type: string
           nullable: true
-          description: Category (Italian, Quick meals, etc.)
           example: "Italian"
         notes:
           type: string
           nullable: true
-          description: Notes about the dish
         image_url:
           type: string
           nullable: true
-          description: Image URL
         created_at:
           type: string
           format: date-time
         updated_at:
           type: string
           format: date-time
+
+    MealItemCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: Dish name (required)
+          example: "Spaghetti Bolognese"
+        category:
+          type: string
+          example: "Italian"
+        notes:
+          type: string
+
+    MealItemUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        notes:
+          type: string
