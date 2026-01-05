@@ -31,13 +31,35 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Get all items
+    // Create a client with the user's JWT to validate authentication
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Validate the user's JWT and get their user ID
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    
+    if (authError || !user) {
+      console.error("Auth error:", authError?.message);
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log(`Processing update-ready-to-eat for user: ${user.id}`);
+
+    // Use service role client for database operations, but filter by user_id
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get only items belonging to the authenticated user
     const { data: items, error: fetchError } = await supabase
       .from("inventory_items")
-      .select("id, name");
+      .select("id, name")
+      .eq("user_id", user.id);
 
     if (fetchError) throw fetchError;
 
@@ -54,16 +76,19 @@ serve(async (req) => {
       });
     }
 
-    // Update each item
+    // Update each item (all belong to the authenticated user)
     let updatedCount = 0;
     for (const update of updates) {
       const { error } = await supabase
         .from("inventory_items")
         .update({ ready_to_eat: update.ready_to_eat })
-        .eq("id", update.id);
+        .eq("id", update.id)
+        .eq("user_id", user.id); // Extra safety check
 
       if (!error) updatedCount++;
     }
+
+    console.log(`Updated ${updatedCount} items for user ${user.id}`);
 
     return new Response(
       JSON.stringify({ 
@@ -76,7 +101,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "An error occurred processing your request" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
