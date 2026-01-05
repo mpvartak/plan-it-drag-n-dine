@@ -1,14 +1,7 @@
 openapi: 3.1.0
 info:
   title: Meal Plan Pro API
-  description: |
-    API for managing meal plans, kitchen inventory, and recipes.
-    
-    Use this API to help users:
-    - Check what food they have in their kitchen (fridge, freezer, pantry)
-    - View and manage their weekly meal plans
-    - Access their recipe collection
-    - Find meals they can cook with available ingredients
+  description: API for managing meal plans, kitchen inventory, and recipes. Check food in fridge/freezer/pantry, view weekly meal plans, and access recipes.
   version: 1.0.0
   contact:
     name: Meal Plan Pro Support
@@ -25,28 +18,12 @@ paths:
     get:
       operationId: getKitchenInventory
       summary: Get kitchen inventory items
-      description: |
-        Retrieves all items currently in the user's kitchen inventory.
-        
-        Use this when the user asks:
-        - "What's in my fridge/freezer/pantry?"
-        - "What food do I have at home?"
-        - "What ingredients do I have?"
-        - "What's expiring soon?"
-        - "Do I have any [ingredient]?"
-        - "What can I cook with what I have?"
-        
-        Items include expiration dates, quantities, and storage location.
-        Results are sorted by expiration date (soonest first) to help identify items that need to be used soon.
+      description: Get items in fridge, freezer, or pantry. Use for "What's in my fridge?", "What food do I have?", "What's expiring soon?" Returns items sorted by expiration date.
       parameters:
         - name: location
           in: query
           required: false
-          description: |
-            Filter by storage location. Use this when the user specifically asks about one location.
-            - "fridge" - refrigerated items
-            - "freezer" - frozen items  
-            - "pantry" - shelf-stable items
+          description: Filter by location - fridge, freezer, or pantry. Optional.
           schema:
             type: string
             enum: [fridge, freezer, pantry]
@@ -69,26 +46,12 @@ paths:
     get:
       operationId: getMealPlan
       summary: Get weekly meal plan
-      description: |
-        Retrieves the meal plan for a specific week.
-        
-        Use this when the user asks:
-        - "What's for dinner tonight/tomorrow?"
-        - "What am I eating this week?"
-        - "What's on my meal plan?"
-        - "What did I plan for [day]?"
-        - "Show me my meals for the week"
-        
-        Returns all meals organized by date and meal type (breakfast, lunch, dinner, snacks).
+      description: Get meal plan for a week. Use for "What's for dinner?", "What am I eating this week?" Returns meals by date and type (breakfast, lunch, dinner, snacks).
       parameters:
         - name: week_start
           in: query
           required: true
-          description: |
-            The start date of the week in YYYY-MM-DD format.
-            Calculate this based on the user's first day of week preference (usually Monday or Sunday).
-            For "this week", use the most recent start day.
-            For "next week", add 7 days to the current week's start.
+          description: Week start date in YYYY-MM-DD format. Use Monday or Sunday based on user preference.
           schema:
             type: string
             format: date
@@ -114,24 +77,12 @@ paths:
     get:
       operationId: getRecipes
       summary: Get recipes
-      description: |
-        Retrieves recipes from the user's recipe collection.
-        
-        Use this when the user asks:
-        - "How do I make [dish]?"
-        - "What's the recipe for [meal]?"
-        - "Show me my recipes"
-        - "What recipes do I have for [ingredient/meal]?"
-        - "How do I cook [item from meal plan]?"
-        
-        Can filter by meal item name to find recipes for specific dishes.
+      description: Get user's recipes. Use for "How do I make X?", "What's the recipe for Y?" Can filter by meal item name for specific dishes.
       parameters:
         - name: meal_item
           in: query
           required: false
-          description: |
-            Filter recipes by meal item name (partial match, case-insensitive).
-            Use this when the user asks for a specific dish's recipe.
+          description: Filter by meal item name (partial match, case-insensitive).
           schema:
             type: string
             example: "chicken"
@@ -154,17 +105,7 @@ paths:
     get:
       operationId: getMealItems
       summary: Get meal items (dish catalog)
-      description: |
-        Retrieves all meal items (dishes) the user has saved.
-        
-        Use this when the user asks:
-        - "What meals/dishes do I have saved?"
-        - "What can I add to my meal plan?"
-        - "Show me my meal options"
-        - "What dishes have I made before?"
-        
-        Meal items are reusable dishes that can be added to meal plans.
-        They may have associated recipes and images.
+      description: Get saved dishes/meals. Use for "What meals do I have saved?", "What can I add to my meal plan?" These are reusable dishes for meal planning.
       responses:
         '200':
           description: List of meal items
@@ -186,7 +127,7 @@ components:
       type: apiKey
       in: header
       name: x-api-key
-      description: API key obtained from Settings > API Keys in Meal Plan Pro
+      description: API key from Settings > API Keys
 
   responses:
     Unauthorized:
@@ -203,7 +144,7 @@ components:
   schemas:
     InventoryItem:
       type: object
-      description: An item in the user's kitchen inventory
+      description: Kitchen inventory item with location, quantity, and expiration
       properties:
         id:
           type: string
@@ -219,27 +160,27 @@ components:
         unit:
           type: string
           nullable: true
-          description: Unit of measurement (lbs, oz, pieces, etc.)
+          description: Unit of measurement
           example: "lbs"
         location:
           type: string
           enum: [fridge, freezer, pantry]
-          description: Where the item is stored
+          description: Storage location
           example: "fridge"
         expiration_date:
           type: string
           format: date
           nullable: true
-          description: When the item expires (null if unknown)
+          description: Expiration date
           example: "2024-01-20"
         ready_to_eat:
           type: boolean
-          description: Whether the item is ready to eat without cooking
+          description: Ready to eat without cooking
           example: false
         notes:
           type: string
           nullable: true
-          description: Additional notes about the item
+          description: Additional notes
         created_at:
           type: string
           format: date-time
@@ -249,7 +190,7 @@ components:
 
     MealPlanEntry:
       type: object
-      description: A meal plan entry for a specific date and meal type
+      description: Meal plan entry for a date and meal type
       properties:
         id:
           type: string
@@ -257,24 +198,24 @@ components:
         date:
           type: string
           format: date
-          description: The date of this meal
+          description: Date of this meal
           example: "2024-01-15"
         meal_type:
           type: string
-          description: Type of meal (breakfast, lunch, dinner, snack, or custom)
+          description: Meal type (breakfast, lunch, dinner, snack)
           example: "dinner"
         meal_items:
           type: array
-          description: List of dishes/meals planned
+          description: Planned dishes
           items:
             type: object
             properties:
               id:
                 type: string
-                description: Reference to a meal item
+                description: Meal item reference
               name:
                 type: string
-                description: Name of the dish
+                description: Dish name
                 example: "Grilled Chicken Salad"
         created_at:
           type: string
@@ -285,7 +226,7 @@ components:
 
     Recipe:
       type: object
-      description: A recipe for a meal item
+      description: Recipe with ingredients and instructions
       properties:
         id:
           type: string
@@ -293,7 +234,7 @@ components:
         meal_item_id:
           type: string
           format: uuid
-          description: The meal item this recipe is for
+          description: Associated meal item ID
         title:
           type: string
           nullable: true
@@ -301,13 +242,13 @@ components:
           example: "Classic Grilled Chicken"
         recipe_type:
           type: string
-          description: Type of recipe content (e.g., "full", "quick", "notes")
+          description: Recipe type (full, quick, notes)
         content:
           type: string
-          description: The full recipe text including ingredients and instructions
+          description: Full recipe text
         meal_items:
           type: object
-          description: The associated meal item
+          description: Associated meal item
           properties:
             name:
               type: string
@@ -321,19 +262,19 @@ components:
 
     MealItem:
       type: object
-      description: A saved meal/dish that can be added to meal plans
+      description: Saved dish for meal planning
       properties:
         id:
           type: string
           format: uuid
         name:
           type: string
-          description: Name of the dish
+          description: Dish name
           example: "Spaghetti Bolognese"
         category:
           type: string
           nullable: true
-          description: Category of the meal (e.g., "Italian", "Quick meals")
+          description: Category (Italian, Quick meals, etc.)
           example: "Italian"
         notes:
           type: string
@@ -342,7 +283,7 @@ components:
         image_url:
           type: string
           nullable: true
-          description: URL to an image of the dish
+          description: Image URL
         created_at:
           type: string
           format: date-time
