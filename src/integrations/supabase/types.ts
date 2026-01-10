@@ -247,6 +247,7 @@ export type Database = {
           created_at: string
           expiration_date: string | null
           id: string
+          is_out_of_stock: boolean
           location: Database["public"]["Enums"]["inventory_location"]
           name: string
           notes: string | null
@@ -260,6 +261,7 @@ export type Database = {
           created_at?: string
           expiration_date?: string | null
           id?: string
+          is_out_of_stock?: boolean
           location?: Database["public"]["Enums"]["inventory_location"]
           name: string
           notes?: string | null
@@ -273,6 +275,7 @@ export type Database = {
           created_at?: string
           expiration_date?: string | null
           id?: string
+          is_out_of_stock?: boolean
           location?: Database["public"]["Enums"]["inventory_location"]
           name?: string
           notes?: string | null
