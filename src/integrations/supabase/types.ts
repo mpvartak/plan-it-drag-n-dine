@@ -44,6 +44,144 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_eating_out: {
+        Row: {
+          cost: number | null
+          created_at: string
+          description: string
+          id: string
+          log_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          description: string
+          id?: string
+          log_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          description?: string
+          id?: string
+          log_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_grocery_purchases: {
+        Row: {
+          cost: number | null
+          created_at: string
+          id: string
+          item_name: string
+          log_date: string
+          quantity: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          id?: string
+          item_name: string
+          log_date: string
+          quantity?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          id?: string
+          item_name?: string
+          log_date?: string
+          quantity?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_meal_logs: {
+        Row: {
+          created_at: string
+          id: string
+          is_unplanned: boolean | null
+          item_id: string
+          item_name: string
+          log_date: string
+          meal_type: string | null
+          status: string
+          substitute_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_unplanned?: boolean | null
+          item_id: string
+          item_name: string
+          log_date: string
+          meal_type?: string | null
+          status: string
+          substitute_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_unplanned?: boolean | null
+          item_id?: string
+          item_name?: string
+          log_date?: string
+          meal_type?: string | null
+          status?: string
+          substitute_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_waste_logs: {
+        Row: {
+          created_at: string
+          id: string
+          item_name: string
+          log_date: string
+          quantity: string | null
+          reason: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_name: string
+          log_date: string
+          quantity?: string | null
+          reason: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_name?: string
+          log_date?: string
+          quantity?: string | null
+          reason?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       feedback: {
         Row: {
           created_at: string
