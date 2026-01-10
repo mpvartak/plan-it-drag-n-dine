@@ -36,6 +36,7 @@ interface InventoryItem {
   expiration_date: string | null;
   notes: string | null;
   ready_to_eat: boolean;
+  is_out_of_stock: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -76,6 +77,7 @@ const Inventory = () => {
   const [activeTab, setActiveTab] = useState<'all' | InventoryLocation>('all');
   const [showChat, setShowChat] = useState(false);
   const [sortByExpiration, setSortByExpiration] = useState<'none' | 'asc' | 'desc'>('none');
+  const [showOutOfStock, setShowOutOfStock] = useState(false);
   
   // Form state
   const [formName, setFormName] = useState('');
@@ -217,6 +219,7 @@ const Inventory = () => {
       expiration_date: formExpirationDate ? format(formExpirationDate, 'yyyy-MM-dd') : null,
       notes: formNotes.trim() || null,
       ready_to_eat: formReadyToEat,
+      is_out_of_stock: false,
     };
 
     if (editingItem) {
@@ -238,6 +241,11 @@ const Inventory = () => {
   // Filter and group items
   const filteredItems = useMemo(() => {
     let items = inventoryItems;
+    
+    // Filter out-of-stock items unless showOutOfStock is enabled
+    if (!showOutOfStock) {
+      items = items.filter(item => !item.is_out_of_stock);
+    }
     
     if (searchQuery) {
       items = items.filter(item => 
@@ -265,7 +273,12 @@ const Inventory = () => {
     }
     
     return items;
-  }, [inventoryItems, searchQuery, activeTab, sortByExpiration]);
+  }, [inventoryItems, searchQuery, activeTab, sortByExpiration, showOutOfStock]);
+
+  // Count out-of-stock items
+  const outOfStockCount = useMemo(() => {
+    return inventoryItems.filter(item => item.is_out_of_stock).length;
+  }, [inventoryItems]);
 
   const toggleExpirationSort = () => {
     setSortByExpiration(prev => {
@@ -661,6 +674,15 @@ const Inventory = () => {
               <ArrowUpDown className="h-4 w-4" />
               Expiry {sortByExpiration === 'asc' ? '↑' : sortByExpiration === 'desc' ? '↓' : ''}
             </Button>
+            <Button
+              variant={showOutOfStock ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={() => setShowOutOfStock(!showOutOfStock)}
+              className="gap-2 shrink-0 bg-background/95"
+            >
+              <PackageMinus className="h-4 w-4" />
+              Out of stock {outOfStockCount > 0 && `(${outOfStockCount})`}
+            </Button>
           </div>
 
           {/* Inventory list */}
@@ -683,8 +705,9 @@ const Inventory = () => {
                     key={item.id} 
                     className={cn(
                       "bg-background/95 transition-all",
-                      expirationStatus === 'expired' && "ring-2 ring-destructive/50",
-                      expirationStatus === 'expiring-soon' && "ring-2 ring-orange-500/50"
+                      item.is_out_of_stock && "opacity-60",
+                      expirationStatus === 'expired' && !item.is_out_of_stock && "ring-2 ring-destructive/50",
+                      expirationStatus === 'expiring-soon' && !item.is_out_of_stock && "ring-2 ring-orange-500/50"
                     )}
                   >
                     <CardContent className="p-4">
@@ -719,18 +742,33 @@ const Inventory = () => {
                           )}
                         </div>
                         <div className="flex gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8"
-                            onClick={() => {
-                              deleteItemMutation.mutate(item.id);
-                              toast({ title: 'Used up', description: `${item.name} marked as used up and removed.` });
-                            }}
-                            title="Out of this"
-                          >
-                            <PackageMinus className="h-4 w-4" />
-                          </Button>
+                          {item.is_out_of_stock ? (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => {
+                                updateItemMutation.mutate({ id: item.id, is_out_of_stock: false });
+                                toast({ title: 'Restocked', description: `${item.name} marked as back in stock.` });
+                              }}
+                              title="Mark as in stock"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => {
+                                updateItemMutation.mutate({ id: item.id, is_out_of_stock: true });
+                                toast({ title: 'Out of stock', description: `${item.name} marked as out of stock.` });
+                              }}
+                              title="Out of this"
+                            >
+                              <PackageMinus className="h-4 w-4" />
+                            </Button>
+                          )}
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button 
