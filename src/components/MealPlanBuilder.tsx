@@ -16,6 +16,7 @@ import { MealCell } from './MealCell';
 import { MealItemInventory } from './MealItemInventory';
 import { CopyWeekModal } from './CopyWeekModal';
 import { ChatInterface } from './ChatInterface';
+import { DailyReviewSheet } from './DailyReviewSheet';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -1180,6 +1181,12 @@ export const MealPlanBuilder = ({
             </div>
             
             <div className="flex items-center gap-2">
+              <DailyReviewSheet 
+                mealPlan={mealPlan}
+                weekDates={weekDates}
+                orderedDays={orderedDays}
+                allMealTypes={allMealTypes}
+              />
               <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" size="sm" className="flex items-center gap-2">
@@ -1508,6 +1515,12 @@ export const MealPlanBuilder = ({
                 </div>
                 
                 <div className="flex items-center gap-2">
+                  <DailyReviewSheet 
+                    mealPlan={mealPlan}
+                    weekDates={weekDates}
+                    orderedDays={orderedDays}
+                    allMealTypes={allMealTypes}
+                  />
                   <Sheet>
                   <SheetTrigger asChild>
                   <Button variant="outline" size="sm" className="flex items-center gap-2">
