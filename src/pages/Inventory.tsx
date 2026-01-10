@@ -709,7 +709,7 @@ const Inventory = () => {
                     key={item.id} 
                     className={cn(
                       "bg-background/95 transition-all",
-                      item.is_out_of_stock && "opacity-60",
+                      item.is_out_of_stock && "border-dashed border-muted-foreground/50",
                       expirationStatus === 'expired' && !item.is_out_of_stock && "ring-2 ring-destructive/50",
                       expirationStatus === 'expiring-soon' && !item.is_out_of_stock && "ring-2 ring-orange-500/50"
                     )}
