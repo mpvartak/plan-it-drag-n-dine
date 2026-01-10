@@ -242,8 +242,12 @@ const Inventory = () => {
   const filteredItems = useMemo(() => {
     let items = inventoryItems;
     
-    // Filter out-of-stock items unless showOutOfStock is enabled
-    if (!showOutOfStock) {
+    // Filter by out-of-stock status
+    if (showOutOfStock) {
+      // Only show out-of-stock items
+      items = items.filter(item => item.is_out_of_stock);
+    } else {
+      // Hide out-of-stock items
       items = items.filter(item => !item.is_out_of_stock);
     }
     
@@ -761,7 +765,7 @@ const Inventory = () => {
                               size="icon" 
                               className="h-8 w-8"
                               onClick={() => {
-                                updateItemMutation.mutate({ id: item.id, is_out_of_stock: true });
+                                updateItemMutation.mutate({ id: item.id, is_out_of_stock: true, quantity: 0 });
                                 toast({ title: 'Out of stock', description: `${item.name} marked as out of stock.` });
                               }}
                               title="Out of this"
