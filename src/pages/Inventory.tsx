@@ -797,7 +797,7 @@ const Inventory = () => {
                               size="icon" 
                               className="h-8 w-8"
                               onClick={() => {
-                                updateItemMutation.mutate({ id: item.id, is_out_of_stock: true, quantity: 0 });
+                                updateItemMutation.mutate({ id: item.id, is_out_of_stock: true, quantity: 0, expiration_date: null });
                                 toast({ title: 'Out of stock', description: `${item.name} marked as out of stock.` });
                               }}
                               title="Out of this"
