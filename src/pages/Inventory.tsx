@@ -78,6 +78,7 @@ const Inventory = () => {
   const [showChat, setShowChat] = useState(false);
   const [sortByExpiration, setSortByExpiration] = useState<'none' | 'asc' | 'desc'>('none');
   const [showOutOfStock, setShowOutOfStock] = useState(false);
+  const [expirationFilter, setExpirationFilter] = useState<'all' | 'expired' | 'expiring-soon'>('all');
   
   // Form state
   const [formName, setFormName] = useState('');
@@ -250,6 +251,14 @@ const Inventory = () => {
       // Hide out-of-stock items
       items = items.filter(item => !item.is_out_of_stock);
     }
+
+    // Filter by expiration status
+    if (expirationFilter !== 'all') {
+      items = items.filter(item => {
+        const status = getExpirationStatus(item.expiration_date);
+        return status === expirationFilter;
+      });
+    }
     
     if (searchQuery) {
       items = items.filter(item => 
@@ -277,7 +286,7 @@ const Inventory = () => {
     }
     
     return items;
-  }, [inventoryItems, searchQuery, activeTab, sortByExpiration, showOutOfStock]);
+  }, [inventoryItems, searchQuery, activeTab, sortByExpiration, showOutOfStock, expirationFilter]);
 
   // Count out-of-stock items
   const outOfStockCount = useMemo(() => {
@@ -425,19 +434,42 @@ const Inventory = () => {
         style={{ backgroundImage: `url(${backgroundImage})` }}
       >
         <div className="container mx-auto px-4 py-6">
-          {/* Summary alerts */}
+          {/* Status filters */}
           {(statusCounts.expired > 0 || statusCounts.expiringSoon > 0) && (
             <div className="mb-4 flex flex-wrap gap-2">
               {statusCounts.expired > 0 && (
-                <Badge variant="destructive" className="gap-1 text-sm py-1 px-3">
+                <Badge 
+                  variant={expirationFilter === 'expired' ? 'default' : 'destructive'} 
+                  className={cn(
+                    "gap-1 text-sm py-1 px-3 cursor-pointer transition-all",
+                    expirationFilter === 'expired' && "ring-2 ring-offset-2 ring-destructive"
+                  )}
+                  onClick={() => setExpirationFilter(expirationFilter === 'expired' ? 'all' : 'expired')}
+                >
                   <AlertTriangle className="h-3 w-3" />
                   {statusCounts.expired} expired item{statusCounts.expired > 1 ? 's' : ''}
                 </Badge>
               )}
               {statusCounts.expiringSoon > 0 && (
-                <Badge className="gap-1 text-sm py-1 px-3 bg-orange-500 hover:bg-orange-600">
+                <Badge 
+                  className={cn(
+                    "gap-1 text-sm py-1 px-3 bg-orange-500 hover:bg-orange-600 cursor-pointer transition-all",
+                    expirationFilter === 'expiring-soon' && "ring-2 ring-offset-2 ring-orange-500"
+                  )}
+                  onClick={() => setExpirationFilter(expirationFilter === 'expiring-soon' ? 'all' : 'expiring-soon')}
+                >
                   <AlertTriangle className="h-3 w-3" />
                   {statusCounts.expiringSoon} item{statusCounts.expiringSoon > 1 ? 's' : ''} expiring soon
+                </Badge>
+              )}
+              {expirationFilter !== 'all' && (
+                <Badge 
+                  variant="outline" 
+                  className="gap-1 text-sm py-1 px-3 cursor-pointer bg-background/95"
+                  onClick={() => setExpirationFilter('all')}
+                >
+                  <X className="h-3 w-3" />
+                  Clear filter
                 </Badge>
               )}
             </div>
