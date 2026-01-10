@@ -239,6 +239,31 @@ const Inventory = () => {
     return counts;
   }, [inventoryItems]);
 
+  // Get expiration status
+  const getExpirationStatus = (expirationDate: string | null) => {
+    if (!expirationDate) return null;
+
+    const expDate = parseDateOnly(expirationDate);
+    expDate.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (isPast(expDate) && differenceInDays(today, expDate) > 0) {
+      return 'expired';
+    }
+
+    const daysUntilExpiry = differenceInDays(expDate, today);
+    if (daysUntilExpiry <= 3) {
+      return 'expiring-soon';
+    }
+    if (daysUntilExpiry <= 7) {
+      return 'expiring-week';
+    }
+
+    return 'ok';
+  };
+
   // Filter and group items
   const filteredItems = useMemo(() => {
     let items = inventoryItems;
@@ -299,31 +324,6 @@ const Inventory = () => {
       if (prev === 'asc') return 'desc';
       return 'none';
     });
-  };
-
-  // Get expiration status
-  const getExpirationStatus = (expirationDate: string | null) => {
-    if (!expirationDate) return null;
-
-    const expDate = parseDateOnly(expirationDate);
-    expDate.setHours(0, 0, 0, 0);
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (isPast(expDate) && differenceInDays(today, expDate) > 0) {
-      return 'expired';
-    }
-
-    const daysUntilExpiry = differenceInDays(expDate, today);
-    if (daysUntilExpiry <= 3) {
-      return 'expiring-soon';
-    }
-    if (daysUntilExpiry <= 7) {
-      return 'expiring-week';
-    }
-
-    return 'ok';
   };
 
   const expirationBadge = (status: string | null, date: string) => {
