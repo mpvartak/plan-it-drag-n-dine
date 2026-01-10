@@ -723,9 +723,13 @@ const Inventory = () => {
                             variant="ghost" 
                             size="icon" 
                             className="h-8 w-8"
-                            onClick={() => openEditDialog(item)}
+                            onClick={() => {
+                              deleteItemMutation.mutate(item.id);
+                              toast({ title: 'Used up', description: `${item.name} marked as used up and removed.` });
+                            }}
+                            title="Out of this"
                           >
-                            <Edit2 className="h-4 w-4" />
+                            <PackageMinus className="h-4 w-4" />
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -738,14 +742,9 @@ const Inventory = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem 
-                                onClick={() => {
-                                  deleteItemMutation.mutate(item.id);
-                                  toast({ title: 'Used up', description: `${item.name} marked as used up and removed.` });
-                                }}
-                              >
-                                <PackageMinus className="h-4 w-4 mr-2" />
-                                Out of this
+                              <DropdownMenuItem onClick={() => openEditDialog(item)}>
+                                <Edit2 className="h-4 w-4 mr-2" />
+                                Edit
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem 
