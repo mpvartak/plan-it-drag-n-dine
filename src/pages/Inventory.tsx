@@ -434,46 +434,58 @@ const Inventory = () => {
         style={{ backgroundImage: `url(${backgroundImage})` }}
       >
         <div className="container mx-auto px-4 py-6">
-          {/* Status filters */}
-          {(statusCounts.expired > 0 || statusCounts.expiringSoon > 0) && (
-            <div className="mb-4 flex flex-wrap gap-2">
-              {statusCounts.expired > 0 && (
-                <Badge 
-                  variant={expirationFilter === 'expired' ? 'default' : 'destructive'} 
-                  className={cn(
-                    "gap-1 text-sm py-1 px-3 cursor-pointer transition-all",
-                    expirationFilter === 'expired' && "ring-2 ring-offset-2 ring-destructive"
-                  )}
-                  onClick={() => setExpirationFilter(expirationFilter === 'expired' ? 'all' : 'expired')}
-                >
-                  <AlertTriangle className="h-3 w-3" />
-                  {statusCounts.expired} expired item{statusCounts.expired > 1 ? 's' : ''}
-                </Badge>
+          {/* Filters */}
+          <div className="mb-4 flex flex-wrap gap-2">
+            {statusCounts.expired > 0 && (
+              <Badge 
+                variant={expirationFilter === 'expired' ? 'default' : 'destructive'} 
+                className={cn(
+                  "gap-1 text-sm py-1 px-3 cursor-pointer transition-all",
+                  expirationFilter === 'expired' && "ring-2 ring-offset-2 ring-destructive"
+                )}
+                onClick={() => setExpirationFilter(expirationFilter === 'expired' ? 'all' : 'expired')}
+              >
+                <AlertTriangle className="h-3 w-3" />
+                {statusCounts.expired} expired
+              </Badge>
+            )}
+            {statusCounts.expiringSoon > 0 && (
+              <Badge 
+                className={cn(
+                  "gap-1 text-sm py-1 px-3 bg-orange-500 hover:bg-orange-600 cursor-pointer transition-all",
+                  expirationFilter === 'expiring-soon' && "ring-2 ring-offset-2 ring-orange-500"
+                )}
+                onClick={() => setExpirationFilter(expirationFilter === 'expiring-soon' ? 'all' : 'expiring-soon')}
+              >
+                <AlertTriangle className="h-3 w-3" />
+                {statusCounts.expiringSoon} expiring soon
+              </Badge>
+            )}
+            <Badge 
+              variant={showOutOfStock ? 'default' : 'outline'} 
+              className={cn(
+                "gap-1 text-sm py-1 px-3 cursor-pointer transition-all bg-background/95",
+                showOutOfStock && "ring-2 ring-offset-2 ring-primary"
               )}
-              {statusCounts.expiringSoon > 0 && (
-                <Badge 
-                  className={cn(
-                    "gap-1 text-sm py-1 px-3 bg-orange-500 hover:bg-orange-600 cursor-pointer transition-all",
-                    expirationFilter === 'expiring-soon' && "ring-2 ring-offset-2 ring-orange-500"
-                  )}
-                  onClick={() => setExpirationFilter(expirationFilter === 'expiring-soon' ? 'all' : 'expiring-soon')}
-                >
-                  <AlertTriangle className="h-3 w-3" />
-                  {statusCounts.expiringSoon} item{statusCounts.expiringSoon > 1 ? 's' : ''} expiring soon
-                </Badge>
-              )}
-              {expirationFilter !== 'all' && (
-                <Badge 
-                  variant="outline" 
-                  className="gap-1 text-sm py-1 px-3 cursor-pointer bg-background/95"
-                  onClick={() => setExpirationFilter('all')}
-                >
-                  <X className="h-3 w-3" />
-                  Clear filter
-                </Badge>
-              )}
-            </div>
-          )}
+              onClick={() => setShowOutOfStock(!showOutOfStock)}
+            >
+              <PackageMinus className="h-3 w-3" />
+              {outOfStockCount} out of stock
+            </Badge>
+            {(expirationFilter !== 'all' || showOutOfStock) && (
+              <Badge 
+                variant="outline" 
+                className="gap-1 text-sm py-1 px-3 cursor-pointer bg-background/95 hover:bg-muted"
+                onClick={() => {
+                  setExpirationFilter('all');
+                  setShowOutOfStock(false);
+                }}
+              >
+                <X className="h-3 w-3" />
+                Clear filters
+              </Badge>
+            )}
+          </div>
 
           {/* Search and Add */}
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -709,15 +721,6 @@ const Inventory = () => {
             >
               <ArrowUpDown className="h-4 w-4" />
               Expiry {sortByExpiration === 'asc' ? '↑' : sortByExpiration === 'desc' ? '↓' : ''}
-            </Button>
-            <Button
-              variant={showOutOfStock ? 'secondary' : 'outline'}
-              size="sm"
-              onClick={() => setShowOutOfStock(!showOutOfStock)}
-              className="gap-2 shrink-0 bg-background/95"
-            >
-              <PackageMinus className="h-4 w-4" />
-              Out of stock {outOfStockCount > 0 && `(${outOfStockCount})`}
             </Button>
           </div>
 
