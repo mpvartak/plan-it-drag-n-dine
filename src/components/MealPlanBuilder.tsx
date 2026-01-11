@@ -555,13 +555,18 @@ export const MealPlanBuilder = ({
     console.log('🔄 Loading meal plans from database...');
     setIsLoading(true);
     try {
-      // Get date range for current week
-      const weekDates = getWeekDates();
-      const startDate = weekDates[0].toISOString().split('T')[0];
-      const endDate = weekDates[weekDates.length - 1].toISOString().split('T')[0];
+      // Compute week dates directly here to avoid stale closure issues
+      const computedWeekDates = orderedDays.map((_, index) => {
+        const date = new Date(currentWeekStart);
+        date.setDate(currentWeekStart.getDate() + index);
+        return date;
+      });
+      const startDate = computedWeekDates[0].toISOString().split('T')[0];
+      const endDate = computedWeekDates[computedWeekDates.length - 1].toISOString().split('T')[0];
       console.log('🔄 Querying database for dates:', {
         startDate,
-        endDate
+        endDate,
+        currentWeekStart: currentWeekStart.toISOString().split('T')[0]
       });
       const {
         data,
