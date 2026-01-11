@@ -1087,7 +1087,11 @@ async function executeToolCall(
       }
 
       const updatedItems = (existing.meal_items as any[]).filter(
-        (item: any) => item.text.toLowerCase() !== args.itemName.toLowerCase()
+        (item: any) => {
+          // Handle both legacy {name} and current {text} formats
+          const itemText = item.text || item.name || '';
+          return itemText.toLowerCase() !== args.itemName.toLowerCase();
+        }
       );
 
       const { error } = await supabase
