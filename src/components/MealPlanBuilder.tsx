@@ -611,8 +611,23 @@ export const MealPlanBuilder = ({
           const dayName = orderedDays[daysDiff];
           console.log('🔄 Processing record for', dayName, record.meal_type, '- Raw meal_items:', record.meal_items);
           if (plan[dayName] && record.meal_items && Array.isArray(record.meal_items)) {
-            const items = record.meal_items as unknown as MealItem[];
-            console.log('🔄 Items after casting:', items, 'Length:', items.length);
+            const rawItems = record.meal_items as unknown as Array<Record<string, any>>;
+            const items: MealItem[] = rawItems
+              .map((item) => {
+                const text = typeof item.text === 'string'
+                  ? item.text
+                  : (typeof item.name === 'string' ? item.name : '');
+
+                return {
+                  ...item,
+                  id: typeof item.id === 'string' ? item.id : `${Date.now()}-${Math.random()}`,
+                  // Some older rows (or AI inserts) store `name` instead of `text`
+                  text,
+                };
+              })
+              .filter((item) => item.text.trim().length > 0);
+
+            console.log('🔄 Items after normalization:', items, 'Length:', items.length);
             plan[dayName][record.meal_type] = items;
             console.log('🔄 Loaded', items.length, 'items for', dayName, record.meal_type);
           } else {
@@ -647,7 +662,10 @@ export const MealPlanBuilder = ({
       Object.keys(plan).forEach(day => {
         Object.keys(plan[day]).forEach(mealType => {
           plan[day][mealType] = plan[day][mealType].map(item => {
-            const mealItemData = mealItemMap.get(item.text.toLowerCase());
+            const key = (typeof item.text === 'string' ? item.text : '').toLowerCase();
+            if (!key) return item;
+
+            const mealItemData = mealItemMap.get(key);
             if (mealItemData) {
               return {
                 ...item,
