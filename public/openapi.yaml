@@ -433,6 +433,109 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /grocery-list:
+    get:
+      operationId: getGroceryList
+      summary: Get grocery list for a week
+      description: Get shopping list items for a specific week. Use for "What's on my grocery list?", "Shopping list for this week".
+      parameters:
+        - name: week_start
+          in: query
+          required: true
+          description: Week start date YYYY-MM-DD
+          schema:
+            type: string
+            format: date
+            example: "2024-01-15"
+      responses:
+        '200':
+          description: Grocery list for the week
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/GroceryList'
+        '400':
+          description: Missing week_start
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      operationId: addGroceryItems
+      summary: Add items to grocery list
+      description: Add shopping items independent of meal plan. Use for "Add milk to grocery list", "I need to buy eggs".
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroceryListAdd'
+      responses:
+        '201':
+          description: Updated grocery list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/GroceryList'
+        '400':
+          description: Missing required fields
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      operationId: clearGroceryList
+      summary: Clear entire grocery list
+      description: Remove all items from a week's grocery list. Use for "Clear my grocery list".
+      parameters:
+        - name: week_start
+          in: query
+          required: true
+          description: Week start date YYYY-MM-DD
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List cleared
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /grocery-list/item:
+    delete:
+      operationId: removeGroceryItem
+      summary: Remove item from grocery list
+      description: Remove a specific item from grocery list. Use for "Remove milk from list", "I don't need eggs anymore".
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroceryListRemoveItem'
+      responses:
+        '200':
+          description: Updated grocery list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/GroceryList'
+        '400':
+          description: Missing required fields
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
 components:
   securitySchemes:
     apiKey:
@@ -730,3 +833,81 @@ components:
           type: string
         notes:
           type: string
+
+    GroceryList:
+      type: object
+      description: Weekly grocery/shopping list
+      properties:
+        id:
+          type: string
+          format: uuid
+        week_start_date:
+          type: string
+          format: date
+          example: "2024-01-15"
+        ingredients:
+          type: array
+          description: List of grocery items
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "Milk"
+              quantity:
+                type: string
+                example: "1 gallon"
+              category:
+                type: string
+                example: "Dairy"
+              source:
+                type: string
+                description: "manual" for API-added items, meal item name for auto-generated
+                example: "manual"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    GroceryListAdd:
+      type: object
+      required: [week_start, items]
+      properties:
+        week_start:
+          type: string
+          format: date
+          description: Week start date YYYY-MM-DD (required)
+          example: "2024-01-15"
+        items:
+          type: array
+          description: Items to add (required)
+          items:
+            type: object
+            required: [name]
+            properties:
+              name:
+                type: string
+                description: Item name (required)
+                example: "Milk"
+              quantity:
+                type: string
+                example: "1 gallon"
+              category:
+                type: string
+                example: "Dairy"
+
+    GroceryListRemoveItem:
+      type: object
+      required: [week_start, item_name]
+      properties:
+        week_start:
+          type: string
+          format: date
+          description: Week start date YYYY-MM-DD (required)
+          example: "2024-01-15"
+        item_name:
+          type: string
+          description: Name of item to remove (required)
+          example: "Milk"
