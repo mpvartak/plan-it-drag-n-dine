@@ -366,6 +366,105 @@ async function deleteMealItem(userId: string, itemId: string) {
 }
 
 // ============================================
+// GROCERY LIST FUNCTIONS
+// ============================================
+
+async function getGroceryList(userId: string, weekStartDate: string) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  return await supabase
+    .from('grocery_lists')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('week_start_date', weekStartDate)
+    .single();
+}
+
+async function addGroceryItems(userId: string, weekStartDate: string, items: {
+  name: string;
+  quantity?: string;
+  category?: string;
+}[]) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  // Check if list exists for this week
+  const { data: existing } = await supabase
+    .from('grocery_lists')
+    .select('id, ingredients')
+    .eq('user_id', userId)
+    .eq('week_start_date', weekStartDate)
+    .single();
+
+  const newIngredients = items.map(item => ({
+    name: item.name,
+    quantity: item.quantity || '',
+    category: item.category || 'Other',
+    source: 'manual',
+  }));
+
+  if (existing) {
+    // Append to existing list
+    const existingIngredients = (existing.ingredients as any[]) || [];
+    const updatedIngredients = [...existingIngredients, ...newIngredients];
+    
+    return await supabase
+      .from('grocery_lists')
+      .update({ ingredients: updatedIngredients, updated_at: new Date().toISOString() })
+      .eq('id', existing.id)
+      .select()
+      .single();
+  } else {
+    // Create new list
+    return await supabase
+      .from('grocery_lists')
+      .insert({
+        user_id: userId,
+        week_start_date: weekStartDate,
+        ingredients: newIngredients,
+      })
+      .select()
+      .single();
+  }
+}
+
+async function removeGroceryItem(userId: string, weekStartDate: string, itemName: string) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const { data: existing } = await supabase
+    .from('grocery_lists')
+    .select('id, ingredients')
+    .eq('user_id', userId)
+    .eq('week_start_date', weekStartDate)
+    .single();
+
+  if (!existing) {
+    return { data: null, error: { message: 'Grocery list not found for this week' } };
+  }
+
+  const existingIngredients = (existing.ingredients as any[]) || [];
+  const updatedIngredients = existingIngredients.filter(
+    (ing: any) => ing.name.toLowerCase() !== itemName.toLowerCase()
+  );
+
+  return await supabase
+    .from('grocery_lists')
+    .update({ ingredients: updatedIngredients, updated_at: new Date().toISOString() })
+    .eq('id', existing.id)
+    .select()
+    .single();
+}
+
+async function clearGroceryList(userId: string, weekStartDate: string) {
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  return await supabase
+    .from('grocery_lists')
+    .delete()
+    .eq('user_id', userId)
+    .eq('week_start_date', weekStartDate);
+}
+
+// ============================================
 // REST API HANDLER
 // ============================================
 
@@ -570,6 +669,78 @@ async function handleRestRequest(req: Request, url: URL, userId: string): Promis
       });
     }
 
+    // ========== GROCERY LIST ==========
+    // GET /grocery-list?week_start=YYYY-MM-DD
+    if (path === '/grocery-list' && method === 'GET') {
+      const weekStart = url.searchParams.get('week_start');
+      if (!weekStart) {
+        return new Response(JSON.stringify({ error: 'week_start parameter required (YYYY-MM-DD)' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      const { data, error } = await getGroceryList(userId, weekStart);
+      // Return empty list if not found (not an error)
+      if (error && error.code === 'PGRST116') {
+        return new Response(JSON.stringify({ data: { week_start_date: weekStart, ingredients: [] } }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      if (error) throw error;
+      return new Response(JSON.stringify({ data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // POST /grocery-list - Add items to grocery list
+    if (path === '/grocery-list' && method === 'POST') {
+      const body = await req.json();
+      if (!body.week_start || !body.items || !Array.isArray(body.items)) {
+        return new Response(JSON.stringify({ error: 'week_start and items array required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      const { data, error } = await addGroceryItems(userId, body.week_start, body.items);
+      if (error) throw error;
+      return new Response(JSON.stringify({ data }), {
+        status: 201,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // DELETE /grocery-list/item - Remove specific item
+    if (path === '/grocery-list/item' && method === 'DELETE') {
+      const body = await req.json();
+      if (!body.week_start || !body.item_name) {
+        return new Response(JSON.stringify({ error: 'week_start and item_name required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      const { data, error } = await removeGroceryItem(userId, body.week_start, body.item_name);
+      if (error) throw error;
+      return new Response(JSON.stringify({ data }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // DELETE /grocery-list - Clear entire list for a week
+    if (path === '/grocery-list' && method === 'DELETE') {
+      const weekStart = url.searchParams.get('week_start');
+      if (!weekStart) {
+        return new Response(JSON.stringify({ error: 'week_start parameter required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      const { error } = await clearGroceryList(userId, weekStart);
+      if (error) throw error;
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     return new Response(JSON.stringify({ error: 'Not found' }), {
       status: 404,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -605,6 +776,19 @@ async function handleMcpRequest(req: Request, userId: string): Promise<Response>
         break;
       case 'list_meal_items':
         result = await getMealItems(userId);
+        break;
+      case 'get_grocery_list':
+        result = await getGroceryList(userId, args.week_start);
+        // Handle not found as empty list
+        if (result.error && result.error.code === 'PGRST116') {
+          result = { data: { week_start_date: args.week_start, ingredients: [] }, error: null };
+        }
+        break;
+      case 'add_grocery_items':
+        result = await addGroceryItems(userId, args.week_start, args.items);
+        break;
+      case 'remove_grocery_item':
+        result = await removeGroceryItem(userId, args.week_start, args.item_name);
         break;
       default:
         return new Response(JSON.stringify({ error: `Unknown tool: ${tool}` }), {
