@@ -738,7 +738,7 @@ components:
           example: "Classic Grilled Chicken"
         recipe_type:
           type: string
-          description: full, quick, notes
+          description: Type of recipe format (e.g. full recipe, quick notes, video link)
         content:
           type: string
           description: Recipe text
@@ -767,7 +767,7 @@ components:
           example: "Mom's Pasta"
         recipe_type:
           type: string
-          description: full, quick, notes (required)
+          description: Type of recipe format (required)
           example: "full"
         content:
           type: string
